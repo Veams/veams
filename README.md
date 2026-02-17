@@ -23,6 +23,21 @@ These three steps are necessary to create a completely decoupled state managemen
 __Note__: 
 _Please keep in mind that dependencies for the hook needs to be flattened and cannot be used as an object due to how React works._
 
+## Demo
+
+Live docs and demo:
+
+```
+https://veams.github.io/status-quo/
+```
+
+## Handlers
+
+Status Quo ships two handler implementations with the same public interface:
+
+- `ObservableStateHandler` (RxJS-backed)
+- `SignalStateHandler` (Signals-backed)
+
 ## Example
 
 Let's start with a simple state example. 
