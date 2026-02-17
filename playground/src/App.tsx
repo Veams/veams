@@ -231,8 +231,8 @@ const [state, actions] = useStateSingleton(CounterSingleton);`;
 
 // Observable: combine handler streams (RxJS shines here)
 combineLatest([
-  CounterStateHandler.getInstance().getStateAsObservable(),
-  new CardStateHandler().getStateAsObservable(),
+  CounterStateHandler.getInstance(),
+  new CardStateHandler(),
 ]).subscribe(([counterState, cardState]) => {
   this.setState({
     counter: counterState,
