@@ -54,12 +54,10 @@ body {
   width: 100%;
 }
 
-.brand-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 4px rgba(47, 107, 255, 0.2);
+.brand-logo {
+  width: 260px;
+  height: auto;
+  display: block;
 }
 
 .nav {
@@ -130,6 +128,12 @@ p {
   margin: 0;
   color: var(--muted);
   line-height: 1.6;
+
+  span {
+    font-family: monospace;
+    font-weight: 700;
+    font-size: .9rem;
+  }
 }
 
 .muted {

@@ -1,4 +1,6 @@
-# Status Quo (`@veams/status-quo`)
+![StatusQuo](assets/status-quo-logo.svg)
+
+# @veams/status-quo
 
 [![npm version](https://img.shields.io/npm/v/@veams/status-quo)](https://www.npmjs.com/package/@veams/status-quo)
 
@@ -23,7 +25,7 @@ This page mirrors the demo content and adds a full API reference.
 
 ## Overview
 
-Status Quo is a small, framework-agnostic state layer that focuses on explicit lifecycle, clear action APIs, and a minimal subscription surface. It ships two handler implementations with the same public interface: RxJS-backed observables and signals-backed stores.
+StatusQuo is a small, framework-agnostic state layer that focuses on explicit lifecycle, clear action APIs, and a minimal subscription surface. It ships two handler implementations with the same public interface: RxJS-backed observables and signals-backed stores.
 
 ## Philosophy
 
@@ -75,7 +77,7 @@ const [state, actions] = useStateFactory(() => new CounterStore(), []);
 
 ## Handlers
 
-Status Quo provides two handler implementations with the same public interface:
+StatusQuo provides two handler implementations with the same public interface:
 
 - `ObservableStateHandler` (RxJS-backed)
 - `SignalStateHandler` (Signals-backed)
@@ -108,29 +110,41 @@ Use only the slice you need. RxJS makes multi-source composition powerful and de
 import { combineLatest } from 'rxjs';
 
 // RxJS: combine handler streams (RxJS shines here)
-combineLatest([
-  CounterStateHandler.getInstance(),
-  new CardStateHandler(),
-]).subscribe(([counterState, cardState]) => {
-  this.setState({
-    counter: counterState,
-    cardTitle: cardState.title,
-  });
-});
+class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
+  private counter$ = CounterObservableStore.getInstance().getStateAsObservable();
+  private card$ = new CardObservableHandler();
+
+  constructor() {
+    super({ initialState: { counter: 0, cardTitle: '' }});
+
+    this.subscriptions.push(
+      combineLatest([
+        this.counter$,
+        this.card$,
+      ]).subscribe(([counterState, cardState]) => {
+        this.setState({
+          counter: counterState,
+          cardTitle: cardState.title,
+        }, 'sync-combined');
+      })
+    )
+  }
+
+}
 
 // Signals: combine derived values via computed + bindSubscribable
 import { computed } from '@preact/signals-core';
 
 class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
-  private counter = new CounterSignalHandler();
+  private counter = CounterSignalHandler.getInstance();
   private card = new CardSignalHandler();
-  private combined = computed(() => ({
+  private combined$ = computed(() => ({
     counter: this.counter.getSignal().value,
     cardTitle: this.card.getSignal().value.title,
   }));
 
   constructor() {
-    super({ initialState: this.combined.value });
+    super({ initialState: { counter: 0, cardTitle: '' }});
 
     this.bindSubscribable(
       { subscribe: this.combined.subscribe.bind(this.combined), getSnapshot: () => this.combined.value },

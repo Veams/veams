@@ -16,6 +16,7 @@ import 'prismjs/components/prism-bash';
 import philosophySwap from './assets/philosophy-swap.svg';
 import philosophySeparation from './assets/philosophy-separation.svg';
 import philosophyAgnostic from './assets/philosophy-agnostic.svg';
+import statusQuoLogo from './assets/statusquo-logo.png';
 
 type CounterState = {
   count: number;
@@ -227,24 +228,36 @@ const CounterSingleton = makeStateSingleton(() => new CounterStore());
 
 const [state, actions] = useStateSingleton(CounterSingleton);`;
 
-  const composeSnippet = `import { combineLatest } from 'rxjs';
+  const composeSnippet = `import { combineLatest } from "rxjs";
 
 // RxJS: combine handler streams (RxJS shines here)
-combineLatest([
-  CounterStateHandler.getInstance(),
-  new CardStateHandler(),
-]).subscribe(([counterState, cardState]) => {
-  this.setState({
-    counter: counterState,
-    cardTitle: cardState.title,
-  });
-});
+class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
+  private counter$ = CounterObservableStore.getInstance().getStateAsObservable();
+  private card$ = new CardObservableHandler();
+
+  constructor() {
+    super({ initialState: { counter: 0, cardTitle: "" }});
+    
+    this.subscriptions.push(
+      combineLatest([
+        this.counter$,
+        this.card$,
+      ]).subscribe(([counterState, cardState]) => {
+        this.setState({
+          counter: counterState,
+          cardTitle: cardState.title,
+        }, "sync-combined");
+      })
+    )
+  }
+
+}
 
 // Signals: combine derived values via computed + bindSubscribable
-import { computed } from '@preact/signals-core';
+import { computed } from "@preact/signals-core";
 
 class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
-  private counter = new CounterSignalHandler();
+  private counter = CounterSignalHandler.getInstance().getSignal();
   private card = new CardSignalHandler();
   private combined = computed(() => ({
     counter: this.counter.getSignal().value,
@@ -252,11 +265,11 @@ class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
   }));
 
   constructor() {
-    super({ initialState: this.combined.value });
+    super({ initialState: { counter: 0, cardTitle: "" }});
 
     this.bindSubscribable(
       { subscribe: this.combined.subscribe.bind(this.combined), getSnapshot: () => this.combined.value },
-      (nextState) => this.setState(nextState, 'sync-combined')
+      (nextState) => this.setState(nextState, "sync-combined")
     );
   }
 }`;
@@ -268,8 +281,7 @@ class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
   return (
     <div className="app">
       <div className="brand-bar">
-        <span className="brand-dot" />
-        <span>Status Quo Demo</span>
+        <img src={statusQuoLogo} alt="StatusQuo logo" className="brand-logo" />
       </div>
       <nav className="nav">
         <div className="nav-links">
@@ -289,7 +301,7 @@ class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
           <p className="eyebrow">Philosophy</p>
           <h1>State management that stays out of your way</h1>
           <p className="subtext">
-            Status Quo treats state handlers as small, composable objects with explicit
+            <span>StatusQuo</span> treats state handlers as small, composable objects with explicit
             lifecycle and a tiny interface. Components subscribe to snapshots, not
             framework‑specific store APIs. That makes it easy to swap the engine under the
             hood—RxJS for observable streams or Preact Signals for ultra‑light reactive state.
