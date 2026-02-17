@@ -229,7 +229,7 @@ const [state, actions] = useStateSingleton(CounterSingleton);`;
 
   const composeSnippet = `import { combineLatest } from 'rxjs';
 
-// Observable: combine handler streams (RxJS shines here)
+// RxJS: combine handler streams (RxJS shines here)
 combineLatest([
   CounterStateHandler.getInstance(),
   new CardStateHandler(),
@@ -240,21 +240,24 @@ combineLatest([
   });
 });
 
-// Signal: use bindSubscribable with signals
+// Signals: combine derived values via computed + bindSubscribable
+import { computed } from '@preact/signals-core';
+
 class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
   private counter = new CounterSignalHandler();
   private card = new CardSignalHandler();
+  private combined = computed(() => ({
+    counter: this.counter.getSignal().value,
+    cardTitle: this.card.getSignal().value.title,
+  }));
 
   constructor() {
-    super({ initialState: { counter: this.counter.getState(), cardTitle: '' } });
+    super({ initialState: this.combined.value });
 
-    this.bindSubscribable(this.counter.getSignal(), (counterState) => {
-      this.setState({ counter: counterState }, 'sync-counter');
-    });
-
-    this.bindSubscribable(this.card.getSignal(), (cardState) => {
-      this.setState({ cardTitle: cardState.title }, 'sync-card');
-    });
+    this.bindSubscribable(
+      { subscribe: this.combined.subscribe.bind(this.combined), getSnapshot: () => this.combined.value },
+      (nextState) => this.setState(nextState, 'sync-combined')
+    );
   }
 }`;
 
@@ -420,8 +423,9 @@ class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
           <h2>Combine multiple handlers</h2>
           <p>
             Use only the slice you need. RxJS makes multi-source composition powerful and
-            declarative with `combineLatest`, while Signals can derive values via
-            `bindSubscribable`. This keeps parent stores lean and focused.
+            declarative with operators like `combineLatest`, while Signals can derive values
+            with `computed` and wire them in via `bindSubscribable`. This keeps parent stores
+            lean and focused.
           </p>
         </div>
         <pre className="code-block">
