@@ -1,193 +1,297 @@
 # Status Quo (`@veams/status-quo`)
 
-The `Manager` to rule your state.
+[![npm version](https://img.shields.io/npm/v/@veams/status-quo)](https://www.npmjs.com/package/@veams/status-quo)
 
----
+The manager to rule your state.
 
-## Table of Content
+This page mirrors the demo content and adds a full API reference.
 
-1. [Getting Started](#getting-started)
-2. [Example](#example)
+## Table of Contents
 
----
+1. [Overview](#overview)
+2. [Philosophy](#philosophy)
+3. [Demo](#demo)
+4. [Quickstart](#quickstart)
+5. [Handlers](#handlers)
+6. [Hooks](#hooks)
+7. [Singletons](#singletons)
+8. [Composition](#composition)
+9. [Devtools](#devtools)
+10. [Cleanup](#cleanup)
+11. [API Reference](#api-reference)
+12. [Migration](#migration)
 
-## Getting Started
+## Overview
 
-1. Create your own state handler which handles all the streams and a state you expose next to the actions
-1. Use actions and state in your component
-1. When using React, initialize the state handler with a custom hook called `useStateFactory()` (or `useStateSingleton()` for Singleton states)
+Status Quo is a small, framework-agnostic state layer that focuses on explicit lifecycle, clear action APIs, and a minimal subscription surface. It ships two handler implementations with the same public interface: RxJS-backed observables and signals-backed stores.
 
+## Philosophy
 
-These three steps are necessary to create a completely decoupled state management solution without the need of creating custom hooks with `useEffect()`.
-
-__Note__: 
-_Please keep in mind that dependencies for the hook needs to be flattened and cannot be used as an object due to how React works._
+- Swap the engine, keep the API. Your UI code stays the same when you switch from RxJS to Signals.
+- Separate view and state. Handlers own transitions and expose actions; views subscribe to snapshots.
+- Framework-agnostic core. Business logic lives outside the UI library; hooks provide the glue.
 
 ## Demo
 
 Live docs and demo:
 
+[https://veams.github.io/status-quo/](https://veams.github.io/status-quo/)
+
+## Quickstart
+
+Install:
+
+```bash
+npm install @veams/status-quo rxjs @preact/signals-core
 ```
-https://veams.github.io/status-quo/
-```
 
-## Handlers
-
-Status Quo ships two handler implementations with the same public interface:
-
-- `ObservableStateHandler` (RxJS-backed)
-- `SignalStateHandler` (Signals-backed)
-
-## Example
-
-Let's start with a simple state example. 
-You should start with the abstract class `ObservableStateHandler`:
+Create a store and use it in a component:
 
 ```ts
-import { useStateFactory, ObservableStateHandler } from '@veams/status-quo';
+import { ObservableStateHandler, useStateFactory } from '@veams/status-quo';
 
-type CounterState = {
-  count: number;
-};
+type CounterState = { count: number };
+
 type CounterActions = {
   increase: () => void;
   decrease: () => void;
 };
 
-class CounterStateHandler extends ObservableStateHandler<CounterState, CounterActions> {
-  constructor([startCount = 0]) {
-    super({ initialState: { count: startCount } });
+class CounterStore extends ObservableStateHandler<CounterState, CounterActions> {
+  constructor() {
+    super({ initialState: { count: 0 } });
   }
-  
-  getActions() {
+
+  getActions(): CounterActions {
     return {
-      increase() {
-        this.setState({
-          count: this.getState() + 1
-        })
-      },
-      decrease() {
-        const currentState = this.getState();
-
-        if (currentState.count > 0) {
-          this.setState({
-            count: currentState - 1
-          })
-        }
-      }
-    }
-  }
-}
-
-export function CounterStateFactory(...args) {
-  return new CounterStateHandler(...args);
-}
-```
-
-This can be used in our factory hook function:
-
-```tsx
-import { useStateFactory } from '@veams/status-quo';
-import { CounterStateFactory } from './counter.state.js';
-
-const Counter = () => {
-  const [state, actions] = useStateFactory(CounterStateFactory, [0]);
-  
-  return (
-    <div>
-      <h2>Counter: {state}</h2>
-      <button onClick={actions.increase}>Increase</button>
-      <button onClick={actions.decrease}>Decrease</button>
-    </div>
-  )
-}
-```
-
-**What about singletons?**
-
-Therefore, you can use a simple singleton class or use `makeStateSingleton()` and pass it later on to the singleton hook function:
-
-```ts
-import { makeStateSingleton } from '@veams/status-quo';
-
-import { CounterStateHandler } from './counter.state.js';
-
-export const CounterStateManager = makeStateSingleton(() => new CounterStateHandler([0]))
-```
-
-```tsx
-import { useStateSingleton } from '@veams/status-quo';
-import { CounterStateManager } from './counter.singleton.js';
-
-const GlobalCounterHandler = () => {
-  const [_, actions] = useStateSingleton(CounterStateManager);
-  
-  return (
-    <div>
-      <button onClick={actions.increase}>Increase</button>
-      <button onClick={actions.decrease}>Decrease</button>
-    </div>
-  )
-}
-
-const GlobalCounterDisplay = () => {
-  const [state] = useStateSingleton(CounterStateManager);
-  
-  return (
-    <div>
-      <h2>Counter: {state}</h2>
-    </div>
-  )
-}
-```
-
-### What about debugging? 
-
-You know redux-devtools? You like it? We covered you (at least a bit)!
-You can enable the devtools in an easy way: 
-
-```ts
-
-class CounterStateHandler extends ObservableStateHandler<CounterState, CounterActions> {
-  constructor([startCount = 0]) {
-    super({
-      initialState: { count: startCount },
-      options: {
-        devTools: { enabled: true, namespace: 'Counter' },
-      },
-    });
-  }
-
-  getActions() {
-    return {
-      increase() {
-        this.setState(
-          {
-            count: this.getState() + 1,
-          },
-          'increase'
-        );
-      },
-      decrease() {
-        const currentState = this.getState();
-
-        if (currentState.count > 0) {
-          this.setState(
-            {
-              count: currentState - 1,
-            },
-            'decrease'
-          );
-        }
-      },
+      increase: () => this.setState({ count: this.getState().count + 1 }),
+      decrease: () => this.setState({ count: this.getState().count - 1 }),
     };
   }
 }
 
-export function CounterStateFactory(...args) {
-  return new CounterStateHandler(...args);
+const [state, actions] = useStateFactory(() => new CounterStore(), []);
+```
+
+## Handlers
+
+Status Quo provides two handler implementations with the same public interface:
+
+- `ObservableStateHandler` (RxJS-backed)
+- `SignalStateHandler` (Signals-backed)
+
+Both are built on `BaseStateHandler`, which provides the shared lifecycle and devtools support.
+
+## Hooks
+
+- `useStateFactory(factory, deps)`
+  - Creates a handler instance per component and subscribes to its snapshot.
+  - Suitable for per-component or per-instance state.
+- `useStateSingleton(singleton)`
+  - Uses a shared singleton handler across components.
+
+## Singletons
+
+```ts
+import { makeStateSingleton, useStateSingleton } from '@veams/status-quo';
+
+const CounterSingleton = makeStateSingleton(() => new CounterStore());
+
+const [state, actions] = useStateSingleton(CounterSingleton);
+```
+
+## Composition
+
+Use only the slice you need. RxJS makes multi-source composition powerful and declarative with operators like `combineLatest`, `switchMap`, or `debounceTime`. Signals can derive values with `computed` and wire them into a parent store via `bindSubscribable`.
+
+```ts
+import { combineLatest } from 'rxjs';
+
+// RxJS: combine handler streams (RxJS shines here)
+combineLatest([
+  CounterStateHandler.getInstance(),
+  new CardStateHandler(),
+]).subscribe(([counterState, cardState]) => {
+  this.setState({
+    counter: counterState,
+    cardTitle: cardState.title,
+  });
+});
+
+// Signals: combine derived values via computed + bindSubscribable
+import { computed } from '@preact/signals-core';
+
+class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
+  private counter = new CounterSignalHandler();
+  private card = new CardSignalHandler();
+  private combined = computed(() => ({
+    counter: this.counter.getSignal().value,
+    cardTitle: this.card.getSignal().value.title,
+  }));
+
+  constructor() {
+    super({ initialState: this.combined.value });
+
+    this.bindSubscribable(
+      { subscribe: this.combined.subscribe.bind(this.combined), getSnapshot: () => this.combined.value },
+      (nextState) => this.setState(nextState, 'sync-combined')
+    );
+  }
 }
 ```
 
-We just added the `options.devTools` option and also updated the `setState()` function by passing a second argument into it which is the actions name.
-Now you can open up the the browser extension and you are able to take a look at your actions and state(s).
+## Devtools
+
+Enable Redux Devtools integration with `options.devTools`:
+
+```ts
+class CounterStore extends ObservableStateHandler<CounterState, CounterActions> {
+  constructor() {
+    super({
+      initialState: { count: 0 },
+      options: { devTools: { enabled: true, namespace: 'Counter' } },
+    });
+  }
+}
+```
+
+## Cleanup
+
+Handlers expose `subscribe`, `getSnapshot`, and `destroy` for custom integrations:
+
+```ts
+const unsubscribe = store.subscribe(() => {
+  console.log(store.getSnapshot());
+});
+
+unsubscribe();
+store.destroy();
+```
+
+## API Reference
+
+### `StateSubscriptionHandler<V, A>`
+
+Required interface implemented by all handlers.
+
+```ts
+interface StateSubscriptionHandler<V, A> {
+  subscribe: (listener: () => void) => () => void;
+  getSnapshot: () => V;
+  destroy: () => void;
+  getInitialState: () => V;
+  getActions: () => A;
+}
+```
+
+### `BaseStateHandler<S, A>`
+
+Shared base class for all handlers.
+
+Constructor:
+
+```ts
+protected constructor(initialState: S)
+```
+
+Public methods:
+
+- `getInitialState(): S`
+- `getState(): S`
+- `getSnapshot(): S`
+- `setState(next: Partial<S>, actionName = 'change'): void`
+- `subscribe(listener: () => void): () => void` (abstract)
+- `destroy(): void`
+- `getActions(): A` (abstract)
+
+Protected helpers:
+
+- `getStateValue(): S` (abstract)
+- `setStateValue(next: S): void` (abstract)
+- `initDevTools(options?: { enabled?: boolean; namespace: string }): void`
+- `bindSubscribable<T>(service: { subscribe: (listener: (value: T) => void) => () => void; getSnapshot?: () => T }, onChange: (value: T) => void): void`
+  - Registers the subscription on `this.subscriptions` and invokes `onChange` with the current snapshot when available.
+
+### `ObservableStateHandler<S, A>`
+
+RxJS-backed handler. Extends `BaseStateHandler`.
+
+Constructor:
+
+```ts
+protected constructor({
+  initialState,
+  options
+}: {
+  initialState: S;
+  options?: {
+    devTools?: { enabled?: boolean; namespace: string };
+  };
+})
+```
+
+Public methods:
+
+- `getStateAsObservable(options?: { useDistinctUntilChanged?: boolean }): Observable<S>`
+- `getStateItemAsObservable(key: keyof S): Observable<S[keyof S]>`
+- `getObservableItem(key: keyof S): Observable<S[keyof S]>`
+- `subscribe(listener: () => void): () => void`
+
+Notes:
+- The observable stream uses `distinctUntilChanged` by default (JSON compare).
+- `subscribe` does not fire for the initial value; it only fires on subsequent changes.
+
+### `SignalStateHandler<S, A>`
+
+Signals-backed handler. Extends `BaseStateHandler`.
+
+Constructor:
+
+```ts
+protected constructor({
+  initialState,
+  options
+}: {
+  initialState: S;
+  options?: {
+    devTools?: { enabled?: boolean; namespace: string };
+    useDistinctUntilChanged?: boolean;
+  };
+})
+```
+
+Public methods:
+
+- `getSignal(): Signal<S>`
+- `subscribe(listener: () => void): () => void`
+
+Notes:
+- `useDistinctUntilChanged` defaults to `true` (JSON compare).
+
+### `makeStateSingleton`
+
+```ts
+function makeStateSingleton<S, A>(
+  factory: () => StateSubscriptionHandler<S, A>
+): {
+  getInstance: () => StateSubscriptionHandler<S, A>;
+}
+```
+
+### Hooks
+
+- `useStateFactory<V, A, P extends unknown[]>(factory: (...args: P) => StateSubscriptionHandler<V, A>, params?: P)`
+  - Returns `[state, actions]`.
+- `useStateSingleton<V, A>(singleton: StateSingleton<V, A>)`
+  - Returns `[state, actions]`.
+
+## Migration
+
+From pre-1.0 releases:
+
+1. Rename `StateHandler` -> `ObservableStateHandler`.
+2. Implement `subscribe()` and `getSnapshot()` on custom handlers.
+3. Replace `getObservable()` usage with `subscribe()` in custom integrations.
+4. Update devtools config:
+   - From: `super({ initialState, devTools: { ... } })`
+   - To: `super({ initialState, options: { devTools: { ... } } })`

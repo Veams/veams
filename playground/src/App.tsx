@@ -423,9 +423,9 @@ class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
           <h2>Combine multiple handlers</h2>
           <p>
             Use only the slice you need. RxJS makes multi-source composition powerful and
-            declarative with operators like `combineLatest`, while Signals can derive values
-            with `computed` and wire them in via `bindSubscribable`. This keeps parent stores
-            lean and focused.
+            declarative with operators like `combineLatest`, `switchMap`, or `debounceTime`.
+            Signals can derive values with `computed` and wire them into a parent store via
+            `bindSubscribable`. This keeps parent stores lean and focused.
           </p>
         </div>
         <pre className="code-block">
