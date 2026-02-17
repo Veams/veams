@@ -78,6 +78,15 @@ export abstract class BaseStateHandler<S, A> implements StateSubscriptionHandler
 
   protected abstract getStateValue(): S;
   protected abstract setStateValue(nextState: S): void;
+  protected bindSubscribable<T>(
+    service: { subscribe: (listener: (value: T) => void) => () => void; getSnapshot?: () => T },
+    onChange: (value: T) => void
+  ) {
+    const unsubscribe = service.subscribe(onChange);
+    this.subscriptions = [...(this.subscriptions ?? []), { unsubscribe }];
+
+    if (service.getSnapshot) onChange(service.getSnapshot());
+  }
 
   abstract subscribe(listener: () => void): () => void;
   abstract getActions(): A;

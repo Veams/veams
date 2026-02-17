@@ -227,48 +227,34 @@ const CounterSingleton = makeStateSingleton(() => new CounterStore());
 
 const [state, actions] = useStateSingleton(CounterSingleton);`;
 
-  const composeSnippet = `// Observable: subscribe to a single field
-class UserStore extends ObservableStateHandler<UserState, UserActions> { /* ... */ }
-class CartStore extends ObservableStateHandler<CartState, CartActions> { /* ... */ }
+  const composeSnippet = `import { combineLatest } from 'rxjs';
 
-class AppStore extends ObservableStateHandler<AppState, AppActions> {
-  private user = new UserStore();
-  private cart = new CartStore();
+// Observable: combine handler streams (RxJS shines here)
+combineLatest([
+  CounterStateHandler.getInstance().getStateAsObservable(),
+  new CardStateHandler().getStateAsObservable(),
+]).subscribe(([counterState, cardState]) => {
+  this.setState({
+    counter: counterState,
+    cardTitle: cardState.title,
+  });
+});
 
-  constructor() {
-    super({ initialState: { status: this.user.getState().status, cart: this.cart.getState() } });
-
-    this.subscriptions = [
-      { unsubscribe: this.user.getStateItemAsObservable('status').subscribe(() => this.sync()) },
-      { unsubscribe: this.cart.subscribe(() => this.syncCart()) }
-    ];
-  }
-
-  private sync() {
-    this.setState({ status: this.user.getState().status }, 'sync-status');
-  }
-
-  private syncCart() {
-    this.setState({ cart: this.cart.getState() }, 'sync-cart');
-  }
-}
-
-// Signal: derive a single field with computed()
-import { computed } from '@preact/signals-core';
-
-class UserSignalStore extends SignalStateHandler<UserState, UserActions> { /* ... */ }
-
+// Signal: use bindSubscribable with signals
 class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
-  private user = new UserSignalStore();
-  private status = computed(() => this.user.getState().status);
+  private counter = new CounterSignalHandler();
+  private card = new CardSignalHandler();
 
   constructor() {
-    super({ initialState: { status: this.user.getState().status } });
-    this.subscriptions = [{ unsubscribe: this.user.subscribe(() => this.sync()) }];
-  }
+    super({ initialState: { counter: this.counter.getState(), cardTitle: '' } });
 
-  private sync() {
-    this.setState({ status: this.status.value }, 'sync-status');
+    this.bindSubscribable(this.counter.getSignal(), (counterState) => {
+      this.setState({ counter: counterState }, 'sync-counter');
+    });
+
+    this.bindSubscribable(this.card.getSignal(), (cardState) => {
+      this.setState({ cardTitle: cardState.title }, 'sync-card');
+    });
   }
 }`;
 
@@ -433,9 +419,9 @@ class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
           <p className="eyebrow">Compose</p>
           <h2>Combine multiple handlers</h2>
           <p>
-            Use only the slice you need. Observables can subscribe to a single key (or use
-            `combineLatest`), while Signals can derive values with `computed`. This keeps
-            parent stores lean and focused.
+            Use only the slice you need. RxJS makes multi-source composition powerful and
+            declarative with `combineLatest`, while Signals can derive values via
+            `bindSubscribable`. This keeps parent stores lean and focused.
           </p>
         </div>
         <pre className="code-block">
