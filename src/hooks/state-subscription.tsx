@@ -1,25 +1,32 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 
 import type { StateSubscriptionHandler } from '../types/types.js';
-import type { SetStateAction } from 'react';
+type Listener = () => void;
 
 export function useStateSubscription<V, A>(
   stateSubscriptionHandler: StateSubscriptionHandler<V, A>
 ) {
-  const [state, setSubscriptionState] = useState<SetStateAction<V>>(
-    stateSubscriptionHandler.getInitialState()
+  const subscribe = useCallback(
+    (listener: Listener) => {
+      const unsubscribe = stateSubscriptionHandler.subscribe(listener);
+
+      return () => {
+        unsubscribe();
+        stateSubscriptionHandler.destroy();
+      };
+    },
+    [stateSubscriptionHandler]
   );
 
-  useEffect(() => {
-    const state$ = stateSubscriptionHandler.getObservable().subscribe((data) => {
-      setSubscriptionState(data);
-    });
+  const getSnapshot = useCallback(
+    () => stateSubscriptionHandler.getSnapshot(),
+    [stateSubscriptionHandler]
+  );
 
-    return () => {
-      state$.unsubscribe();
-      return stateSubscriptionHandler.destroy();
-    };
-  }, [stateSubscriptionHandler]);
+  const getServerSnapshot = useCallback(
+    () => stateSubscriptionHandler.getInitialState(),
+    [stateSubscriptionHandler]
+  );
 
-  return state;
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

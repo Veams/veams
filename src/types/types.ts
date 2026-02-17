@@ -1,7 +1,6 @@
-import type { Observable } from 'rxjs';
-
 export interface StateSubscriptionHandler<V, A> {
-  getObservable: () => Observable<V>;
+  subscribe: (listener: () => void) => () => void;
+  getSnapshot: () => V;
   destroy: () => void;
   getInitialState: () => V;
   getActions: () => A;

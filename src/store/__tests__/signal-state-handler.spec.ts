@@ -1,8 +1,6 @@
-import { lastValueFrom, Subject, take } from 'rxjs';
+import { SignalStateHandler } from '../signal-state-handler.js';
 
-import { StateHandler } from '../state-handler.js';
-
-class TestStateHandler extends StateHandler<
+class TestSignalStateHandler extends SignalStateHandler<
   { test: string; test2: string },
   { testAction: () => void }
 > {
@@ -13,16 +11,14 @@ class TestStateHandler extends StateHandler<
         test2: 'testValue2',
       },
       ...(withDevTools && {
-        devTools: {
-          enabled: true,
-          namespace: 'TestStateHandler',
+        options: {
+          devTools: {
+            enabled: true,
+            namespace: 'TestSignalStateHandler',
+          },
         },
       }),
     });
-  }
-
-  getObservable() {
-    return this.getStateAsObservable();
   }
 
   getActions(): { testAction: () => void } {
@@ -34,11 +30,11 @@ class TestStateHandler extends StateHandler<
   }
 }
 
-describe('State Handler', () => {
-  let stateHandler: TestStateHandler;
+describe('Signal State Handler', () => {
+  let stateHandler: TestSignalStateHandler;
 
   beforeEach(() => {
-    stateHandler = new TestStateHandler();
+    stateHandler = new TestSignalStateHandler();
   });
 
   it('should provide initial state', () => {
@@ -55,7 +51,7 @@ describe('State Handler', () => {
     });
   });
 
-  it('should support state changing via setter and merge state object on first level', async () => {
+  it('should support state changing via setter and merge state object on first level', () => {
     const expected = {
       test: 'change',
       test2: 'testValue2',
@@ -63,33 +59,24 @@ describe('State Handler', () => {
 
     stateHandler.setState(expected);
 
-    const state = await lastValueFrom(stateHandler.getObservable().pipe(take(1)));
-
-    expect(state).toStrictEqual(expected);
     expect(stateHandler.getState()).toStrictEqual(expected);
   });
 
   it('should support additional subscriptions handling', () => {
-    const customSubject = new Subject();
     const spy = jest.fn();
-    const subscription = customSubject.subscribe(spy);
+    const subscription = { unsubscribe: spy };
 
     stateHandler.subscriptions = [subscription];
 
-    customSubject.next(1);
-
     stateHandler.destroy();
-
-    customSubject.next(2);
-    customSubject.next(3);
 
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
-  it('should only call subscriber when object state has changed', async () => {
+  it('should only call subscriber when object state has changed', () => {
     const spy = jest.fn();
+    const unsubscribe = stateHandler.subscribe(spy);
 
-    stateHandler.getObservable().subscribe(spy);
     stateHandler.setState({
       test: 'test',
     });
@@ -103,6 +90,8 @@ describe('State Handler', () => {
       test: 'test2',
     });
 
-    expect(spy).toHaveBeenCalledTimes(3); // 1. testValue (Initial value), 2. test (first setter), 3. test2 (second setter)
+    unsubscribe();
+
+    expect(spy).toHaveBeenCalledTimes(2);
   });
 });
