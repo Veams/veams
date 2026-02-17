@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - `SignalStateHandler` (signals-backed state handler).
 - `BaseStateHandler` to share devtools and lifecycle APIs.
+- `bindSubscribable` helper for managing external subscriptions.
 - Playground/demo with GitHub Pages deployment.
 
 ### Changed
