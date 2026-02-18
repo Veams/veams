@@ -1,4 +1,4 @@
-![StatusQuo](assets/status-quo-logo.svg)
+![StatusQuo](assets/statusquo-logo.png)
 
 # @veams/status-quo
 
