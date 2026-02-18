@@ -1,4 +1,5 @@
 ![StatusQuo](assets/statusquo-logo.png)
+<img src="assets/statusquo-logo.png" width="200" alt="StatusQuo Logo" style="margin: 0 auto;">
 
 # @veams/status-quo
 
