@@ -1,8 +1,8 @@
-![StatusQuo](assets/statusquo-logo.png)
+<center>
 <img src="assets/statusquo-logo.png" width="200" alt="StatusQuo Logo" style="margin: 0 auto;">
+</center>
 
-# @veams/status-quo
-
+# @veams/status-quo 
 [![npm version](https://img.shields.io/npm/v/@veams/status-quo)](https://www.npmjs.com/package/@veams/status-quo)
 
 The manager to rule your state.
