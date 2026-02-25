@@ -1,29 +1,42 @@
 import { lastValueFrom, Subject, take } from 'rxjs';
 
+import { resetStatusQuoForTests, setupStatusQuo } from '../../config/status-quo-config.js';
 import { ObservableStateHandler } from '../observable-state-handler.js';
+import type { DistinctOptions } from '../../config/status-quo-config.js';
 
-class TestObservableStateHandler extends ObservableStateHandler<
-  { test: string; test2: string },
-  { testAction: () => void }
-> {
-  constructor(withDevTools?: boolean) {
+type TestState = { test: string; test2: string };
+type TestActions = { testAction: () => void };
+type TestObservableHandlerOptions = {
+  withDevTools?: boolean;
+  distinct?: DistinctOptions<TestState>;
+  useDistinctUntilChanged?: boolean;
+};
+
+class TestObservableStateHandler extends ObservableStateHandler<TestState, TestActions> {
+  constructor({ withDevTools, distinct, useDistinctUntilChanged }: TestObservableHandlerOptions = {}) {
     super({
       initialState: {
         test: 'testValue',
         test2: 'testValue2',
       },
-      ...(withDevTools && {
-        options: {
+      options: {
+        ...(withDevTools && {
           devTools: {
             enabled: true,
             namespace: 'TestObservableStateHandler',
           },
-        },
-      }),
+        }),
+        ...(distinct && {
+          distinct,
+        }),
+        ...(typeof useDistinctUntilChanged === 'boolean' && {
+          useDistinctUntilChanged,
+        }),
+      },
     });
   }
 
-  getActions(): { testAction: () => void } {
+  getActions(): TestActions {
     return {
       testAction: () => {
         this.setState({ test: 'newValue' });
@@ -36,7 +49,12 @@ describe('Observable State Handler', () => {
   let stateHandler: TestObservableStateHandler;
 
   beforeEach(() => {
+    resetStatusQuoForTests();
     stateHandler = new TestObservableStateHandler();
+  });
+
+  afterEach(() => {
+    resetStatusQuoForTests();
   });
 
   it('should provide initial state', () => {
@@ -110,5 +128,68 @@ describe('Observable State Handler', () => {
     unsubscribe();
 
     expect(spy).toHaveBeenCalledTimes(2); // 1. test (first setter), 2. test2 (second setter)
+  });
+
+  it('should respect global distinct setup when disabled', () => {
+    setupStatusQuo({
+      distinct: {
+        enabled: false,
+      },
+    });
+
+    const handler = new TestObservableStateHandler();
+    const spy = jest.fn();
+    const unsubscribe = handler.subscribe(spy);
+
+    handler.setState({ test: 'same' });
+    handler.setState({ test: 'same' });
+
+    unsubscribe();
+
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
+
+  it('should respect global custom distinct comparator from setupStatusQuo', () => {
+    setupStatusQuo({
+      distinct: {
+        comparator: (previous: TestState, next: TestState) => {
+          return previous.test === next.test;
+        },
+      },
+    });
+
+    const handler = new TestObservableStateHandler();
+    const spy = jest.fn();
+    const unsubscribe = handler.subscribe(spy);
+
+    handler.setState({ test2: 'newValue2' });
+    handler.setState({ test: 'newValue' });
+
+    unsubscribe();
+
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should prefer per-handler distinct options over global setup', () => {
+    setupStatusQuo({
+      distinct: {
+        enabled: false,
+      },
+    });
+
+    const handler = new TestObservableStateHandler({
+      distinct: {
+        enabled: true,
+      },
+    });
+    const spy = jest.fn();
+    const unsubscribe = handler.subscribe(spy);
+
+    handler.setState({ test: 'same' });
+    handler.setState({ test: 'same' });
+
+    unsubscribe();
+
+    expect(spy).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,8 +1,10 @@
 import { signal } from '@preact/signals-core';
 
 import { BaseStateHandler } from './base-state-handler.js';
+import { resolveDistinctOptions } from '../config/status-quo-config.js';
 
 import type { Signal } from '@preact/signals-core';
+import type { DistinctOptions } from '../config/status-quo-config.js';
 
 type SignalStateHandlerProps<S> = {
   initialState: S;
@@ -11,34 +13,23 @@ type SignalStateHandlerProps<S> = {
       enabled?: boolean;
       namespace: string;
     };
+    distinct?: DistinctOptions<S>;
     useDistinctUntilChanged?: boolean;
   };
 };
 
 type Listener = () => void;
 
-const defaultOptions = {
-  useDistinctUntilChanged: true,
-};
-
-function isEqualAsJson(a: unknown, b: unknown) {
-  return JSON.stringify(a) === JSON.stringify(b);
-}
-
 export abstract class SignalStateHandler<S, A> extends BaseStateHandler<S, A> {
   private readonly state: Signal<S>;
   private readonly listeners = new Map<Listener, S>();
-  private readonly useDistinctUntilChanged: boolean;
+  private readonly distinctOptions: ReturnType<typeof resolveDistinctOptions<S>>;
 
-  protected constructor({ initialState, options = defaultOptions }: SignalStateHandlerProps<S>) {
+  protected constructor({ initialState, options }: SignalStateHandlerProps<S>) {
     super(initialState);
-    const mergedOptions = {
-      ...defaultOptions,
-      ...options,
-    };
 
     this.state = signal<S>(initialState);
-    this.useDistinctUntilChanged = mergedOptions.useDistinctUntilChanged ?? true;
+    this.distinctOptions = resolveDistinctOptions(options?.distinct, options?.useDistinctUntilChanged);
     this.initDevTools(options?.devTools);
   }
 
@@ -65,7 +56,7 @@ export abstract class SignalStateHandler<S, A> extends BaseStateHandler<S, A> {
 
   private notify(nextState: S) {
     for (const [listener, lastSnapshot] of this.listeners.entries()) {
-      if (this.useDistinctUntilChanged && isEqualAsJson(nextState, lastSnapshot)) {
+      if (this.distinctOptions.enabled && this.distinctOptions.comparator(lastSnapshot, nextState)) {
         continue;
       }
 

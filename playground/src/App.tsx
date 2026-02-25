@@ -278,6 +278,15 @@ const [userName] = useStateSingleton(SessionSingleton, (state) => state.user.nam
 // Same behavior via useStateSubscription:
 const [session] = useStateSubscription(SessionSingleton);`;
 
+  const apiSetupStatusQuoSnippet = `import equal from 'fast-deep-equal';
+import { setupStatusQuo } from '@veams/status-quo';
+
+setupStatusQuo({
+  distinct: {
+    comparator: equal
+  }
+});`;
+
   const composeSnippet = `import { combineLatest } from "rxjs";
 
 // RxJS: combine handler streams (RxJS shines here)
@@ -569,12 +578,23 @@ class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
             <article className="api-composition-card">
               <h3>Helper function</h3>
               <p>
-                Create a shared singleton provider and configure lifecycle behavior via
-                `destroyOnNoConsumers`.
+                Configure global distinct behavior once with `setupStatusQuo` and create shared
+                singleton providers with `makeStateSingleton`.
               </p>
-              <p className="api-composition-punch">One singleton factory, controlled lifetime.</p>
+              <p className="api-composition-punch">One setup, consistent behavior.</p>
             </article>
-            <div className="api-grid api-grid-single">
+            <div className="api-grid">
+              <article className="api-card">
+                <h3>setupStatusQuo(config?)</h3>
+                <p>
+                  Defines global runtime defaults for distinct update behavior. Per-handler options
+                  still override global config.
+                </p>
+                <pre className="code-block compact">
+                  <code className="language-ts">{apiSetupStatusQuoSnippet}</code>
+                </pre>
+              </article>
+
               <article className="api-card">
                 <h3>makeStateSingleton(factory, options?)</h3>
                 <p>

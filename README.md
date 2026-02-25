@@ -77,6 +77,19 @@ class CounterStore extends ObservableStateHandler<CounterState, CounterActions> 
 const [state, actions] = useStateFactory(() => new CounterStore(), []);
 ```
 
+Optional global setup (e.g. with a custom deep-equality comparator):
+
+```ts
+import equal from 'fast-deep-equal';
+import { setupStatusQuo } from '@veams/status-quo';
+
+setupStatusQuo({
+  distinct: {
+    comparator: equal,
+  },
+});
+```
+
 ## Handlers
 
 StatusQuo provides two handler implementations with the same public interface:
@@ -191,6 +204,31 @@ class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
 ## API Guide
 
 This section documents the primary public API with behavior notes and usage examples.
+
+### `setupStatusQuo(config?)`
+
+Sets global runtime defaults for distinct update behavior.
+Per-handler options still override the global setup.
+
+```ts
+type StatusQuoConfig = {
+  distinct?: {
+    enabled?: boolean; // default: true
+    comparator?: (previous: unknown, next: unknown) => boolean; // default: JSON compare
+  };
+};
+```
+
+```ts
+import equal from 'fast-deep-equal';
+import { setupStatusQuo } from '@veams/status-quo';
+
+setupStatusQuo({
+  distinct: {
+    comparator: equal,
+  },
+});
+```
 
 ### `useStateHandler(factory, params?)`
 
@@ -397,6 +435,11 @@ protected constructor({
   initialState: S;
   options?: {
     devTools?: { enabled?: boolean; namespace: string };
+    distinct?: {
+      enabled?: boolean;
+      comparator?: (previous: S, next: S) => boolean;
+    };
+    useDistinctUntilChanged?: boolean; // optional override
   };
 })
 ```
@@ -409,7 +452,8 @@ Public methods:
 - `subscribe(listener: () => void): () => void`
 
 Notes:
-- The observable stream uses `distinctUntilChanged` by default (JSON compare).
+- The observable stream uses `distinctUntilChanged` by default.
+- Distinct behavior can be configured globally via `setupStatusQuo` or per handler via `options.distinct`.
 - `subscribe` does not fire for the initial value; it only fires on subsequent changes.
 
 ### `SignalStateHandler<S, A>`
@@ -426,6 +470,10 @@ protected constructor({
   initialState: S;
   options?: {
     devTools?: { enabled?: boolean; namespace: string };
+    distinct?: {
+      enabled?: boolean;
+      comparator?: (previous: S, next: S) => boolean;
+    };
     useDistinctUntilChanged?: boolean;
   };
 })
@@ -437,7 +485,22 @@ Public methods:
 - `subscribe(listener: () => void): () => void`
 
 Notes:
-- `useDistinctUntilChanged` defaults to `true` (JSON compare).
+- Distinct behavior defaults to enabled.
+- Configure it globally via `setupStatusQuo` or per handler via `options.distinct`.
+- `useDistinctUntilChanged` remains available as a shorthand enable/disable override.
+
+### `setupStatusQuo`
+
+```ts
+type StatusQuoConfig = {
+  distinct?: {
+    enabled?: boolean;
+    comparator?: (previous: unknown, next: unknown) => boolean;
+  };
+};
+
+function setupStatusQuo(config?: StatusQuoConfig): void
+```
 
 ### `makeStateSingleton`
 

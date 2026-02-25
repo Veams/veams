@@ -268,10 +268,6 @@ p {
   align-items: stretch;
 }
 
-.api-grid-single {
-  grid-template-columns: 1fr;
-}
-
 .api-composition-card {
   padding: 2px 0 18px;
   border-bottom: 1px solid rgba(27, 27, 31, 0.16);

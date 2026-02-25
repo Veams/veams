@@ -4,15 +4,17 @@ import {
   useStateHandler,
   useStateSingleton,
   useStateSubscription,
-} from './hooks/index.js';
+} from './hooks';
 import {
   BaseStateHandler,
   makeStateSingleton,
   ObservableStateHandler,
   SignalStateHandler,
-} from './store/index.js';
+} from './store';
+import { setupStatusQuo } from './config/status-quo-config.js';
 
-import type { StateSingleton, StateSingletonOptions } from './store/index.js';
+import type { DistinctComparator, DistinctOptions, StatusQuoConfig } from './config/status-quo-config.js';
+import type { StateSingleton, StateSingletonOptions } from './store';
 import type { StateSubscriptionHandler } from './types/types.js';
 
 export {
@@ -20,6 +22,7 @@ export {
   makeStateSingleton,
   ObservableStateHandler,
   SignalStateHandler,
+  setupStatusQuo,
   useStateActions,
   useStateFactory,
   useStateHandler,
@@ -27,4 +30,11 @@ export {
   useStateSubscription,
 };
 
-export type { StateSingleton, StateSingletonOptions, StateSubscriptionHandler };
+export type {
+  DistinctComparator,
+  DistinctOptions,
+  StateSingleton,
+  StateSingletonOptions,
+  StateSubscriptionHandler,
+  StatusQuoConfig,
+};

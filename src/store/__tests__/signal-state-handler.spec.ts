@@ -1,27 +1,40 @@
+import { resetStatusQuoForTests, setupStatusQuo } from '../../config/status-quo-config.js';
 import { SignalStateHandler } from '../signal-state-handler.js';
+import type { DistinctOptions } from '../../config/status-quo-config.js';
 
-class TestSignalStateHandler extends SignalStateHandler<
-  { test: string; test2: string },
-  { testAction: () => void }
-> {
-  constructor(withDevTools?: boolean) {
+type TestState = { test: string; test2: string };
+type TestActions = { testAction: () => void };
+type TestSignalHandlerOptions = {
+  withDevTools?: boolean;
+  distinct?: DistinctOptions<TestState>;
+  useDistinctUntilChanged?: boolean;
+};
+
+class TestSignalStateHandler extends SignalStateHandler<TestState, TestActions> {
+  constructor({ withDevTools, distinct, useDistinctUntilChanged }: TestSignalHandlerOptions = {}) {
     super({
       initialState: {
         test: 'testValue',
         test2: 'testValue2',
       },
-      ...(withDevTools && {
-        options: {
+      options: {
+        ...(withDevTools && {
           devTools: {
             enabled: true,
             namespace: 'TestSignalStateHandler',
           },
-        },
-      }),
+        }),
+        ...(distinct && {
+          distinct,
+        }),
+        ...(typeof useDistinctUntilChanged === 'boolean' && {
+          useDistinctUntilChanged,
+        }),
+      },
     });
   }
 
-  getActions(): { testAction: () => void } {
+  getActions(): TestActions {
     return {
       testAction: () => {
         this.setState({ test: 'newValue' });
@@ -34,7 +47,12 @@ describe('Signal State Handler', () => {
   let stateHandler: TestSignalStateHandler;
 
   beforeEach(() => {
+    resetStatusQuoForTests();
     stateHandler = new TestSignalStateHandler();
+  });
+
+  afterEach(() => {
+    resetStatusQuoForTests();
   });
 
   it('should provide initial state', () => {
@@ -93,5 +111,68 @@ describe('Signal State Handler', () => {
     unsubscribe();
 
     expect(spy).toHaveBeenCalledTimes(2);
+  });
+
+  it('should respect global distinct setup when disabled', () => {
+    setupStatusQuo({
+      distinct: {
+        enabled: false,
+      },
+    });
+
+    const handler = new TestSignalStateHandler();
+    const spy = jest.fn();
+    const unsubscribe = handler.subscribe(spy);
+
+    handler.setState({ test: 'same' });
+    handler.setState({ test: 'same' });
+
+    unsubscribe();
+
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
+
+  it('should respect global custom distinct comparator from setupStatusQuo', () => {
+    setupStatusQuo({
+      distinct: {
+        comparator: (previous: TestState, next: TestState) => {
+          return previous.test === next.test;
+        },
+      },
+    });
+
+    const handler = new TestSignalStateHandler();
+    const spy = jest.fn();
+    const unsubscribe = handler.subscribe(spy);
+
+    handler.setState({ test2: 'newValue2' });
+    handler.setState({ test: 'newValue' });
+
+    unsubscribe();
+
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should prefer per-handler distinct options over global setup', () => {
+    setupStatusQuo({
+      distinct: {
+        enabled: false,
+      },
+    });
+
+    const handler = new TestSignalStateHandler({
+      distinct: {
+        enabled: true,
+      },
+    });
+    const spy = jest.fn();
+    const unsubscribe = handler.subscribe(spy);
+
+    handler.setState({ test: 'same' });
+    handler.setState({ test: 'same' });
+
+    unsubscribe();
+
+    expect(spy).toHaveBeenCalledTimes(1);
   });
 });
