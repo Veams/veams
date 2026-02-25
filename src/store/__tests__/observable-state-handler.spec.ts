@@ -84,6 +84,12 @@ describe('Observable State Handler', () => {
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
+  it('should expose state item observable via getObservable', async () => {
+    const observableValue = await lastValueFrom(stateHandler.getObservable('test').pipe(take(1)));
+
+    expect(observableValue).toBe('testValue');
+  });
+
   it('should only call subscriber when object state has changed', async () => {
     const spy = jest.fn();
 

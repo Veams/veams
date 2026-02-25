@@ -1,14 +1,24 @@
-import { useMemo } from 'react';
-
 import { useStateSubscription } from './state-subscription.js';
 
 import type { StateSingleton } from '../store/state-singleton.js';
 
-export function useStateSingleton<V, A>(stateSingleton: StateSingleton<V, A>) {
-  const stateHandler = useMemo(() => stateSingleton.getInstance(), [stateSingleton]);
-  const actions = useMemo(() => stateHandler.getActions(), [stateHandler]);
+type StateSelector<State, SelectedState> = (state: State) => SelectedState;
+type EqualityFn<SelectedState> = (current: SelectedState, next: SelectedState) => boolean;
 
-  const state = useStateSubscription(stateHandler);
+const identitySelector = <State,>(state: State) => state;
 
-  return [state, actions] as [V, A];
+export function useStateSingleton<V, A>(stateSingleton: StateSingleton<V, A>): [V, A];
+export function useStateSingleton<V, A, Sel>(
+  stateSingleton: StateSingleton<V, A>,
+  selector: StateSelector<V, Sel>,
+  isEqual?: EqualityFn<Sel>
+): [Sel, A];
+export function useStateSingleton<V, A, Sel = V>(
+  stateSingleton: StateSingleton<V, A>,
+  selector: StateSelector<V, Sel> = identitySelector as StateSelector<V, Sel>,
+  isEqual: EqualityFn<Sel> = Object.is
+) {
+  const [state, actions] = useStateSubscription(stateSingleton, selector, isEqual);
+
+  return [state, actions] as [Sel, A];
 }

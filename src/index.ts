@@ -1,4 +1,10 @@
-import { useStateFactory, useStateSingleton } from './hooks/index.js';
+import {
+  useStateActions,
+  useStateFactory,
+  useStateHandler,
+  useStateSingleton,
+  useStateSubscription,
+} from './hooks/index.js';
 import {
   BaseStateHandler,
   makeStateSingleton,
@@ -6,7 +12,7 @@ import {
   SignalStateHandler,
 } from './store/index.js';
 
-import type { StateSingleton } from './store/index.js';
+import type { StateSingleton, StateSingletonOptions } from './store/index.js';
 import type { StateSubscriptionHandler } from './types/types.js';
 
 export {
@@ -14,8 +20,11 @@ export {
   makeStateSingleton,
   ObservableStateHandler,
   SignalStateHandler,
+  useStateActions,
   useStateFactory,
+  useStateHandler,
   useStateSingleton,
+  useStateSubscription,
 };
 
-export type { StateSingleton, StateSubscriptionHandler };
+export type { StateSingleton, StateSingletonOptions, StateSubscriptionHandler };

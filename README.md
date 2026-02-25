@@ -19,10 +19,11 @@ This page mirrors the demo content and adds a full API reference.
 6. [Hooks](#hooks)
 7. [Singletons](#singletons)
 8. [Composition](#composition)
-9. [Devtools](#devtools)
-10. [Cleanup](#cleanup)
-11. [API Reference](#api-reference)
-12. [Migration](#migration)
+9. [API Guide](#api-guide)
+10. [Devtools](#devtools)
+11. [Cleanup](#cleanup)
+12. [API Reference](#api-reference)
+13. [Migration](#migration)
 
 ## Overview
 
@@ -87,21 +88,53 @@ Both are built on `BaseStateHandler`, which provides the shared lifecycle and de
 
 ## Hooks
 
-- `useStateFactory(factory, deps)`
-  - Creates a handler instance per component and subscribes to its snapshot.
-  - Suitable for per-component or per-instance state.
-- `useStateSingleton(singleton)`
-  - Uses a shared singleton handler across components.
+Use `useStateHandler + useStateActions + useStateSubscription` as the base composition.
+`useStateFactory` and `useStateSingleton` are shortcut APIs over that composition.
+For full signatures and practical examples, see [API Guide](#api-guide).
+
+- `useStateHandler(factory, params)`
+  - Creates and memoizes one handler instance per component.
+- `useStateActions(handler)`
+  - Returns actions without subscribing to state.
+- `useStateSubscription(handlerOrSingleton, selector?, isEqual?)`
+  - Subscribes to full state or a selected slice and returns `[state, actions]`.
+- `useStateFactory(factory, selector?, isEqual?, params?)`
+  - Shortcut for `useStateHandler + useStateSubscription`.
+- `useStateSingleton(singleton, selector?, isEqual?)`
+  - Shortcut for `useStateSubscription(singleton, selector?, isEqual?)`.
+
+Recommended composition:
+
+```ts
+const handler = useStateHandler(createUserStore, []);
+const actions = useStateActions(handler);
+const [name] = useStateSubscription(handler, (state) => state.user.name);
+
+const [singletonName] = useStateSubscription(UserSingleton, (state) => state.user.name);
+```
 
 ## Singletons
+
+Use singletons for shared state across multiple components.
 
 ```ts
 import { makeStateSingleton, useStateSingleton } from '@veams/status-quo';
 
+// Default behavior: singleton is destroyed when the last consumer unmounts.
 const CounterSingleton = makeStateSingleton(() => new CounterStore());
 
 const [state, actions] = useStateSingleton(CounterSingleton);
 ```
+
+Keep a singleton instance alive across unmounts:
+
+```ts
+const PersistentCounterSingleton = makeStateSingleton(() => new CounterStore(), {
+  destroyOnNoConsumers: false,
+});
+```
+
+Use this for app-level stores that should survive route/component unmounts. Keep the default for stores that should release resources when unused.
 
 ## Composition
 
@@ -153,6 +186,129 @@ class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
     );
   }
 }
+```
+
+## API Guide
+
+This section documents the primary public API with behavior notes and usage examples.
+
+### `useStateHandler(factory, params?)`
+
+Creates one handler instance per component mount and returns it.
+
+- `factory`: function returning a `StateSubscriptionHandler`
+- `params`: optional factory params tuple
+- lifecycle note: params are applied when the handler instance is created for that mount
+
+```ts
+const handler = useStateHandler(createUserStore, []);
+```
+
+### `useStateActions(handler)`
+
+Returns actions from a handler without subscribing to state changes.
+Use this in action-only components to avoid rerenders from state updates.
+
+```ts
+const handler = useStateHandler(createUserStore, []);
+const actions = useStateActions(handler);
+```
+
+### `useStateSubscription(source, selector?, isEqual?)`
+
+Subscribes to either a handler instance or a singleton and returns `[selectedState, actions]`.
+
+- `source`: `StateSubscriptionHandler` or `StateSingleton`
+- `selector`: optional projection function; defaults to identity
+- `isEqual`: optional equality function; defaults to `Object.is`
+
+Full snapshot subscription:
+
+```ts
+const handler = useStateHandler(createUserStore, []);
+const [state, actions] = useStateSubscription(handler);
+```
+
+Selector subscription:
+
+```ts
+const [name, actions] = useStateSubscription(
+  handler,
+  (state) => state.user.name
+);
+```
+
+Selector with custom equality:
+
+```ts
+const [profile] = useStateSubscription(
+  handler,
+  (state) => state.user.profile,
+  (current, next) => current.id === next.id && current.role === next.role
+);
+```
+
+Singleton source:
+
+```ts
+const [session, actions] = useStateSubscription(SessionSingleton);
+```
+
+Lifecycle note for singleton sources:
+- Consumers are ref-counted.
+- The singleton instance is only destroyed when the last consumer unmounts and `destroyOnNoConsumers !== false`.
+
+### `useStateFactory(factory, selector?, isEqual?, params?)`
+
+Shortcut API for `useStateHandler + useStateSubscription`.
+
+- `useStateFactory(factory, params)`
+- `useStateFactory(factory, selector, params)`
+- `useStateFactory(factory, selector, isEqual, params)`
+
+```ts
+const [state, actions] = useStateFactory(createUserStore, []);
+const [name] = useStateFactory(createUserStore, (state) => state.user.name, []);
+const [profile] = useStateFactory(
+  createUserStore,
+  (state) => state.user.profile,
+  (current, next) => current.id === next.id,
+  []
+);
+```
+
+### `makeStateSingleton(factory, options?)`
+
+Creates a shared singleton provider for a handler instance.
+
+```ts
+const UserSingleton = makeStateSingleton(() => new UserStore());
+```
+
+Options:
+
+```ts
+type StateSingletonOptions = {
+  destroyOnNoConsumers?: boolean; // default: true
+};
+```
+
+- `true` (default): destroy instance after last consumer unmounts
+- `false`: keep instance alive across periods with zero consumers
+
+```ts
+const PersistentUserSingleton = makeStateSingleton(() => new UserStore(), {
+  destroyOnNoConsumers: false,
+});
+```
+
+### `useStateSingleton(singleton, selector?, isEqual?)`
+
+Shortcut API for `useStateSubscription(singleton, selector?, isEqual?)`.
+
+```ts
+const [state, actions] = useStateSingleton(UserSingleton);
+const [name] = useStateSingleton(UserSingleton, (state) => state.user.name);
 ```
 
 ## Devtools
@@ -249,7 +405,7 @@ Public methods:
 
 - `getStateAsObservable(options?: { useDistinctUntilChanged?: boolean }): Observable<S>`
 - `getStateItemAsObservable(key: keyof S): Observable<S[keyof S]>`
-- `getObservableItem(key: keyof S): Observable<S[keyof S]>`
+- `getObservable(key: keyof S): Observable<S[keyof S]>`
 - `subscribe(listener: () => void): () => void`
 
 Notes:
@@ -286,18 +442,33 @@ Notes:
 ### `makeStateSingleton`
 
 ```ts
+type StateSingletonOptions = {
+  destroyOnNoConsumers?: boolean; // default: true
+};
+
 function makeStateSingleton<S, A>(
-  factory: () => StateSubscriptionHandler<S, A>
+  factory: () => StateSubscriptionHandler<S, A>,
+  options?: StateSingletonOptions
 ): {
   getInstance: () => StateSubscriptionHandler<S, A>;
 }
 ```
 
+Lifecycle behavior:
+- `destroyOnNoConsumers: true` (default): destroy and recreate singleton instances with mount lifecycle.
+- `destroyOnNoConsumers: false`: keep the same singleton instance alive when no component is subscribed.
+
 ### Hooks
 
-- `useStateFactory<V, A, P extends unknown[]>(factory: (...args: P) => StateSubscriptionHandler<V, A>, params?: P)`
+- `useStateHandler<V, A, P extends unknown[]>(factory: (...args: P) => StateSubscriptionHandler<V, A>, params?: P)`
+  - Returns `StateSubscriptionHandler<V, A>`.
+- `useStateActions<V, A>(handler: StateSubscriptionHandler<V, A>)`
+  - Returns `A`.
+- `useStateSubscription<V, A, Sel = V>(source: StateSubscriptionHandler<V, A> | StateSingleton<V, A>, selector?: (state: V) => Sel, isEqual?: (current: Sel, next: Sel) => boolean)`
   - Returns `[state, actions]`.
-- `useStateSingleton<V, A>(singleton: StateSingleton<V, A>)`
+- `useStateFactory<V, A, P extends unknown[], Sel = V>(factory: (...args: P) => StateSubscriptionHandler<V, A>, selector?: (state: V) => Sel, isEqual?: (current: Sel, next: Sel) => boolean, params?: P)`
+  - Returns `[state, actions]`.
+- `useStateSingleton<V, A, Sel = V>(singleton: StateSingleton<V, A>, selector?: (state: V) => Sel, isEqual?: (current: Sel, next: Sel) => boolean)`
   - Returns `[state, actions]`.
 
 ## Migration

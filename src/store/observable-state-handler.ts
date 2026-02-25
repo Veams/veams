@@ -68,8 +68,13 @@ export abstract class ObservableStateHandler<S, A> extends BaseStateHandler<S, A
       }, this.state$);
   }
 
-  getObservableItem(key: keyof S) {
+  getObservable(key: keyof S) {
     return this.getStateItemAsObservable(key);
+  }
+
+  /** @deprecated Use getObservable instead. */
+  getObservableItem(key: keyof S) {
+    return this.getObservable(key);
   }
 
   subscribe(listener: () => void) {
