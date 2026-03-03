@@ -1,5 +1,6 @@
 import { resetStatusQuoForTests, setupStatusQuo } from '../../config/status-quo-config.js';
 import { SignalStateHandler } from '../signal-state-handler.js';
+import { makeStateSingleton } from '../state-singleton.js';
 import type { DistinctOptions } from '../../config/status-quo-config.js';
 
 type TestState = { test: string; test2: string };
@@ -39,6 +40,60 @@ class TestSignalStateHandler extends SignalStateHandler<TestState, TestActions> 
       testAction: () => {
         this.setState({ test: 'newValue' });
       },
+    };
+  }
+}
+
+type CounterState = { count: number };
+type CounterActions = { increase: () => void };
+
+class CounterSignalStateHandler extends SignalStateHandler<CounterState, CounterActions> {
+  constructor(initialCount = 0) {
+    super({
+      initialState: {
+        count: initialCount,
+      },
+    });
+  }
+
+  getActions(): CounterActions {
+    return {
+      increase: () => {
+        this.setState({ count: this.getState().count + 1 }, 'increase');
+      },
+    };
+  }
+}
+
+class CounterSignalBridgeStateHandler extends SignalStateHandler<CounterState, { noop: () => void }> {
+  constructor(
+    counterSingleton: ReturnType<typeof makeStateSingleton<CounterState, CounterActions>>,
+    onCounterSync: (counterState: CounterState) => void
+  ) {
+    super({
+      initialState: {
+        count: 0,
+      },
+    });
+
+    const counterStateHandler = counterSingleton.getInstance();
+
+    this.bindSubscribable<CounterState>(
+      {
+        subscribe: (listener) =>
+          counterStateHandler.subscribe(() => listener(counterStateHandler.getSnapshot())),
+        getSnapshot: () => counterStateHandler.getSnapshot(),
+      },
+      (nextCounterState) => {
+        onCounterSync(nextCounterState);
+        this.setState({ count: nextCounterState.count }, 'sync-counter');
+      }
+    );
+  }
+
+  getActions(): { noop: () => void } {
+    return {
+      noop: () => undefined,
     };
   }
 }
@@ -174,5 +229,25 @@ describe('Signal State Handler', () => {
     unsubscribe();
 
     expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should notify another signal state handler for each singleton counter update', () => {
+    const counterSingleton = makeStateSingleton(() => new CounterSignalStateHandler(0), {
+      destroyOnNoConsumers: false,
+    });
+    const syncSpy = jest.fn();
+    const bridgeStateHandler = new CounterSignalBridgeStateHandler(counterSingleton, syncSpy);
+    const counterStateHandler = counterSingleton.getInstance();
+
+    counterStateHandler.getActions().increase();
+    counterStateHandler.getActions().increase();
+
+    expect(syncSpy).toHaveBeenCalledTimes(3);
+    expect(syncSpy).toHaveBeenNthCalledWith(1, { count: 0 });
+    expect(syncSpy).toHaveBeenNthCalledWith(2, { count: 1 });
+    expect(syncSpy).toHaveBeenNthCalledWith(3, { count: 2 });
+    expect(bridgeStateHandler.getState()).toStrictEqual({ count: 2 });
+
+    bridgeStateHandler.destroy();
   });
 });

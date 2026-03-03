@@ -22,7 +22,6 @@ type Listener = () => void;
 
 export abstract class SignalStateHandler<S, A> extends BaseStateHandler<S, A> {
   private readonly state: Signal<S>;
-  private readonly listeners = new Map<Listener, S>();
   private readonly distinctOptions: ReturnType<typeof resolveDistinctOptions<S>>;
 
   protected constructor({ initialState, options }: SignalStateHandlerProps<S>) {
@@ -38,11 +37,24 @@ export abstract class SignalStateHandler<S, A> extends BaseStateHandler<S, A> {
   }
 
   subscribe(listener: Listener) {
-    this.listeners.set(listener, this.state.value);
+    let initialized = false;
+    let previousSnapshot = this.state.value;
 
-    return () => {
-      this.listeners.delete(listener);
-    };
+    return this.state.subscribe((nextState) => {
+      if (!initialized) {
+        initialized = true;
+        previousSnapshot = nextState;
+        return;
+      }
+
+      if (this.distinctOptions.enabled && this.distinctOptions.comparator(previousSnapshot, nextState)) {
+        previousSnapshot = nextState;
+        return;
+      }
+
+      previousSnapshot = nextState;
+      listener();
+    });
   }
 
   protected getStateValue() {
@@ -51,17 +63,5 @@ export abstract class SignalStateHandler<S, A> extends BaseStateHandler<S, A> {
 
   protected setStateValue(nextState: S) {
     this.state.value = nextState;
-    this.notify(nextState);
-  }
-
-  private notify(nextState: S) {
-    for (const [listener, lastSnapshot] of this.listeners.entries()) {
-      if (this.distinctOptions.enabled && this.distinctOptions.comparator(lastSnapshot, nextState)) {
-        continue;
-      }
-
-      this.listeners.set(listener, nextState);
-      listener();
-    }
   }
 }
