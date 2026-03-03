@@ -10,6 +10,32 @@ type SelectorCache<SelectedState> = {
 type SelectorFn<State, SelectedState> = (state: State) => SelectedState;
 type EqualityFn<SelectedState> = (current: SelectedState, next: SelectedState) => boolean;
 type Listener = () => void;
+type SharedStateSubscriptionHandler = StateSubscriptionHandler<unknown, unknown>;
+type DeferredDestroy = {
+  refCount: number;
+  timeoutId: ReturnType<typeof setTimeout> | null;
+};
+
+const deferredDestroyMap = new WeakMap<SharedStateSubscriptionHandler, DeferredDestroy>();
+
+function getDeferredDestroyState(
+  stateSubscriptionHandler: SharedStateSubscriptionHandler
+): DeferredDestroy {
+  const existingState = deferredDestroyMap.get(stateSubscriptionHandler);
+
+  if (existingState) {
+    return existingState;
+  }
+
+  const nextState: DeferredDestroy = {
+    refCount: 0,
+    timeoutId: null,
+  };
+
+  deferredDestroyMap.set(stateSubscriptionHandler, nextState);
+
+  return nextState;
+}
 
 export function useStateSubscriptionSelector<V, A, Sel>(
   stateSubscriptionHandler: StateSubscriptionHandler<V, A>,
@@ -27,14 +53,49 @@ export function useStateSubscriptionSelector<V, A, Sel>(
 
   const subscribe = useCallback(
     (listener: Listener) => {
+      const sharedStateSubscriptionHandler =
+        stateSubscriptionHandler as unknown as SharedStateSubscriptionHandler;
+      const deferredDestroyState = getDeferredDestroyState(sharedStateSubscriptionHandler);
+      deferredDestroyState.refCount += 1;
+
+      if (deferredDestroyState.timeoutId) {
+        clearTimeout(deferredDestroyState.timeoutId);
+        deferredDestroyState.timeoutId = null;
+      }
+
       const unsubscribe = stateSubscriptionHandler.subscribe(listener);
 
       return () => {
         unsubscribe();
 
-        if (destroyOnCleanup) {
-          stateSubscriptionHandler.destroy();
+        if (!destroyOnCleanup) {
+          return;
         }
+
+        const activeDeferredDestroyState = deferredDestroyMap.get(sharedStateSubscriptionHandler);
+
+        if (!activeDeferredDestroyState) {
+          return;
+        }
+
+        activeDeferredDestroyState.refCount -= 1;
+
+        if (activeDeferredDestroyState.refCount > 0) {
+          return;
+        }
+
+        activeDeferredDestroyState.refCount = 0;
+        activeDeferredDestroyState.timeoutId = setTimeout(() => {
+          const pendingDeferredDestroyState = deferredDestroyMap.get(sharedStateSubscriptionHandler);
+
+          if (!pendingDeferredDestroyState || pendingDeferredDestroyState.refCount > 0) {
+            return;
+          }
+
+          pendingDeferredDestroyState.timeoutId = null;
+          stateSubscriptionHandler.destroy();
+          deferredDestroyMap.delete(sharedStateSubscriptionHandler);
+        }, 0);
       };
     },
     [destroyOnCleanup, stateSubscriptionHandler]

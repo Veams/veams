@@ -31,6 +31,22 @@ type TestActions = {
   increment: () => void;
 };
 
+type CounterState = {
+  count: number;
+};
+
+type CounterActions = {
+  increment: () => void;
+};
+
+type CounterMirrorState = {
+  mirroredCount: number;
+};
+
+type CounterMirrorActions = {
+  noop: () => void;
+};
+
 class TestStateHandler implements StateSubscriptionHandler<TestState, TestActions> {
   private readonly initialState: TestState;
   private state: TestState;
@@ -86,6 +102,99 @@ class TestStateHandler implements StateSubscriptionHandler<TestState, TestAction
   private emitStateChange() {
     this.listeners.forEach((listener) => listener());
   }
+}
+
+class CounterStateHandler implements StateSubscriptionHandler<CounterState, CounterActions> {
+  private readonly initialState: CounterState;
+  private state: CounterState;
+  private readonly listeners = new Set<() => void>();
+
+  destroy = jest.fn();
+
+  constructor(initialCount = 0) {
+    this.initialState = { count: initialCount };
+    this.state = this.initialState;
+  }
+
+  subscribe = (listener: () => void) => {
+    this.listeners.add(listener);
+
+    return () => {
+      this.listeners.delete(listener);
+    };
+  };
+
+  getSnapshot = () => {
+    return this.state;
+  };
+
+  getInitialState = () => {
+    return this.initialState;
+  };
+
+  getActions = () => {
+    return {
+      increment: () => {
+        this.state = {
+          count: this.state.count + 1,
+        };
+
+        this.listeners.forEach((listener) => listener());
+      },
+    };
+  };
+}
+
+class CounterMirrorStateHandler
+  implements StateSubscriptionHandler<CounterMirrorState, CounterMirrorActions>
+{
+  private readonly initialState: CounterMirrorState;
+  private state: CounterMirrorState;
+  private readonly listeners = new Set<() => void>();
+  private readonly unsubscribeFromCounter: () => void;
+
+  destroy = jest.fn(() => {
+    this.unsubscribeFromCounter();
+    this.listeners.clear();
+  });
+
+  constructor(counterSingleton: StateSingleton<CounterState, CounterActions>) {
+    const counterStateHandler = counterSingleton.getInstance();
+    const initialCounterState = counterStateHandler.getSnapshot();
+    this.initialState = {
+      mirroredCount: initialCounterState.count,
+    };
+    this.state = this.initialState;
+    this.unsubscribeFromCounter = counterStateHandler.subscribe(() => {
+      const nextCounterState = counterStateHandler.getSnapshot();
+      this.state = {
+        mirroredCount: nextCounterState.count,
+      };
+      this.listeners.forEach((listener) => listener());
+    });
+  }
+
+  subscribe = (listener: () => void) => {
+    this.listeners.add(listener);
+
+    return () => {
+      this.listeners.delete(listener);
+    };
+  };
+
+  getSnapshot = () => {
+    return this.state;
+  };
+
+  getInitialState = () => {
+    return this.initialState;
+  };
+
+  getActions = () => {
+    return {
+      noop: () => undefined,
+    };
+  };
 }
 
 type ComposedHooksConsumerProps = {
@@ -208,6 +317,21 @@ const FullSubscriptionConsumer = ({
   return <span>{state.user.name}</span>;
 };
 
+type StrictModeMirrorFactoryConsumerProps = {
+  createStateHandler: () => StateSubscriptionHandler<CounterMirrorState, CounterMirrorActions>;
+  onRender: (count: number) => void;
+};
+
+const StrictModeMirrorFactoryConsumer = ({
+  createStateHandler,
+  onRender,
+}: StrictModeMirrorFactoryConsumerProps) => {
+  const [count] = useStateFactory(createStateHandler, (state) => state.mirroredCount, []);
+  onRender(count);
+
+  return <span>{count}</span>;
+};
+
 describe('Selector hooks', () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
@@ -234,7 +358,7 @@ describe('Selector hooks', () => {
     globalThis.IS_REACT_ACT_ENVIRONMENT = false;
   });
 
-  it('useStateFactory selector should only rerender when selected state changes', () => {
+  it('useStateFactory selector should only rerender when selected state changes', async () => {
     let stateHandler: TestStateHandler | null = null;
     const createStateHandler = jest.fn(() => {
       if (!stateHandler) {
@@ -275,6 +399,12 @@ describe('Selector hooks', () => {
 
     act(() => {
       root.render(<></>);
+    });
+
+    await act(async () => {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      });
     });
 
     expect(stateHandler!.destroy).toHaveBeenCalledTimes(1);
@@ -603,5 +733,41 @@ describe('Selector hooks', () => {
 
     expect(createStateHandler).toHaveBeenCalledTimes(1);
     expect(renderSpy).toHaveBeenLastCalledWith('Ada');
+  });
+
+  it('useStateFactory should keep bridge handler alive through StrictMode subscribe re-check', () => {
+    const counterStateHandler = new CounterStateHandler(0);
+    const counterSingleton = makeStateSingleton(() => counterStateHandler, {
+      destroyOnNoConsumers: false,
+    });
+    let counterMirrorStateHandler: CounterMirrorStateHandler | null = null;
+    const createStateHandler = jest.fn(() => {
+      if (!counterMirrorStateHandler) {
+        counterMirrorStateHandler = new CounterMirrorStateHandler(counterSingleton);
+      }
+
+      return counterMirrorStateHandler;
+    });
+    const renderSpy = jest.fn();
+
+    act(() => {
+      root.render(
+        <React.StrictMode>
+          <StrictModeMirrorFactoryConsumer createStateHandler={createStateHandler} onRender={renderSpy} />
+        </React.StrictMode>
+      );
+    });
+
+    act(() => {
+      counterStateHandler.getActions().increment();
+    });
+
+    act(() => {
+      counterStateHandler.getActions().increment();
+    });
+
+    expect(createStateHandler).toHaveBeenCalledTimes(1);
+    expect(renderSpy).toHaveBeenLastCalledWith(2);
+    expect(counterMirrorStateHandler!.destroy).not.toHaveBeenCalled();
   });
 });
