@@ -195,7 +195,8 @@ class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
 
     this.bindSubscribable(
       { subscribe: this.combined.subscribe.bind(this.combined), getSnapshot: () => this.combined.value },
-      (nextState) => this.setState(nextState, 'sync-combined')
+      (nextState) => this.setState(nextState, 'sync-combined'),
+      (value) => value
     );
   }
 }
@@ -385,7 +386,8 @@ Required interface implemented by all handlers.
 
 ```ts
 interface StateSubscriptionHandler<V, A> {
-  subscribe: (listener: () => void) => () => void;
+  subscribe(listener: () => void): () => void;
+  subscribe(listener: (value: V) => void): () => void;
   getSnapshot: () => V;
   destroy: () => void;
   getInitialState: () => V;
@@ -410,6 +412,7 @@ Public methods:
 - `getSnapshot(): S`
 - `setState(next: Partial<S>, actionName = 'change'): void`
 - `subscribe(listener: () => void): () => void` (abstract)
+- `subscribe(listener: (value: S) => void): () => void` (abstract)
 - `destroy(): void`
 - `getActions(): A` (abstract)
 
@@ -418,8 +421,9 @@ Protected helpers:
 - `getStateValue(): S` (abstract)
 - `setStateValue(next: S): void` (abstract)
 - `initDevTools(options?: { enabled?: boolean; namespace: string }): void`
-- `bindSubscribable<T>(service: { subscribe: (listener: (value: T) => void) => () => void; getSnapshot?: () => T }, onChange: (value: T) => void): void`
+- `bindSubscribable<T, Sel>(service: { subscribe: (listener: (value: T) => void) => () => void; getSnapshot?: () => T }, onChange: (value: Sel) => void, selector: (value: T) => Sel, isEqual?: (current: Sel, next: Sel) => boolean): void`
   - Registers the subscription on `this.subscriptions` and invokes `onChange` with the current snapshot when available.
+  - `onChange` is only called when selected value changes according to `isEqual` (default `Object.is`).
 
 ### `ObservableStateHandler<S, A>`
 
@@ -450,11 +454,13 @@ Public methods:
 - `getStateItemAsObservable(key: keyof S): Observable<S[keyof S]>`
 - `getObservable(key: keyof S): Observable<S[keyof S]>`
 - `subscribe(listener: () => void): () => void`
+- `subscribe(listener: (value: S) => void): () => void`
 
 Notes:
 - The observable stream uses `distinctUntilChanged` by default.
 - Distinct behavior can be configured globally via `setupStatusQuo` or per handler via `options.distinct`.
 - `subscribe` does not fire for the initial value; it only fires on subsequent changes.
+- Subscribers receive the next state snapshot as a callback argument.
 
 ### `SignalStateHandler<S, A>`
 
@@ -483,6 +489,7 @@ Public methods:
 
 - `getSignal(): Signal<S>`
 - `subscribe(listener: () => void): () => void`
+- `subscribe(listener: (value: S) => void): () => void`
 
 Notes:
 - Distinct behavior defaults to enabled.

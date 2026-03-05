@@ -18,8 +18,6 @@ type SignalStateHandlerProps<S> = {
   };
 };
 
-type Listener = () => void;
-
 export abstract class SignalStateHandler<S, A> extends BaseStateHandler<S, A> {
   private readonly state: Signal<S>;
   private readonly distinctOptions: ReturnType<typeof resolveDistinctOptions<S>>;
@@ -36,7 +34,9 @@ export abstract class SignalStateHandler<S, A> extends BaseStateHandler<S, A> {
     return this.state;
   }
 
-  subscribe(listener: Listener) {
+  subscribe(listener: () => void): () => void;
+  subscribe(listener: (value: S) => void): () => void;
+  subscribe(listener: (value: S) => void) {
     let initialized = false;
     let previousSnapshot = this.state.value;
 
@@ -53,7 +53,7 @@ export abstract class SignalStateHandler<S, A> extends BaseStateHandler<S, A> {
       }
 
       previousSnapshot = nextState;
-      listener();
+      listener(nextState);
     });
   }
 

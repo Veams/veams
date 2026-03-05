@@ -46,6 +46,8 @@ class TestSignalStateHandler extends SignalStateHandler<TestState, TestActions> 
 
 type CounterState = { count: number };
 type CounterActions = { increase: () => void };
+type CounterBucketSelection = { bucket: number };
+type CounterBucketState = { bucket: number };
 
 class CounterSignalStateHandler extends SignalStateHandler<CounterState, CounterActions> {
   constructor(initialCount = 0) {
@@ -78,16 +80,49 @@ class CounterSignalBridgeStateHandler extends SignalStateHandler<CounterState, {
 
     const counterStateHandler = counterSingleton.getInstance();
 
-    this.bindSubscribable<CounterState>(
-      {
-        subscribe: (listener) =>
-          counterStateHandler.subscribe(() => listener(counterStateHandler.getSnapshot())),
-        getSnapshot: () => counterStateHandler.getSnapshot(),
-      },
+    this.bindSubscribable<CounterState, CounterState>(
+      counterStateHandler,
       (nextCounterState) => {
         onCounterSync(nextCounterState);
         this.setState({ count: nextCounterState.count }, 'sync-counter');
-      }
+      },
+      (counterState) => counterState
+    );
+  }
+
+  getActions(): { noop: () => void } {
+    return {
+      noop: () => undefined,
+    };
+  }
+}
+
+class CounterSignalBucketBridgeStateHandler extends SignalStateHandler<
+  CounterBucketState,
+  { noop: () => void }
+> {
+  constructor(
+    counterSingleton: ReturnType<typeof makeStateSingleton<CounterState, CounterActions>>,
+    onCounterSync: (selection: CounterBucketSelection) => void
+  ) {
+    super({
+      initialState: {
+        bucket: -1,
+      },
+    });
+
+    const counterStateHandler = counterSingleton.getInstance();
+
+    this.bindSubscribable<CounterState, CounterBucketSelection>(
+      counterStateHandler,
+      (nextSelection) => {
+        onCounterSync(nextSelection);
+        this.setState({ bucket: nextSelection.bucket }, 'sync-counter-bucket');
+      },
+      (counterState) => ({
+        bucket: Math.floor(counterState.count / 2),
+      }),
+      (current, next) => current.bucket === next.bucket
     );
   }
 
@@ -247,6 +282,28 @@ describe('Signal State Handler', () => {
     expect(syncSpy).toHaveBeenNthCalledWith(2, { count: 1 });
     expect(syncSpy).toHaveBeenNthCalledWith(3, { count: 2 });
     expect(bridgeStateHandler.getState()).toStrictEqual({ count: 2 });
+
+    bridgeStateHandler.destroy();
+  });
+
+  it('should support selector + equality filtering for bindSubscribable', () => {
+    const counterSingleton = makeStateSingleton(() => new CounterSignalStateHandler(0), {
+      destroyOnNoConsumers: false,
+    });
+    const syncSpy = jest.fn();
+    const bridgeStateHandler = new CounterSignalBucketBridgeStateHandler(counterSingleton, syncSpy);
+    const counterStateHandler = counterSingleton.getInstance();
+
+    counterStateHandler.getActions().increase(); // count 1 -> bucket 0 (no change)
+    counterStateHandler.getActions().increase(); // count 2 -> bucket 1
+    counterStateHandler.getActions().increase(); // count 3 -> bucket 1 (no change)
+    counterStateHandler.getActions().increase(); // count 4 -> bucket 2
+
+    expect(syncSpy).toHaveBeenCalledTimes(3);
+    expect(syncSpy).toHaveBeenNthCalledWith(1, { bucket: 0 });
+    expect(syncSpy).toHaveBeenNthCalledWith(2, { bucket: 1 });
+    expect(syncSpy).toHaveBeenNthCalledWith(3, { bucket: 2 });
+    expect(bridgeStateHandler.getState()).toStrictEqual({ bucket: 2 });
 
     bridgeStateHandler.destroy();
   });

@@ -1,11 +1,18 @@
 import { withDevTools } from './dev-tools.js';
+import { createSelectorCache, selectWithCache } from '../utils/selector-cache.js';
 
 import type { StateSubscriptionHandler } from '../types/types.js';
 import type { DevTools, MessagePayload } from './dev-tools.js';
+import type { EqualityFn, Selector } from '../utils/selector-cache.js';
 
 type DevToolsOptions = {
   enabled?: boolean;
   namespace: string;
+};
+
+type Subscribable<T> = {
+  subscribe: (listener: (value: T) => void) => () => void;
+  getSnapshot?: () => T;
 };
 
 const defaultDevToolsOptions = { enabled: false, namespace: 'Store' };
@@ -78,17 +85,44 @@ export abstract class BaseStateHandler<S, A> implements StateSubscriptionHandler
 
   protected abstract getStateValue(): S;
   protected abstract setStateValue(nextState: S): void;
-  protected bindSubscribable<T>(
-    service: { subscribe: (listener: (value: T) => void) => () => void; getSnapshot?: () => T },
-    onChange: (value: T) => void
+
+  protected bindSubscribable<T, Sel = T>(
+    service: Subscribable<T>,
+    onChange: (value: Sel) => void,
+    selector: Selector<T, Sel>,
+    isEqual?: EqualityFn<Sel>
+  ): void;
+  protected bindSubscribable<T, Sel = T>(
+    service: Subscribable<T>,
+    onChange: (value: Sel) => void,
+    selector: Selector<T, Sel>,
+    isEqual: EqualityFn<Sel> = Object.is
   ) {
-    const unsubscribe = service.subscribe(onChange);
+    const selectorCache = createSelectorCache<Sel>();
+
+    const notifySelectedValue = (value: T) => {
+      const { value: nextSelection, hasChanged } = selectWithCache(
+        selectorCache,
+        value,
+        selector,
+        isEqual
+      );
+
+      if (!hasChanged) {
+        return;
+      }
+
+      onChange(nextSelection);
+    };
+
+    const unsubscribe = service.subscribe(notifySelectedValue);
     this.subscriptions = [...(this.subscriptions ?? []), { unsubscribe }];
 
-    if (service.getSnapshot) onChange(service.getSnapshot());
+    if (service.getSnapshot) notifySelectedValue(service.getSnapshot());
   }
 
   abstract subscribe(listener: () => void): () => void;
+  abstract subscribe(listener: (value: S) => void): () => void;
   abstract getActions(): A;
 
   private handleDevToolsEvents = (message: MessagePayload) => {

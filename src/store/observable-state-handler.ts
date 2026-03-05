@@ -70,15 +70,17 @@ export abstract class ObservableStateHandler<S, A> extends BaseStateHandler<S, A
     return this.getObservable(key);
   }
 
-  subscribe(listener: () => void) {
+  subscribe(listener: () => void): () => void;
+  subscribe(listener: (value: S) => void): () => void;
+  subscribe(listener: (value: S) => void) {
     let initialized = false;
-    const subscription = this.getStateAsObservable().subscribe(() => {
+    const subscription = this.getStateAsObservable().subscribe((nextState) => {
       if (!initialized) {
         initialized = true;
         return;
       }
 
-      listener();
+      listener(nextState);
     });
     return () => subscription.unsubscribe();
   }

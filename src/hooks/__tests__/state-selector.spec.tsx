@@ -50,7 +50,7 @@ type CounterMirrorActions = {
 class TestStateHandler implements StateSubscriptionHandler<TestState, TestActions> {
   private readonly initialState: TestState;
   private state: TestState;
-  private readonly listeners = new Set<() => void>();
+  private readonly listeners = new Set<(value: TestState) => void>();
 
   destroy = jest.fn();
 
@@ -59,13 +59,16 @@ class TestStateHandler implements StateSubscriptionHandler<TestState, TestAction
     this.state = initialState;
   }
 
-  subscribe = (listener: () => void) => {
-    this.listeners.add(listener);
+  subscribe(listener: () => void): () => void;
+  subscribe(listener: (value: TestState) => void): () => void;
+  subscribe(listener: ((value: TestState) => void) | (() => void)) {
+    const typedListener = listener as (value: TestState) => void;
+    this.listeners.add(typedListener);
 
     return () => {
-      this.listeners.delete(listener);
+      this.listeners.delete(typedListener);
     };
-  };
+  }
 
   getSnapshot = () => {
     return this.state;
@@ -100,14 +103,15 @@ class TestStateHandler implements StateSubscriptionHandler<TestState, TestAction
   };
 
   private emitStateChange() {
-    this.listeners.forEach((listener) => listener());
+    const nextState = this.state;
+    this.listeners.forEach((listener) => listener(nextState));
   }
 }
 
 class CounterStateHandler implements StateSubscriptionHandler<CounterState, CounterActions> {
   private readonly initialState: CounterState;
   private state: CounterState;
-  private readonly listeners = new Set<() => void>();
+  private readonly listeners = new Set<(value: CounterState) => void>();
 
   destroy = jest.fn();
 
@@ -116,13 +120,16 @@ class CounterStateHandler implements StateSubscriptionHandler<CounterState, Coun
     this.state = this.initialState;
   }
 
-  subscribe = (listener: () => void) => {
-    this.listeners.add(listener);
+  subscribe(listener: () => void): () => void;
+  subscribe(listener: (value: CounterState) => void): () => void;
+  subscribe(listener: ((value: CounterState) => void) | (() => void)) {
+    const typedListener = listener as (value: CounterState) => void;
+    this.listeners.add(typedListener);
 
     return () => {
-      this.listeners.delete(listener);
+      this.listeners.delete(typedListener);
     };
-  };
+  }
 
   getSnapshot = () => {
     return this.state;
@@ -139,7 +146,8 @@ class CounterStateHandler implements StateSubscriptionHandler<CounterState, Coun
           count: this.state.count + 1,
         };
 
-        this.listeners.forEach((listener) => listener());
+        const nextState = this.state;
+        this.listeners.forEach((listener) => listener(nextState));
       },
     };
   };
@@ -150,7 +158,7 @@ class CounterMirrorStateHandler
 {
   private readonly initialState: CounterMirrorState;
   private state: CounterMirrorState;
-  private readonly listeners = new Set<() => void>();
+  private readonly listeners = new Set<(value: CounterMirrorState) => void>();
   private readonly unsubscribeFromCounter: () => void;
 
   destroy = jest.fn(() => {
@@ -165,22 +173,25 @@ class CounterMirrorStateHandler
       mirroredCount: initialCounterState.count,
     };
     this.state = this.initialState;
-    this.unsubscribeFromCounter = counterStateHandler.subscribe(() => {
-      const nextCounterState = counterStateHandler.getSnapshot();
+    this.unsubscribeFromCounter = counterStateHandler.subscribe((nextCounterState: CounterState) => {
       this.state = {
         mirroredCount: nextCounterState.count,
       };
-      this.listeners.forEach((listener) => listener());
+      const nextMirrorState = this.state;
+      this.listeners.forEach((listener) => listener(nextMirrorState));
     });
   }
 
-  subscribe = (listener: () => void) => {
-    this.listeners.add(listener);
+  subscribe(listener: () => void): () => void;
+  subscribe(listener: (value: CounterMirrorState) => void): () => void;
+  subscribe(listener: ((value: CounterMirrorState) => void) | (() => void)) {
+    const typedListener = listener as (value: CounterMirrorState) => void;
+    this.listeners.add(typedListener);
 
     return () => {
-      this.listeners.delete(listener);
+      this.listeners.delete(typedListener);
     };
-  };
+  }
 
   getSnapshot = () => {
     return this.state;

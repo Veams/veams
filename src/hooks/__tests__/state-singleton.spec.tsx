@@ -31,7 +31,7 @@ const createStateHandler = (value: number): TestHandler => {
   const actions = { noop: jest.fn() };
 
   return {
-    subscribe: () => () => undefined,
+    subscribe: (_listener: (() => void) | ((value: TestState) => void)) => () => undefined,
     getSnapshot: () => snapshot,
     getInitialState: () => snapshot,
     getActions: () => actions,

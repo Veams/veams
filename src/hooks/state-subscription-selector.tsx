@@ -1,14 +1,9 @@
 import { useCallback, useMemo, useSyncExternalStore } from 'react';
+import { createSelectorCache, selectWithCache } from '../utils/selector-cache.js';
 
 import type { StateSubscriptionHandler } from '../types/types.js';
+import type { EqualityFn, Selector } from '../utils/selector-cache.js';
 
-type SelectorCache<SelectedState> = {
-  hasValue: boolean;
-  value: SelectedState | undefined;
-};
-
-type SelectorFn<State, SelectedState> = (state: State) => SelectedState;
-type EqualityFn<SelectedState> = (current: SelectedState, next: SelectedState) => boolean;
 type Listener = () => void;
 type SharedStateSubscriptionHandler = StateSubscriptionHandler<unknown, unknown>;
 type DeferredDestroy = {
@@ -39,17 +34,11 @@ function getDeferredDestroyState(
 
 export function useStateSubscriptionSelector<V, A, Sel>(
   stateSubscriptionHandler: StateSubscriptionHandler<V, A>,
-  selector: SelectorFn<V, Sel>,
+  selector: Selector<V, Sel>,
   isEqual: EqualityFn<Sel> = Object.is,
   destroyOnCleanup = true
 ) {
-  const selectorCache = useMemo<SelectorCache<Sel>>(
-    () => ({
-      hasValue: false,
-      value: undefined,
-    }),
-    [stateSubscriptionHandler]
-  );
+  const selectorCache = useMemo(() => createSelectorCache<Sel>(), [stateSubscriptionHandler]);
 
   const subscribe = useCallback(
     (listener: Listener) => {
@@ -103,16 +92,7 @@ export function useStateSubscriptionSelector<V, A, Sel>(
 
   const selectSnapshot = useCallback(
     (snapshot: V) => {
-      const nextSelection = selector(snapshot);
-
-      if (selectorCache.hasValue && isEqual(selectorCache.value as Sel, nextSelection)) {
-        return selectorCache.value as Sel;
-      }
-
-      selectorCache.hasValue = true;
-      selectorCache.value = nextSelection;
-
-      return nextSelection;
+      return selectWithCache(selectorCache, snapshot, selector, isEqual).value;
     },
     [isEqual, selector, selectorCache]
   );
