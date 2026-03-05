@@ -86,17 +86,15 @@ export abstract class BaseStateHandler<S, A> implements StateSubscriptionHandler
   protected abstract getStateValue(): S;
   protected abstract setStateValue(nextState: S): void;
 
-  protected bindSubscribable<T>(
-    service: Subscribable<T>,
-    onChange: (value: T) => void,
-    selector?: Selector<T, T>,
-    isEqual?: EqualityFn<T>
-  ): void;
   protected bindSubscribable<T, Sel>(
     service: Subscribable<T>,
     onChange: (value: Sel) => void,
     selector: Selector<T, Sel>,
     isEqual?: EqualityFn<Sel>
+  ): void;
+  protected bindSubscribable<T>(
+    service: Subscribable<T>,
+    onChange: (value: T) => void
   ): void;
   protected bindSubscribable<T, Sel = T>(
     service: Subscribable<T>,
