@@ -127,7 +127,7 @@ describe('Observable State Handler', () => {
 
     unsubscribe();
 
-    expect(spy).toHaveBeenCalledTimes(2); // 1. test (first setter), 2. test2 (second setter)
+    expect(spy).toHaveBeenCalledTimes(3); // 1. initial, 2. test (first setter), 3. test2 (second setter)
   });
 
   it('should respect global distinct setup when disabled', () => {
@@ -146,7 +146,7 @@ describe('Observable State Handler', () => {
 
     unsubscribe();
 
-    expect(spy).toHaveBeenCalledTimes(2);
+    expect(spy).toHaveBeenCalledTimes(3);
   });
 
   it('should respect global custom distinct comparator from setupStatusQuo', () => {
@@ -167,7 +167,7 @@ describe('Observable State Handler', () => {
 
     unsubscribe();
 
-    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledTimes(2);
   });
 
   it('should prefer per-handler distinct options over global setup', () => {
@@ -190,6 +190,6 @@ describe('Observable State Handler', () => {
 
     unsubscribe();
 
-    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledTimes(2);
   });
 });

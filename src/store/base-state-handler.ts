@@ -86,7 +86,13 @@ export abstract class BaseStateHandler<S, A> implements StateSubscriptionHandler
   protected abstract getStateValue(): S;
   protected abstract setStateValue(nextState: S): void;
 
-  protected bindSubscribable<T, Sel = T>(
+  protected bindSubscribable<T>(
+    service: Subscribable<T>,
+    onChange: (value: T) => void,
+    selector?: Selector<T, T>,
+    isEqual?: EqualityFn<T>
+  ): void;
+  protected bindSubscribable<T, Sel>(
     service: Subscribable<T>,
     onChange: (value: Sel) => void,
     selector: Selector<T, Sel>,
@@ -95,16 +101,19 @@ export abstract class BaseStateHandler<S, A> implements StateSubscriptionHandler
   protected bindSubscribable<T, Sel = T>(
     service: Subscribable<T>,
     onChange: (value: Sel) => void,
-    selector: Selector<T, Sel>,
+    selector?: Selector<T, Sel>,
     isEqual: EqualityFn<Sel> = Object.is
   ) {
+    const selectorFn = (selector ?? ((value: T) => value as unknown as Sel)) as Selector<T, Sel>;
     const selectorCache = createSelectorCache<Sel>();
+    let receivedSyncValue = false;
 
     const notifySelectedValue = (value: T) => {
+      receivedSyncValue = true;
       const { value: nextSelection, hasChanged } = selectWithCache(
         selectorCache,
         value,
-        selector,
+        selectorFn,
         isEqual
       );
 
@@ -118,7 +127,7 @@ export abstract class BaseStateHandler<S, A> implements StateSubscriptionHandler
     const unsubscribe = service.subscribe(notifySelectedValue);
     this.subscriptions = [...(this.subscriptions ?? []), { unsubscribe }];
 
-    if (service.getSnapshot) notifySelectedValue(service.getSnapshot());
+    if (service.getSnapshot && !receivedSyncValue) notifySelectedValue(service.getSnapshot());
   }
 
   abstract subscribe(listener: () => void): () => void;

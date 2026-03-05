@@ -328,8 +328,7 @@ class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
 
     this.bindSubscribable(
       { subscribe: this.combined.subscribe.bind(this.combined), getSnapshot: () => this.combined.value },
-      (nextState) => this.setState(nextState, "sync-combined"),
-      (value) => value
+      (nextState) => this.setState(nextState, "sync-combined")
     );
   }
 }`;

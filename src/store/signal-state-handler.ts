@@ -44,6 +44,7 @@ export abstract class SignalStateHandler<S, A> extends BaseStateHandler<S, A> {
       if (!initialized) {
         initialized = true;
         previousSnapshot = nextState;
+        listener(nextState);
         return;
       }
 

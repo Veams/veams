@@ -200,7 +200,7 @@ describe('Signal State Handler', () => {
 
     unsubscribe();
 
-    expect(spy).toHaveBeenCalledTimes(2);
+    expect(spy).toHaveBeenCalledTimes(3);
   });
 
   it('should respect global distinct setup when disabled', () => {
@@ -219,7 +219,7 @@ describe('Signal State Handler', () => {
 
     unsubscribe();
 
-    expect(spy).toHaveBeenCalledTimes(2);
+    expect(spy).toHaveBeenCalledTimes(3);
   });
 
   it('should respect global custom distinct comparator from setupStatusQuo', () => {
@@ -240,7 +240,7 @@ describe('Signal State Handler', () => {
 
     unsubscribe();
 
-    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledTimes(2);
   });
 
   it('should prefer per-handler distinct options over global setup', () => {
@@ -263,7 +263,7 @@ describe('Signal State Handler', () => {
 
     unsubscribe();
 
-    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledTimes(2);
   });
 
   it('should notify another signal state handler for each singleton counter update', () => {

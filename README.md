@@ -195,8 +195,7 @@ class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
 
     this.bindSubscribable(
       { subscribe: this.combined.subscribe.bind(this.combined), getSnapshot: () => this.combined.value },
-      (nextState) => this.setState(nextState, 'sync-combined'),
-      (value) => value
+      (nextState) => this.setState(nextState, 'sync-combined')
     );
   }
 }
@@ -421,8 +420,10 @@ Protected helpers:
 - `getStateValue(): S` (abstract)
 - `setStateValue(next: S): void` (abstract)
 - `initDevTools(options?: { enabled?: boolean; namespace: string }): void`
+- `bindSubscribable<T>(service: { subscribe: (listener: (value: T) => void) => () => void; getSnapshot?: () => T }, onChange: (value: T) => void, selector?: (value: T) => T, isEqual?: (current: T, next: T) => boolean): void`
 - `bindSubscribable<T, Sel>(service: { subscribe: (listener: (value: T) => void) => () => void; getSnapshot?: () => T }, onChange: (value: Sel) => void, selector: (value: T) => Sel, isEqual?: (current: Sel, next: Sel) => boolean): void`
   - Registers the subscription on `this.subscriptions` and invokes `onChange` with the current snapshot when available.
+  - If `selector` is omitted, identity selection is used.
   - `onChange` is only called when selected value changes according to `isEqual` (default `Object.is`).
 
 ### `ObservableStateHandler<S, A>`
@@ -459,7 +460,7 @@ Public methods:
 Notes:
 - The observable stream uses `distinctUntilChanged` by default.
 - Distinct behavior can be configured globally via `setupStatusQuo` or per handler via `options.distinct`.
-- `subscribe` does not fire for the initial value; it only fires on subsequent changes.
+- `subscribe` fires immediately with the current snapshot and then on subsequent changes.
 - Subscribers receive the next state snapshot as a callback argument.
 
 ### `SignalStateHandler<S, A>`
