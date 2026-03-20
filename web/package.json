@@ -1,0 +1,28 @@
+{
+  "name": "@veams/docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "check:types": "tsc --noEmit",
+    "dev": "vite",
+    "docs:build": "vite build",
+    "docs:preview": "vite preview",
+    "lint": "eslint --fix \"src/**/*.{ts,tsx}\""
+  },
+  "dependencies": {
+    "@veams/status-quo": "^1.5.1",
+    "prism-react-renderer": "^2.4.1",
+    "prismjs": "^1.30.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-router-dom": "7.13.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.0.0",
+    "@vitejs/plugin-react": "6.0.1",
+    "typescript": "5.9.3",
+    "vite": "8.0.1"
+  }
+}

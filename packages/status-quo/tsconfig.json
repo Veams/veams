@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "sourceMap": true,
+    "declaration": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "esModuleInterop": true,
+    "lib": [
+      "es2015",
+      "es2016",
+      "es2017",
+      "es2021",
+      "es2022",
+      "dom",
+      "dom.iterable"
+    ],
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "target": "es2022",
+    "declarationDir": "dist",
+    "outDir": "dist",
+    "typeRoots": [
+      "../../node_modules/@types",
+      "../../node_modules/@redux-devtools/extension"
+    ],
+    "jsx": "react"
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "tasks",
+    "src/**/*.mock.ts"
+  ]
+}

@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - '@veams/*@*'
 
 permissions:
   contents: write
@@ -21,13 +21,30 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Build dist
-        run: npm run build
+
+      - name: Extract package info
+        id: info
+        run: |
+          TAG=${{ github.ref_name }}
+          PACKAGE_NAME=$(echo $TAG | cut -d'@' -f1,2)
+          VERSION=$(echo $TAG | cut -d'@' -f3)
+          # Map @veams/name to folder name
+          FOLDER_NAME=$(echo $PACKAGE_NAME | cut -d'/' -f2)
+          echo "package_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "folder_name=$FOLDER_NAME" >> $GITHUB_OUTPUT
+
+      - name: Build package
+        run: npm run build -- --filter=${{ steps.info.outputs.package_name }}
+
       - name: Package dist
         run: |
-          zip -r "dist-${{ github.ref_name }}.zip" dist
+          cd packages/${{ steps.info.outputs.folder_name }}
+          zip -r "../../${{ steps.info.outputs.folder_name }}-dist-${{ steps.info.outputs.version }}.zip" dist
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist-${{ github.ref_name }}.zip
+          files: ${{ steps.info.outputs.folder_name }}-dist-${{ steps.info.outputs.version }}.zip
           generate_release_notes: true
+          name: "${{ steps.info.outputs.package_name }} v${{ steps.info.outputs.version }}"

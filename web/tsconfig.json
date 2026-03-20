@@ -1,0 +1,51 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "es2022"
+    ],
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "paths": {
+      "@veams/status-quo": [
+        "../packages/status-quo/src/index.ts"
+      ],
+      "@veams/status-quo/*": [
+        "../packages/status-quo/src/*"
+      ],
+      "@veams/status-quo/react": [
+        "../packages/status-quo/src/react/index.ts"
+      ],
+      "@veams/status-quo/react/*": [
+        "../packages/status-quo/src/react/*"
+      ],
+      "@veams/status-quo-query": [
+        "../packages/status-quo-query/src/index.ts"
+      ],
+      "@veams/status-quo-query/*": [
+        "../packages/status-quo-query/src/*"
+      ]
+    },
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "es2022",
+    "types": [
+      "vite/client"
+    ]
+  },
+  "include": [
+    "src/**/*.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules"
+  ]
+}

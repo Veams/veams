@@ -1,90 +1,32 @@
 {
-  "name": "@veams/status-quo",
-  "version": "1.5.1",
-  "description": "The manager to rule states in frontend.",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "exports": {
-    ".": {
-      "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      },
-      "require": "./dist/index.js"
-    },
-    "./hooks": {
-      "import": {
-        "types": "./dist/hooks/index.d.ts",
-        "default": "./dist/hooks/index.js"
-      },
-      "require": "./dist/hooks/index.js"
-    },
-    "./store": {
-      "import": {
-        "types": "./dist/store/index.d.ts",
-        "default": "./dist/store/index.js"
-      },
-      "require": "./dist/store/index.js"
-    }
-  },
-  "types": "dist/index.d.ts",
-  "type": "module",
-  "sideEffects": false,
+  "name": "veams-js",
+  "private": true,
+  "packageManager": "npm@11.6.2",
+  "workspaces": [
+    "packages/*",
+    "web"
+  ],
   "scripts": {
-    "build": "cross-env NODE_ENV=production npm-run-all compile",
-    "bundle:ts": "tsc --project tsconfig.json",
-    "check:types": "tsc --skipLibCheck --noEmit",
-    "compile": "npm-run-all bundle:ts",
-    "dev": "npm-run-all --parallel watch:**",
-    "generate:types": "tsc --project tsconfig.json --emitDeclarationOnly true --declaration true --declarationDir ./dist/types",
-    "lint": "pnpm run lint:ts",
-    "lint:ts": "eslint --fix \"src/**/*.{tsx,ts}\" --config ./.eslintrc.cjs",
-    "start": "npm-run-all --parallel watch:**",
-    "playground": "vite --config playground/vite.config.ts",
-    "docs:build": "vite build --config playground/vite.config.ts",
-    "docs:preview": "vite preview --config playground/vite.config.ts",
-    "watch:bundle:ts": "npm run bundle:ts -- -w",
-    "watch:generate:types": "npm run generate:types -- --watch",
-    "test": "cross-env NODE_ENV=test jest --config jest.config.cjs",
-    "test:ci": "cross-env NODE_ENV=test jest --ci --silent --no-cache --config jest.config.ci.cjs",
-    "release": "npm run build && release-it"
-  },
-  "peerDependencies": {
-    "@preact/signals-core": ">=1.0.0",
-    "react": ">=18.0.0",
-    "rxjs": ">=7.5.4"
+    "build": "turbo run build",
+    "check:types": "turbo run check:types",
+    "dev": "turbo run dev --parallel",
+    "docs:build": "turbo run docs:build",
+    "docs:preview": "turbo run docs:preview --parallel",
+    "lint": "turbo run lint",
+    "test": "turbo run test"
   },
   "devDependencies": {
-    "@preact/signals-core": "^1.13.0",
-    "@types/prismjs": "^1.26.4",
-    "@types/react-dom": "^19.0.0",
-    "@types/jest": "30.0.0",
-    "@types/node": "25.2.3",
-    "@types/react": "19.2.14",
-    "@vitejs/plugin-react": "^5.0.0",
-    "cross-env": "10.1.0",
-    "eslint": "8.55.0",
-    "jest": "30.2.0",
-    "jest-environment-jsdom": "30.2.0",
-    "npm-run-all": "4.1.5",
-    "prettier": "3.8.1",
-    "prismjs": "^1.29.0",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "rxjs": "7.8.2",
-    "tslib": "2.8.1",
-    "typescript": "5.9.3",
-    "vite": "^5.0.0",
-    "@swc/jest": "0.2.39",
-    "@swc/core": "1.15.11",
-    "release-it": "19.2.4"
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.39.4",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^13.23.0",
+    "turbo": "^2.5.3",
+    "typescript-eslint": "^8.57.1"
   },
-  "keywords": [
-    "State Management"
-  ],
-  "publishConfig": {
-    "access": "public"
-  },
-  "author": "Sebastian Fitzner",
-  "license": "MIT"
+  "overrides": {
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.39.4"
+  }
 }

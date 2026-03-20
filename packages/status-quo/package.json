@@ -1,0 +1,90 @@
+{
+  "name": "@veams/status-quo",
+  "version": "1.5.1",
+  "description": "The manager to rule states in frontend.",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": "./dist/index.js"
+    },
+    "./react": {
+      "import": {
+        "types": "./dist/react/index.d.ts",
+        "default": "./dist/react/index.js"
+      },
+      "require": "./dist/react/index.js"
+    },
+    "./store": {
+      "import": {
+        "types": "./dist/store/index.d.ts",
+        "default": "./dist/store/index.js"
+      },
+      "require": "./dist/store/index.js"
+    }
+  },
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "sideEffects": false,
+  "scripts": {
+    "build": "cross-env NODE_ENV=production npm-run-all compile",
+    "bundle:ts": "tsc --project tsconfig.json",
+    "check:types": "tsc --skipLibCheck --noEmit",
+    "compile": "npm-run-all bundle:ts",
+    "dev": "npm-run-all --parallel watch:**",
+    "generate:types": "tsc --project tsconfig.json --emitDeclarationOnly true --declaration true --declarationDir ./dist/types",
+    "lint": "npm run lint:ts",
+    "lint:ts": "eslint --fix \"src/**/*.{tsx,ts}\"",
+    "start": "npm-run-all --parallel watch:**",
+    "watch:bundle:ts": "npm run bundle:ts -- -w",
+    "watch:generate:types": "npm run generate:types -- --watch",
+    "test": "cross-env NODE_ENV=test jest --config jest.config.cjs",
+    "test:ci": "cross-env NODE_ENV=test jest --ci --silent --no-cache --config jest.config.ci.cjs",
+    "release": "npm run build && release-it"
+  },
+  "peerDependencies": {
+    "@preact/signals-core": ">=1.0.0",
+    "react": ">=18.0.0",
+    "rxjs": ">=7.5.4"
+  },
+  "devDependencies": {
+    "@preact/signals-core": "^1.13.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/jest": "30.0.0",
+    "@types/node": "25.2.3",
+    "@types/react": "19.2.14",
+    "cross-env": "10.1.0",
+    "jest": "30.3.0",
+    "jest-environment-jsdom": "30.3.0",
+    "npm-run-all": "4.1.5",
+    "prettier": "3.8.1",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "rxjs": "7.8.2",
+    "tslib": "2.8.1",
+    "typescript": "5.9.3",
+    "@swc/jest": "0.2.39",
+    "@swc/core": "1.15.11",
+    "release-it": "19.2.4"
+  },
+  "keywords": [
+    "State Management"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "Sebastian Fitzner",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Veams/veams.git",
+    "directory": "packages/status-quo"
+  },
+  "bugs": {
+    "url": "https://github.com/Veams/veams/issues"
+  }
+}

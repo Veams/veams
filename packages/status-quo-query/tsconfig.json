@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "declaration": true,
+    "declarationDir": "dist",
+    "esModuleInterop": true,
+    "lib": [
+      "es2022"
+    ],
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "outDir": "dist",
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2022",
+    "typeRoots": [
+      "../../node_modules/@types"
+    ]
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "coverage",
+    "dist",
+    "node_modules",
+    "src/**/__tests__/**",
+    "src/**/*.mock.ts",
+    "src/**/*.{spec,test}.ts"
+  ]
+}
