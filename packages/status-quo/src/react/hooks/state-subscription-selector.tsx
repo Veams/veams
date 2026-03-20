@@ -11,6 +11,15 @@ type DeferredDestroy = {
   refCount: number;
   timeoutId: ReturnType<typeof setTimeout> | null;
 };
+type SnapshotCacheEntry<Source, Selected> = {
+  selectedSnapshot: Selected;
+  sourceSnapshot: Source;
+  version: number;
+};
+type ServerSnapshotCacheEntry<Source, Selected> = {
+  selectedSnapshot: Selected;
+  sourceSnapshot: Source;
+};
 
 const deferredDestroyMap = new WeakMap<SharedStateSubscriptionHandler, DeferredDestroy>();
 
@@ -40,6 +49,13 @@ export function useStateSubscriptionSelector<V, A, Sel>(
   destroyOnCleanup = true
 ) {
   const selectorCacheRef = useRef<ReturnType<typeof createSelectorCache<Sel>> | null>(null);
+  // Tracks store notifications so getSnapshot can reuse the same selected value
+  // within one store version. This keeps useSyncExternalStore reads referentially stable.
+  const snapshotVersionRef = useRef(0);
+  // Client-side cache for selected snapshots per source snapshot/version pair.
+  const snapshotCacheRef = useRef<SnapshotCacheEntry<V, Sel> | null>(null);
+  // Separate cache for the server snapshot function used by SSR/hydration paths.
+  const serverSnapshotCacheRef = useRef<ServerSnapshotCacheEntry<V, Sel> | null>(null);
 
   if (!selectorCacheRef.current) {
     selectorCacheRef.current = createSelectorCache<Sel>();
@@ -59,7 +75,13 @@ export function useStateSubscriptionSelector<V, A, Sel>(
         deferredDestroyState.timeoutId = null;
       }
 
-      const unsubscribe = stateSubscriptionHandler.subscribe(listener);
+      const unsubscribe = stateSubscriptionHandler.subscribe(() => {
+        // Invalidate the selected snapshot cache before notifying React.
+        // Any next getSnapshot call should recompute from the new store state.
+        snapshotVersionRef.current += 1;
+        snapshotCacheRef.current = null;
+        listener();
+      });
 
       return () => {
         unsubscribe();
@@ -106,13 +128,61 @@ export function useStateSubscriptionSelector<V, A, Sel>(
     [isEqual, selector, selectorCache]
   );
 
+  const selectorCacheControlRef = useRef(selectSnapshot);
+
+  if (selectorCacheControlRef.current !== selectSnapshot) {
+    // Selector/equality changes define a new selection strategy, so clear all caches.
+    selectorCacheControlRef.current = selectSnapshot;
+    snapshotVersionRef.current = 0;
+    snapshotCacheRef.current = null;
+    serverSnapshotCacheRef.current = null;
+  }
+
   const getSnapshot = useCallback(
-    () => selectSnapshot(stateSubscriptionHandler.getSnapshot()),
+    () => {
+      const sourceSnapshot = stateSubscriptionHandler.getSnapshot();
+      const version = snapshotVersionRef.current;
+      const cachedSnapshot = snapshotCacheRef.current;
+
+      if (
+        cachedSnapshot &&
+        cachedSnapshot.version === version &&
+        Object.is(cachedSnapshot.sourceSnapshot, sourceSnapshot)
+      ) {
+        // Same source snapshot in the same store version: return the exact same selected reference.
+        return cachedSnapshot.selectedSnapshot;
+      }
+
+      const selectedSnapshot = selectSnapshot(sourceSnapshot);
+      snapshotCacheRef.current = {
+        selectedSnapshot,
+        sourceSnapshot,
+        version,
+      };
+
+      return selectedSnapshot;
+    },
     [selectSnapshot, stateSubscriptionHandler]
   );
 
   const getServerSnapshot = useCallback(
-    () => selectSnapshot(stateSubscriptionHandler.getInitialState()),
+    () => {
+      const sourceSnapshot = stateSubscriptionHandler.getInitialState();
+      const cachedSnapshot = serverSnapshotCacheRef.current;
+
+      if (cachedSnapshot && Object.is(cachedSnapshot.sourceSnapshot, sourceSnapshot)) {
+        // Keep server snapshot reads stable for hydration by reusing cached selection.
+        return cachedSnapshot.selectedSnapshot;
+      }
+
+      const selectedSnapshot = selectSnapshot(sourceSnapshot);
+      serverSnapshotCacheRef.current = {
+        selectedSnapshot,
+        sourceSnapshot,
+      };
+
+      return selectedSnapshot;
+    },
     [selectSnapshot, stateSubscriptionHandler]
   );
 

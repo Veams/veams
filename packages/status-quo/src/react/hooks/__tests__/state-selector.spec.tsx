@@ -331,6 +331,23 @@ const FullSubscriptionConsumer = ({
   return <span>{state.user.name}</span>;
 };
 
+type ObjectSelectorConsumerProps = {
+  createStateHandler: () => StateSubscriptionHandler<TestState, TestActions>;
+  onRender: (value: { counter: number; userName: string }) => void;
+};
+
+const ObjectSelectorConsumer = ({ createStateHandler, onRender }: ObjectSelectorConsumerProps) => {
+  const stateHandler = useStateHandler(createStateHandler, []);
+  const [summary] = useStateSubscription(stateHandler, (state) => ({
+    counter: state.counter,
+    userName: state.user.name,
+  }));
+
+  onRender(summary);
+
+  return <span>{summary.userName}</span>;
+};
+
 type StrictModeMirrorFactoryConsumerProps = {
   createStateHandler: () => StateSubscriptionHandler<CounterMirrorState, CounterMirrorActions>;
   onRender: (count: number) => void;
@@ -567,6 +584,55 @@ describe('Selector hooks', () => {
     });
 
     expect(renderSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('useStateSubscription should cache object selector snapshots within one store version', () => {
+    let stateHandler: TestStateHandler | null = null;
+    const createStateHandler = jest.fn(() => {
+      if (!stateHandler) {
+        stateHandler = new TestStateHandler({
+          user: { name: 'Ada' },
+          counter: 0,
+        });
+      }
+
+      return stateHandler;
+    });
+    const renderSpy = jest.fn();
+
+    expect(() => {
+      act(() => {
+        root.render(
+          <ObjectSelectorConsumer createStateHandler={createStateHandler} onRender={renderSpy} />
+        );
+      });
+    }).not.toThrow();
+
+    expect(renderSpy).toHaveBeenCalledTimes(1);
+    expect(renderSpy).toHaveBeenLastCalledWith({
+      counter: 0,
+      userName: 'Ada',
+    });
+
+    act(() => {
+      stateHandler!.getActions().increment();
+    });
+
+    expect(renderSpy).toHaveBeenCalledTimes(2);
+    expect(renderSpy).toHaveBeenLastCalledWith({
+      counter: 1,
+      userName: 'Ada',
+    });
+
+    act(() => {
+      stateHandler!.getActions().setName('Grace');
+    });
+
+    expect(renderSpy).toHaveBeenCalledTimes(3);
+    expect(renderSpy).toHaveBeenLastCalledWith({
+      counter: 1,
+      userName: 'Grace',
+    });
   });
 
   it('useStateSubscription should return full snapshot when no selector is provided', () => {
