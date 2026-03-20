@@ -18,7 +18,7 @@ export interface CacheApi {
   unsafe_getClient: () => QueryClient;
 }
 
-export function setupCache(queryClient: QueryClient): CacheApi {
+export function setupQueryProvider(queryClient: QueryClient): CacheApi {
   return {
     createMutation: setupMutation(queryClient),
     createQuery: setupQuery(queryClient),

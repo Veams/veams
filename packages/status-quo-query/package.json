@@ -26,12 +26,12 @@
       },
       "require": "./dist/query.js"
     },
-    "./cache": {
+    "./provider": {
       "import": {
-        "types": "./dist/cache.d.ts",
-        "default": "./dist/cache.js"
+        "types": "./dist/provider.d.ts",
+        "default": "./dist/provider.js"
       },
-      "require": "./dist/cache.js"
+      "require": "./dist/provider.js"
     }
   },
   "types": "dist/index.d.ts",

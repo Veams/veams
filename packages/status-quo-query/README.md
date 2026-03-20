@@ -12,7 +12,7 @@ npm install @veams/status-quo-query @tanstack/query-core
 
 Root exports:
 
-- `setupCache`
+- `setupQueryProvider`
 - `setupQuery`
 - `setupMutation`
 - `isQueryLoading`
@@ -34,7 +34,7 @@ Root exports:
 
 Subpath exports:
 
-- `@veams/status-quo-query/cache`
+- `@veams/status-quo-query/provider`
 - `@veams/status-quo-query/query`
 - `@veams/status-quo-query/mutation`
 
@@ -43,11 +43,11 @@ Subpath exports:
 ```ts
 import { QueryClient } from '@tanstack/query-core';
 import {
-  setupCache,
+  setupQueryProvider,
 } from '@veams/status-quo-query';
 
 const queryClient = new QueryClient();
-const cache = setupCache(queryClient);
+const cache = setupQueryProvider(queryClient);
 
 const userQuery = cache.createQuery(['user', 42], () => fetchUser(42), {
   enabled: false,
@@ -64,7 +64,7 @@ cache.setQueryData(['user', 42], (current) => current);
 
 ## API
 
-### `setupCache(queryClient)`
+### `setupQueryProvider(queryClient)`
 
 Creates the package-level cache facade around an existing TanStack `QueryClient`.
 
@@ -170,4 +170,4 @@ Creates a `createMutation` factory bound to a `QueryClient`.
 - `getSnapshot()` always returns passive state only.
 - Commands live on the handle itself: `refetch`, `invalidate`, `mutate`, `reset`.
 - Raw TanStack observer and client access is explicit through `unsafe_getResult()` and `unsafe_getClient()`.
-- Cache-level operations live on `setupCache()`, not on individual snapshots.
+- Cache-level operations live on `setupQueryProvider()`, not on individual snapshots.

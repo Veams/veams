@@ -1,6 +1,6 @@
 import { QueryClient } from '@tanstack/query-core';
 
-import { setupCache } from '../cache';
+import { setupQueryProvider } from '../provider';
 
 describe('Cache API', () => {
   it('exposes cache-level query client operations', async () => {
@@ -10,7 +10,7 @@ describe('Cache API', () => {
     const cancelQueriesSpy = jest.spyOn(queryClient, 'cancelQueries');
     const resetQueriesSpy = jest.spyOn(queryClient, 'resetQueries');
     const removeQueriesSpy = jest.spyOn(queryClient, 'removeQueries');
-    const cache = setupCache(queryClient);
+    const cache = setupQueryProvider(queryClient);
 
     cache.setQueryData<{ id: number }>(['user', 42], { id: 42 });
 
