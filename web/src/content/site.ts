@@ -3390,7 +3390,7 @@ export const docsPackages: DocsPackage[] = [
 ];
 
 export const defaultPackage =
-  docsPackages.find((entry) => entry.id === 'status-quo') ?? docsPackages[0];
+  docsPackages.find((entry) => entry.id === 'methodology') ?? docsPackages[0];
 export const defaultPage = defaultPackage.sections[0].pages[0];
 export const defaultPath = `/packages/${defaultPackage.id}/${defaultPage.id}`;
 

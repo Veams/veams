@@ -7,7 +7,7 @@
 
 The manager to rule your state.
 
-This README summarizes the package API. The full routed documentation lives in VEAMS Docs.
+This README summarizes the package API. The full routed documentation lives in VEAMS Documentation.
 
 ## Table of Contents
 

@@ -141,7 +141,7 @@ function DocsPage() {
   const [isPackageNavOpen, setIsPackageNavOpen] = useState(false);
   const [isSectionNavOpen, setIsSectionNavOpen] = useState(false);
   const documentTitle =
-    packageDoc && page ? `${packageDoc.title} · ${page.title} · VEAMS Docs` : 'VEAMS Docs';
+    packageDoc && page ? `${packageDoc.title} · ${page.title} · VEAMS Documentation` : 'VEAMS Documentation';
 
   useEffect(() => {
     document.title = documentTitle;
@@ -218,7 +218,7 @@ function DocsPage() {
     <div className={`site-shell accent-${packageDoc.accent}`}>
       <header className="topbar">
         <div className="topbar-layout">
-          <NavLink aria-label="VEAMS Docs" className="topbar-brand" to={defaultPath}>
+          <NavLink aria-label="VEAMS Documentation" className="topbar-brand" to={defaultPath}>
             <VeamsLogo />
             <span aria-hidden="true" className="brand-separator">
               |
