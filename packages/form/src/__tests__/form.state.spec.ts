@@ -41,6 +41,28 @@ describe('FormStateHandler', () => {
     expect(handler.getState().isValid).toBe(false);
   });
 
+  it('should update nested values via dot-paths', () => {
+    const handler = new FormStateHandler({
+      initialValues: {
+        profile: {
+          email: '',
+        },
+      },
+      validator: (values) => ({
+        ...(values.profile.email ? {} : { 'profile.email': 'Email is required' }),
+      }),
+    });
+
+    handler.setFieldValue('profile.email', 'alice@veams.org');
+
+    expect(handler.getState().values).toEqual({
+      profile: {
+        email: 'alice@veams.org',
+      },
+    });
+    expect(handler.getState().errors['profile.email']).toBeUndefined();
+  });
+
   it('should handle manual field errors', () => {
     const handler = new FormStateHandler({
       initialValues: { email: '' },
@@ -65,6 +87,26 @@ describe('FormStateHandler', () => {
     expect(handler.getState().touched).toEqual({
       company: true,
       email: true,
+    });
+  });
+
+  it('should mark nested leaf fields as touched', () => {
+    const handler = new FormStateHandler({
+      initialValues: {
+        profile: {
+          email: '',
+        },
+        preferences: {
+          newsletter: false,
+        },
+      },
+    });
+
+    handler.touchAllFields();
+
+    expect(handler.getState().touched).toEqual({
+      'preferences.newsletter': true,
+      'profile.email': true,
     });
   });
 

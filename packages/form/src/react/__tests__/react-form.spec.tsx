@@ -25,9 +25,9 @@ function EmailField() {
 function ControllerProbe({
   onReady,
 }: {
-  onReady: (controller: FormStateHandler<{ email: string }>) => void;
+  onReady: (controller: FormStateHandler<{ profile: { email: string } }>) => void;
 }) {
-  const controller = useFormController<{ email: string }>();
+  const controller = useFormController<{ profile: { email: string } }>();
   onReady(controller);
 
   return null;
@@ -93,15 +93,18 @@ describe('react-form', () => {
 
   it('should submit updated form values through the provider-owned controller', () => {
     const handleSubmit = jest.fn();
-    const handleControllerReady = jest.fn<void, [FormStateHandler<{ email: string }>]>();
+    const handleControllerReady = jest.fn<
+      void,
+      [FormStateHandler<{ profile: { email: string } }>]
+    >();
 
     act(() => {
       root.render(
         <FormProvider
-          initialValues={{ email: '' }}
+          initialValues={{ profile: { email: '' } }}
           onSubmit={handleSubmit}
           validator={(values) => ({
-            ...(values.email ? {} : { email: 'Email is required' }),
+            ...(values.profile.email ? {} : { 'profile.email': 'Email is required' }),
           })}
         >
           <EmailField />
@@ -113,22 +116,22 @@ describe('react-form', () => {
 
     const form = container.querySelector('form');
     const [[controller]] = handleControllerReady.mock.calls as [
-      [FormStateHandler<{ email: string }>],
+      [FormStateHandler<{ profile: { email: string } }>],
     ];
 
     expect(form).not.toBeNull();
     expect(controller).toBeInstanceOf(FormStateHandler);
 
     act(() => {
-      controller.setFieldValue('email', 'alice@example.com');
+      controller.setFieldValue('profile.email', 'alice@example.com');
       form?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     });
 
     expect(handleSubmit).toHaveBeenCalledTimes(1);
     const [[submittedValues, submittedController]] = handleSubmit.mock.calls as [
-      [{ email: string }, FormStateHandler<{ email: string }>],
+      [{ profile: { email: string } }, FormStateHandler<{ profile: { email: string } }>],
     ];
-    expect(submittedValues).toEqual({ email: 'alice@example.com' });
+    expect(submittedValues).toEqual({ profile: { email: 'alice@example.com' } });
     expect(submittedController).toBe(controller);
   });
 
@@ -143,7 +146,6 @@ describe('react-form', () => {
       root.render(
         <FormProvider
           formHandlerInstance={externalFormHandler}
-          initialValues={{ role: 'user' }}
           onSubmit={jest.fn()}
         >
           <Controller

@@ -3,6 +3,7 @@ export {
   type FormActions,
   type FormErrors,
   type FormFieldName,
+  type FormFieldValue,
   type FormState,
   type FormStateHandlerConfig,
   type FormStateHandlerOptions,

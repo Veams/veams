@@ -1,7 +1,29 @@
 import { SignalStateHandler, type DevToolsOptions } from '@veams/status-quo';
 
-export type FormValues = Record<string, unknown>;
-export type FormFieldName<T extends FormValues> = Extract<keyof T, string>;
+import { collectLeafPaths, setValueAtPath } from './path-utils.js';
+
+export type FormValues = object;
+type Primitive = bigint | boolean | Date | null | number | string | symbol | undefined;
+type IsLeafValue<TValue> =
+  TValue extends Primitive ? true : TValue extends readonly unknown[] ? true : false;
+type DotPath<TKey extends string, TPath extends string> = `${TKey}.${TPath}`;
+
+export type FormFieldName<T extends FormValues> = {
+  [TKey in Extract<keyof T, string>]: IsLeafValue<T[TKey]> extends true
+    ? TKey
+    : T[TKey] extends FormValues
+      ? TKey | DotPath<TKey, FormFieldName<T[TKey]>>
+      : TKey;
+}[Extract<keyof T, string>];
+
+export type FormFieldValue<TValue, TPath extends string> = TPath extends `${infer Head}.${infer Tail}`
+  ? Head extends keyof TValue
+    ? FormFieldValue<TValue[Head], Tail>
+    : never
+  : TPath extends keyof TValue
+    ? TValue[TPath]
+    : never;
+
 export type FormErrors<T extends FormValues> = Partial<Record<FormFieldName<T>, string>>;
 export type FormTouched<T extends FormValues> = Partial<Record<FormFieldName<T>, boolean>>;
 
@@ -36,7 +58,7 @@ export interface FormActions<T extends FormValues> {
   resetForm: (values?: T) => void;
   setFieldError: (name: FormFieldName<T>, errorMessage?: string) => void;
   setFieldTouched: (name: FormFieldName<T>, isTouched?: boolean) => void;
-  setFieldValue: <K extends FormFieldName<T>>(name: K, value: T[K]) => void;
+  setFieldValue: <K extends FormFieldName<T>>(name: K, value: FormFieldValue<T, K>) => void;
   setSubmitting: (isSubmitting: boolean) => void;
   touchAllFields: () => void;
   validateForm: () => boolean;
@@ -97,12 +119,9 @@ export class FormStateHandler<T extends FormValues> extends SignalStateHandler<
     );
   };
 
-  setFieldValue = <K extends FormFieldName<T>>(name: K, value: T[K]) => {
+  setFieldValue = <K extends FormFieldName<T>>(name: K, value: FormFieldValue<T, K>) => {
     const currentState = this.getState();
-    const nextValues = {
-      ...currentState.values,
-      [name]: value,
-    } as T;
+    const nextValues = setValueAtPath(currentState.values, name, value);
     const nextErrors = this.validateValues(nextValues);
 
     this.setState(
@@ -156,7 +175,7 @@ export class FormStateHandler<T extends FormValues> extends SignalStateHandler<
 
   touchAllFields = () => {
     const currentState = this.getState();
-    const touched = Object.keys(currentState.values).reduce<FormTouched<T>>((result, key) => {
+    const touched = collectLeafPaths(currentState.values).reduce<FormTouched<T>>((result, key) => {
       result[key as FormFieldName<T>] = true;
       return result;
     }, {});

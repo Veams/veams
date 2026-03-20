@@ -40,6 +40,12 @@ React entrypoint:
 - `useUncontrolledField`
 - `Controller`
 
+Validator adapters:
+
+- `@veams/form/validators`
+- `@veams/form/validators/zod`
+- `toZodValidator(schema)`
+
 ## Quickstart
 
 Create a generic form handler:
@@ -74,6 +80,27 @@ const loginForm = new FormStateHandler<LoginValues>({
 
 loginForm.setFieldValue('email', 'hello@veams.org');
 loginForm.validateForm();
+```
+
+Nested values are supported through dot-path field names:
+
+```ts
+type ProfileForm = {
+  profile: {
+    email: string;
+  };
+};
+
+const profileForm = new FormStateHandler<ProfileForm>({
+  initialValues: {
+    profile: {
+      email: '',
+    },
+  },
+});
+
+profileForm.setFieldValue('profile.email', 'nested@veams.org');
+profileForm.setFieldTouched('profile.email', true);
 ```
 
 ## React Quickstart
@@ -114,9 +141,23 @@ function LoginForm() {
 }
 ```
 
+## Uncontrolled Field Principle
+
+Native fields should stay uncontrolled by default in VEAMS Form, while `FormStateHandler` remains the source of truth for values, errors, touched state, and submit state.
+
+Why this default is useful:
+
+- Lower render churn: typing updates the DOM directly without forcing controlled React value props on every keystroke.
+- Native behavior stays intact: browser input semantics, selection handling, and autofill work naturally.
+- Cleaner component code: field components mostly spread `registerProps` and render `meta`.
+- Clear ownership boundaries: feature/form behavior stays in the handler, React stays a binding layer.
+
+When a component requires controlled props (`value` + `onChange`), use `Controller` intentionally for that field only.
+
 ## Feature-Owned Form State
 
 A feature handler can own the form handler and pass it into the React provider. This keeps cross-field validation and non-form UI state in the same feature boundary.
+When `formHandlerInstance` is provided, `initialValues` and `validator` stay on the handler and are not passed to `FormProvider`.
 
 ```ts
 import { SignalStateHandler } from '@veams/status-quo';
@@ -195,7 +236,6 @@ function LoginFeature() {
   return (
     <FormProvider
       formHandlerInstance={actions.getFormHandler()}
-      initialValues={{ email: '', password: '' }}
       onSubmit={actions.submitLogin}
     >
       <PasswordField isVisible={state.isPasswordVisible} />
@@ -240,4 +280,30 @@ function RoleForm() {
     </FormProvider>
   );
 }
+```
+
+## Schema Validators (Zod)
+
+`@veams/form` does not depend on Zod, but it exposes a lightweight adapter for Zod-style `safeParse` schemas.
+The package currently includes only the Zod adapter because that is the most common schema setup in current usage. PRs for additional adapters are welcome as long as the package remains dependency-free.
+
+```ts
+import { z } from 'zod';
+import { FormStateHandler } from '@veams/form';
+import { toZodValidator } from '@veams/form/validators/zod';
+
+const loginSchema = z.object({
+  email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
+  password: z.string().min(12, 'Use at least 12 characters'),
+});
+
+type LoginValues = z.infer<typeof loginSchema>;
+
+const form = new FormStateHandler<LoginValues>({
+  initialValues: {
+    email: '',
+    password: '',
+  },
+  validator: toZodValidator(loginSchema),
+});
 ```

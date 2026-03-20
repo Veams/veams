@@ -18,6 +18,20 @@
         "default": "./dist/react/index.js"
       },
       "require": "./dist/react/index.js"
+    },
+    "./validators": {
+      "import": {
+        "types": "./dist/validators/index.d.ts",
+        "default": "./dist/validators/index.js"
+      },
+      "require": "./dist/validators/index.js"
+    },
+    "./validators/zod": {
+      "import": {
+        "types": "./dist/validators/zod.d.ts",
+        "default": "./dist/validators/zod.js"
+      },
+      "require": "./dist/validators/zod.js"
     }
   },
   "types": "dist/index.d.ts",
@@ -31,6 +45,7 @@
     "lint": "npm run lint:ts",
     "lint:ts": "eslint --fix \"src/**/*.{tsx,ts}\"",
     "test": "cross-env NODE_ENV=test jest --config jest.config.cjs",
+    "test:types": "tsc --noEmit --project tsconfig.type-tests.json",
     "release": "npm run build && release-it"
   },
   "peerDependencies": {
