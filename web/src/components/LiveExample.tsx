@@ -192,84 +192,76 @@ function LocalDraftExample() {
   );
 }
 
-type WorkspaceState = {
-  density: 'comfortable' | 'compact';
-  layout: 'board' | 'list';
+type SharedCounterState = {
+  count: number;
 };
 
-type WorkspaceActions = {
+type SharedCounterActions = {
+  decrement: () => void;
+  increment: () => void;
+  incrementByFive: () => void;
   reset: () => void;
-  toggleDensity: () => void;
-  toggleLayout: () => void;
 };
 
-class WorkspacePreferencesHandler extends SignalStateHandler<WorkspaceState, WorkspaceActions> {
+class SharedCounterHandler extends SignalStateHandler<SharedCounterState, SharedCounterActions> {
   constructor() {
     super({
       initialState: {
-        density: 'comfortable',
-        layout: 'board',
+        count: 0,
       },
     });
   }
 
-  getActions(): WorkspaceActions {
+  getActions(): SharedCounterActions {
     return {
-      reset: () =>
-        this.setState({ density: 'comfortable', layout: 'board' }, 'reset'),
-      toggleDensity: () =>
-        this.setState(
-          {
-            density: this.getState().density === 'comfortable' ? 'compact' : 'comfortable',
-          },
-          'toggle-density'
-        ),
-      toggleLayout: () =>
-        this.setState(
-          { layout: this.getState().layout === 'board' ? 'list' : 'board' },
-          'toggle-layout'
-        ),
+      decrement: () => this.setState({ count: this.getState().count - 1 }, 'decrement'),
+      increment: () => this.setState({ count: this.getState().count + 1 }, 'increment'),
+      incrementByFive: () => this.setState({ count: this.getState().count + 5 }, 'increment-by-five'),
+      reset: () => this.setState({ count: 0 }, 'reset'),
     };
   }
 }
 
-const workspacePreferencesSingleton = makeStateSingleton(
-  () => new WorkspacePreferencesHandler()
+const sharedCounterSingleton = makeStateSingleton(
+  () => new SharedCounterHandler()
 );
 
-function WorkspaceToolbarCard() {
-  const [state, actions] = useStateSingleton(workspacePreferencesSingleton);
+function CounterControlsCard() {
+  const [state, actions] = useStateSingleton(sharedCounterSingleton);
 
   return (
-    <ExampleCard title="Toolbar consumer">
+    <ExampleCard title="Controls consumer">
       <div className="example-chip-row">
-        <span className="example-chip">Layout: {state.layout}</span>
-        <span className="example-chip">Density: {state.density}</span>
+        <span className="example-chip">Count: {state.count}</span>
+        <span className="example-chip">{state.count % 2 === 0 ? 'even' : 'odd'}</span>
       </div>
       <div className="example-counter-actions">
-        <button onClick={actions.toggleLayout} type="button">
-          Toggle layout
+        <button onClick={actions.decrement} type="button">
+          -1
         </button>
-        <button onClick={actions.toggleDensity} type="button">
-          Toggle density
+        <button onClick={actions.increment} type="button">
+          +1
+        </button>
+        <button onClick={actions.incrementByFive} type="button">
+          +5
         </button>
       </div>
     </ExampleCard>
   );
 }
 
-function WorkspaceSummaryCard() {
-  const [state, actions] = useStateSingleton(workspacePreferencesSingleton);
+function CounterSummaryCard() {
+  const [state, actions] = useStateSingleton(sharedCounterSingleton);
 
   return (
     <ExampleCard title="Summary consumer">
       <StatGrid
         items={[
-          { label: 'Cards', value: state.layout === 'board' ? '12 lanes' : '12 rows' },
-          { label: 'Spacing', value: state.density === 'comfortable' ? '24 px' : '12 px' },
+          { label: 'Shared count', value: String(state.count) },
+          { label: 'Absolute', value: String(Math.abs(state.count)) },
         ]}
       />
-      <RenderMeta detail="Shared snapshot" value={`${state.layout} / ${state.density}`} />
+      <RenderMeta detail="Shared snapshot" value={state.count === 0 ? 'idle' : 'changed'} />
       <div className="example-counter-actions">
         <button onClick={actions.reset} type="button">
           Reset singleton
@@ -279,79 +271,68 @@ function WorkspaceSummaryCard() {
   );
 }
 
-function SingletonWorkspaceExample() {
+function SingletonCounterExample() {
   return (
-    <ExampleChrome eyebrow="Working Example" title="Two consumers bound to one singleton">
+    <ExampleChrome eyebrow="Working Example" title="Counter shared by two consumers">
       <div className="example-counter-layout example-counter-layout-shared">
-        <WorkspaceToolbarCard />
-        <WorkspaceSummaryCard />
+        <CounterControlsCard />
+        <CounterSummaryCard />
       </div>
     </ExampleChrome>
   );
 }
 
-type QueueState = {
-  batchSize: 1 | 3;
-  processed: number;
-  queued: number;
+type ChecklistState = {
+  completed: number;
+  total: number;
 };
 
-type QueueActions = {
-  enqueue: () => void;
+type ChecklistActions = {
+  complete: () => void;
+  reopen: () => void;
   reset: () => void;
-  runBatch: () => void;
-  setBatchSize: (batchSize: 1 | 3) => void;
 };
 
-class BatchQueueHandler extends SignalStateHandler<QueueState, QueueActions> {
+const initialChecklistState: ChecklistState = {
+  completed: 1,
+  total: 4,
+};
+
+class ChecklistHandler extends SignalStateHandler<ChecklistState, ChecklistActions> {
   constructor() {
-    super({
-      initialState: {
-        batchSize: 1,
-        processed: 0,
-        queued: 5,
-      },
-    });
+    super({ initialState: initialChecklistState });
   }
 
-  getActions(): QueueActions {
+  getActions(): ChecklistActions {
     return {
-      enqueue: () => this.setState({ queued: this.getState().queued + 1 }, 'enqueue'),
-      reset: () => this.setState({ batchSize: 1, processed: 0, queued: 5 }, 'reset'),
-      runBatch: () => {
-        const { batchSize, processed, queued } = this.getState();
-        const moved = Math.min(batchSize, queued);
-
+      complete: () =>
         this.setState(
-          {
-            processed: processed + moved,
-            queued: queued - moved,
-          },
-          'run-batch'
-        );
-      },
-      setBatchSize: (batchSize) => this.setState({ batchSize }, 'set-batch-size'),
+          { completed: Math.min(this.getState().completed + 1, this.getState().total) },
+          'complete'
+        ),
+      reopen: () =>
+        this.setState({ completed: Math.max(this.getState().completed - 1, 0) }, 'reopen'),
+      reset: () => this.setState({ ...initialChecklistState }, 'reset'),
     };
   }
 }
 
-const createBatchQueueHandler = () => new BatchQueueHandler();
-type QueueHandler = StateSubscriptionHandler<QueueState, QueueActions>;
+const createChecklistHandler = () => new ChecklistHandler();
+type ChecklistHandlerInstance = StateSubscriptionHandler<ChecklistState, ChecklistActions>;
 
-function QueueSummaryCard({ handler }: { handler: QueueHandler }) {
-  const [summary] = useStateSubscription(handler, (state) => ({
-    batchSize: state.batchSize,
-    processed: state.processed,
-    queued: state.queued,
-  }));
+function ChecklistSummaryCard({ handler }: { handler: ChecklistHandlerInstance }) {
+  const [completed] = useStateSubscription(handler, (state) => state.completed);
+  const [total] = useStateSubscription(handler, (state) => state.total);
+  const open = total - completed;
+  const progress = `${Math.round((completed / Math.max(total, 1)) * 100)}%`;
 
   return (
     <ExampleCard title="Summary subscriber">
       <StatGrid
         items={[
-          { label: 'Queued', value: String(summary.queued) },
-          { label: 'Processed', value: String(summary.processed) },
-          { label: 'Batch', value: String(summary.batchSize) },
+          { label: 'Done', value: String(completed) },
+          { label: 'Open', value: String(open) },
+          { label: 'Progress', value: progress },
         ]}
       />
       <p className="example-note-copy">
@@ -361,26 +342,19 @@ function QueueSummaryCard({ handler }: { handler: QueueHandler }) {
   );
 }
 
-function QueueControlsCard({ handler }: { handler: QueueHandler }) {
+function ChecklistControlsCard({ handler }: { handler: ChecklistHandlerInstance }) {
   const actions = useStateActions(handler);
-  const [batchSize] = useStateSubscription(handler, (state) => state.batchSize);
+  const [canComplete] = useStateSubscription(handler, (state) => state.completed < state.total);
+  const [canReopen] = useStateSubscription(handler, (state) => state.completed > 0);
 
   return (
     <ExampleCard title="Action composition">
-      <div className="example-chip-row">
-        <ChipButton active={batchSize === 1} onClick={() => actions.setBatchSize(1)}>
-          Batch 1
-        </ChipButton>
-        <ChipButton active={batchSize === 3} onClick={() => actions.setBatchSize(3)}>
-          Batch 3
-        </ChipButton>
-      </div>
       <div className="example-counter-actions">
-        <button onClick={actions.enqueue} type="button">
-          Enqueue
+        <button disabled={!canComplete} onClick={actions.complete} type="button">
+          Complete one
         </button>
-        <button onClick={actions.runBatch} type="button">
-          Run batch
+        <button disabled={!canReopen} onClick={actions.reopen} type="button">
+          Reopen one
         </button>
         <button onClick={actions.reset} type="button">
           Reset
@@ -393,14 +367,14 @@ function QueueControlsCard({ handler }: { handler: QueueHandler }) {
   );
 }
 
-function CompositionQueueExample() {
-  const handler = useStateHandler(createBatchQueueHandler, []);
+function CompositionChecklistExample() {
+  const handler = useStateHandler(createChecklistHandler, []);
 
   return (
-    <ExampleChrome eyebrow="Working Example" title="Base hooks composed on purpose">
+    <ExampleChrome eyebrow="Working Example" title="Simple checklist with base hooks">
       <div className="example-counter-layout example-counter-layout-shared">
-        <QueueSummaryCard handler={handler} />
-        <QueueControlsCard handler={handler} />
+        <ChecklistSummaryCard handler={handler} />
+        <ChecklistControlsCard handler={handler} />
       </div>
     </ExampleChrome>
   );
@@ -710,10 +684,10 @@ export function LiveExample({ id, sourceExamples }: LiveExampleProps) {
       preview = <LocalDraftExample />;
       break;
     case 'status-quo-singleton-workspace':
-      preview = <SingletonWorkspaceExample />;
+      preview = <SingletonCounterExample />;
       break;
-    case 'status-quo-composition-queue':
-      preview = <CompositionQueueExample />;
+    case 'status-quo-composition-checklist':
+      preview = <CompositionChecklistExample />;
       break;
     case 'status-quo-provider-wizard':
       preview = <ProviderWizardExample />;

@@ -1460,6 +1460,14 @@ button {
     width: auto;
   }
 
+  .topbar-menu-label {
+    display: none;
+  }
+
+  .topbar-menu-toggle {
+    padding: 0.8rem 1rem;
+  }
+
   .content-panel,
   .sidebar {
     padding-left: 2rem;

@@ -9,6 +9,7 @@ export type FeatureCard = {
   title: string;
   visual:
     | 'cache-orchestration'
+    | 'form-feature-owner'
     | 'framework-core'
     | 'handle-command'
     | 'passive-snapshot'
@@ -23,7 +24,7 @@ export type FeatureCard = {
 export type LiveExampleId =
   | 'status-quo-local-draft'
   | 'status-quo-singleton-workspace'
-  | 'status-quo-composition-queue'
+  | 'status-quo-composition-checklist'
   | 'status-quo-provider-wizard'
   | 'status-quo-selector-profile';
 
@@ -143,92 +144,85 @@ const statusQuoSingletonHandlerExample = `import {
   makeStateSingleton,
 } from '@veams/status-quo';
 
-type WorkspaceState = {
-  density: 'comfortable' | 'compact';
-  layout: 'board' | 'list';
+type CounterState = {
+  count: number;
 };
 
-type WorkspaceActions = {
+type CounterActions = {
+  decrement: () => void;
+  increment: () => void;
+  incrementByFive: () => void;
   reset: () => void;
-  toggleDensity: () => void;
-  toggleLayout: () => void;
 };
 
-class WorkspacePreferencesHandler extends SignalStateHandler<WorkspaceState, WorkspaceActions> {
+class SharedCounterHandler extends SignalStateHandler<CounterState, CounterActions> {
   constructor() {
     super({
       initialState: {
-        density: 'comfortable',
-        layout: 'board',
+        count: 0,
       },
     });
   }
 
-  getActions(): WorkspaceActions {
+  getActions(): CounterActions {
     return {
-      reset: () =>
-        this.setState({ density: 'comfortable', layout: 'board' }, 'reset'),
-      toggleDensity: () =>
-        this.setState(
-          {
-            density: this.getState().density === 'comfortable' ? 'compact' : 'comfortable',
-          },
-          'toggle-density'
-        ),
-      toggleLayout: () =>
-        this.setState(
-          { layout: this.getState().layout === 'board' ? 'list' : 'board' },
-          'toggle-layout'
-        ),
+      decrement: () => this.setState({ count: this.getState().count - 1 }, 'decrement'),
+      increment: () => this.setState({ count: this.getState().count + 1 }, 'increment'),
+      incrementByFive: () => this.setState({ count: this.getState().count + 5 }, 'increment-by-five'),
+      reset: () => this.setState({ count: 0 }, 'reset'),
     };
   }
 }
 
-export const workspacePreferencesSingleton = makeStateSingleton(
-  () => new WorkspacePreferencesHandler()
+export const sharedCounterSingleton = makeStateSingleton(
+  () => new SharedCounterHandler()
 );`;
 
 const statusQuoSingletonComponentExample = `import { useStateSingleton } from '@veams/status-quo/react';
 
-import { workspacePreferencesSingleton } from './workspace-preferences-handler';
+import { sharedCounterSingleton } from './shared-counter-handler';
 
-function WorkspaceToolbar() {
-  const [state, actions] = useStateSingleton(workspacePreferencesSingleton);
+function CounterControls() {
+  const [state, actions] = useStateSingleton(sharedCounterSingleton);
 
   return (
     <>
-      <button onClick={actions.toggleLayout} type="button">
-        Layout: {state.layout}
+      <button onClick={actions.decrement} type="button">
+        -1
       </button>
-      <button onClick={actions.toggleDensity} type="button">
-        Density: {state.density}
+      <button onClick={actions.increment} type="button">
+        +1
+      </button>
+      <button onClick={actions.incrementByFive} type="button">
+        +5
       </button>
       <button onClick={actions.reset} type="button">
         Reset
       </button>
+      <p>Count: {state.count}</p>
     </>
   );
 }
 
-function WorkspaceSummary() {
-  const [state] = useStateSingleton(workspacePreferencesSingleton);
+function CounterSummary() {
+  const [state] = useStateSingleton(sharedCounterSingleton);
 
   return (
     <p>
-      Shared preference state: {state.layout} / {state.density}
+      Shared counter snapshot: {state.count}
     </p>
   );
 }`;
 
 const statusQuoProviderHandlerExample = `import { SignalStateHandler } from '@veams/status-quo';
 
-type WizardState = {
+export type WizardState = {
   completed: number;
   step: number;
   totalSteps: number;
 };
 
-type WizardActions = {
+export type WizardActions = {
   completeStep: () => void;
   nextStep: () => void;
   previousStep: () => void;
@@ -274,7 +268,11 @@ const statusQuoProviderComponentExample = `import {
   useStateHandler,
 } from '@veams/status-quo/react';
 
-import { createWizardFlowHandler } from './wizard-flow-handler';
+import {
+  createWizardFlowHandler,
+  type WizardActions,
+  type WizardState,
+} from './wizard-flow-handler';
 
 function WizardScope() {
   const handler = useStateHandler(createWizardFlowHandler, []);
@@ -289,7 +287,7 @@ function WizardScope() {
 
 function WizardProgress() {
   const [state] = useProvidedStateSubscription(
-    (currentState: { completed: number; step: number; totalSteps: number }) => currentState
+    (currentState: WizardState) => currentState
   );
 
   return (
@@ -300,15 +298,7 @@ function WizardProgress() {
 }
 
 function WizardCommands() {
-  const actions = useProvidedStateActions<
-    { completed: number; step: number; totalSteps: number },
-    {
-      completeStep: () => void;
-      nextStep: () => void;
-      previousStep: () => void;
-      reset: () => void;
-    }
-  >();
+  const actions = useProvidedStateActions<WizardState, WizardActions>();
 
   return (
     <>
@@ -330,52 +320,42 @@ function WizardCommands() {
 
 const statusQuoCompositionHandlerExample = `import { SignalStateHandler } from '@veams/status-quo';
 
-type QueueState = {
-  batchSize: 1 | 3;
-  processed: number;
-  queued: number;
+type ChecklistState = {
+  completed: number;
+  total: number;
 };
 
-type QueueActions = {
-  enqueue: () => void;
+type ChecklistActions = {
+  complete: () => void;
+  reopen: () => void;
   reset: () => void;
-  runBatch: () => void;
-  setBatchSize: (batchSize: 1 | 3) => void;
 };
 
-class BatchQueueHandler extends SignalStateHandler<QueueState, QueueActions> {
+const initialChecklistState: ChecklistState = {
+  completed: 1,
+  total: 4,
+};
+
+class ChecklistHandler extends SignalStateHandler<ChecklistState, ChecklistActions> {
   constructor() {
-    super({
-      initialState: {
-        batchSize: 1,
-        processed: 0,
-        queued: 5,
-      },
-    });
+    super({ initialState: initialChecklistState });
   }
 
-  getActions(): QueueActions {
+  getActions(): ChecklistActions {
     return {
-      enqueue: () => this.setState({ queued: this.getState().queued + 1 }, 'enqueue'),
-      reset: () => this.setState({ batchSize: 1, processed: 0, queued: 5 }, 'reset'),
-      runBatch: () => {
-        const { batchSize, processed, queued } = this.getState();
-        const moved = Math.min(batchSize, queued);
-
+      complete: () =>
         this.setState(
-          {
-            processed: processed + moved,
-            queued: queued - moved,
-          },
-          'run-batch'
-        );
-      },
-      setBatchSize: (batchSize) => this.setState({ batchSize }, 'set-batch-size'),
+          { completed: Math.min(this.getState().completed + 1, this.getState().total) },
+          'complete'
+        ),
+      reopen: () =>
+        this.setState({ completed: Math.max(this.getState().completed - 1, 0) }, 'reopen'),
+      reset: () => this.setState({ ...initialChecklistState }, 'reset'),
     };
   }
 }
 
-export const createBatchQueueHandler = () => new BatchQueueHandler();`;
+export const createChecklistHandler = () => new ChecklistHandler();`;
 
 const statusQuoCompositionComponentExample = `import {
   useStateActions,
@@ -383,52 +363,44 @@ const statusQuoCompositionComponentExample = `import {
   useStateSubscription,
 } from '@veams/status-quo/react';
 
-import { createBatchQueueHandler } from './batch-queue-handler';
+import { createChecklistHandler } from './checklist-handler';
 
-type QueueHandler = ReturnType<typeof createBatchQueueHandler>;
+type ChecklistHandler = ReturnType<typeof createChecklistHandler>;
 
-function QueueExample() {
-  const handler = useStateHandler(createBatchQueueHandler, []);
+function ChecklistExample() {
+  const handler = useStateHandler(createChecklistHandler, []);
 
   return (
     <>
-      <QueueSummary handler={handler} />
-      <QueueControls handler={handler} />
+      <ChecklistSummary handler={handler} />
+      <ChecklistControls handler={handler} />
     </>
   );
 }
 
-function QueueSummary({ handler }: { handler: QueueHandler }) {
-  const [summary] = useStateSubscription(handler, (state) => ({
-    batchSize: state.batchSize,
-    processed: state.processed,
-    queued: state.queued,
-  }));
+function ChecklistSummary({ handler }: { handler: ChecklistHandler }) {
+  const [completed] = useStateSubscription(handler, (state) => state.completed);
+  const [total] = useStateSubscription(handler, (state) => state.total);
 
   return (
     <p>
-      {summary.queued} queued, {summary.processed} processed, batch {summary.batchSize}
+      {completed} of {total} done
     </p>
   );
 }
 
-function QueueControls({ handler }: { handler: QueueHandler }) {
+function ChecklistControls({ handler }: { handler: ChecklistHandler }) {
   const actions = useStateActions(handler);
-  const [batchSize] = useStateSubscription(handler, (state) => state.batchSize);
+  const [canComplete] = useStateSubscription(handler, (state) => state.completed < state.total);
+  const [canReopen] = useStateSubscription(handler, (state) => state.completed > 0);
 
   return (
     <>
-      <button onClick={() => actions.setBatchSize(1)} type="button">
-        Batch {batchSize === 1 ? '(active)' : ''}
+      <button disabled={!canComplete} onClick={actions.complete} type="button">
+        Complete one
       </button>
-      <button onClick={() => actions.setBatchSize(3)} type="button">
-        Batch {batchSize === 3 ? '(active)' : ''}
-      </button>
-      <button onClick={actions.enqueue} type="button">
-        Enqueue
-      </button>
-      <button onClick={actions.runBatch} type="button">
-        Run batch
+      <button disabled={!canReopen} onClick={actions.reopen} type="button">
+        Reopen one
       </button>
       <button onClick={actions.reset} type="button">
         Reset
@@ -620,6 +592,24 @@ const statusQuoSelectorExample = `const [identity] = useStateSubscription(
     role: state.profile.role,
   }),
   (current, next) => current.name === next.name && current.role === next.role
+);`;
+
+const statusQuoSelectorSimpleExample = `const [name] = useStateSubscription(
+  handler,
+  (state) => state.profile.name
+);`;
+
+const statusQuoSelectorProvidedExample = `const [progress] = useProvidedStateSubscription(
+  (state) => ({
+    completed: state.completed,
+    step: state.step,
+  }),
+  (current, next) => current.completed === next.completed && current.step === next.step
+);`;
+
+const statusQuoSelectorSingletonExample = `const [count] = useStateSingleton(
+  sharedCounterSingleton,
+  (state) => state.count
 );`;
 
 const statusQuoObservableHandlerExample = `import {
@@ -820,14 +810,10 @@ function CounterCard() {
   return <button onClick={actions.increase}>{count}</button>;
 }`;
 
-const statusQuoBindSubscribableExample = `import {
-  SignalStateHandler,
-  makeStateSingleton,
-} from '@veams/status-quo';
+const statusQuoBindSubscribableExample = `import { SignalStateHandler } from '@veams/status-quo';
 
 type CounterState = { count: number };
 type CounterActions = { increase: () => void };
-type BucketState = { bucket: number };
 
 class CounterHandler extends SignalStateHandler<CounterState, CounterActions> {
   constructor() {
@@ -845,37 +831,36 @@ class CounterHandler extends SignalStateHandler<CounterState, CounterActions> {
   }
 }
 
-const counterSingleton = makeStateSingleton(() => new CounterHandler());
+type BucketState = { bucket: number };
+type BucketActions = { reset: () => void };
 
-class CounterBucketHandler extends SignalStateHandler<BucketState, { noop: () => void }> {
-  constructor() {
+class CounterBucketHandler extends SignalStateHandler<BucketState, BucketActions> {
+  constructor(source: CounterHandler) {
     super({
       initialState: {
         bucket: 0,
       },
     });
 
-    // Keep the syncing logic inside the handler, not inside a component effect.
     this.bindSubscribable(
-      counterSingleton.getInstance(),
-      (selection) => {
-        this.setState({ bucket: selection.bucket }, 'sync-bucket');
-      },
-      // Map the upstream counter into the derived state this handler owns.
+      source,
+      (bucket) => this.setState({ bucket }, 'sync-bucket'),
       (counterState) => ({
-        bucket: Math.floor(counterState.count / 5),
+        bucket: Math.floor(counterState.count / 10),
       }),
-      // Skip updates while the derived bucket stays the same.
       (current, next) => current.bucket === next.bucket
     );
   }
 
-  getActions() {
+  getActions(): BucketActions {
     return {
-      noop: () => undefined,
+      reset: () => this.setState({ bucket: 0 }, 'reset'),
     };
   }
-}`;
+}
+
+const counter = new CounterHandler();
+const bucket = new CounterBucketHandler(counter);`;
 
 const statusQuoGlobalSetup = `import { setupStatusQuo } from '@veams/status-quo';
 
@@ -929,10 +914,10 @@ setupStatusQuo({
 });`;
 
 const statusQuoQueryQuickStart = `import { QueryClient } from '@tanstack/query-core';
-import { setupCache } from '@veams/status-quo-query';
+import { setupQueryProvider } from '@veams/status-quo-query';
 
 const queryClient = new QueryClient();
-const cache = setupCache(queryClient);
+const cache = setupQueryProvider(queryClient);
 
 const userQuery = cache.createQuery(['user', 42], () => fetchUser(42), {
   enabled: false,
@@ -955,6 +940,12 @@ const rawClient = cache.unsafe_getClient();
 
 rawClient.cancelQueries({ queryKey: ['user', 42] });`;
 
+const statusQuoQueryFrameworkImports = `import { QueryClient } from '@tanstack/query-core';
+import { setupQueryProvider } from '@veams/status-quo-query';
+
+const queryClient = new QueryClient();
+const cache = setupQueryProvider(queryClient);`;
+
 const statusQuoApiImports = `import {
   ObservableStateHandler,
   SignalStateHandler,
@@ -973,6 +964,37 @@ import {
   useStateSubscription,
 } from '@veams/status-quo/react';`;
 
+const statusQuoHookUseStateHandlerExample = `const handler = useStateHandler(createDraftHandler, []);`;
+
+const statusQuoHookStateProviderExample = `const handler = useStateHandler(createWizardFlowHandler, []);
+
+return <StateProvider instance={handler}>{children}</StateProvider>;`;
+
+const statusQuoHookUseProvidedStateHandlerExample = `const handler = useProvidedStateHandler();
+handler.destroy();`;
+
+const statusQuoHookUseStateActionsExample = `const actions = useStateActions(handler);
+actions.save();`;
+
+const statusQuoHookUseProvidedStateActionsExample = `const actions = useProvidedStateActions();
+actions.nextStep();`;
+
+const statusQuoHookUseStateSubscriptionExample = `const [profile, actions] = useStateSubscription(
+  handler,
+  (state) => state.profile
+);`;
+
+const statusQuoHookUseProvidedStateSubscriptionExample = `const [step] = useProvidedStateSubscription(
+  (state) => state.step
+);`;
+
+const statusQuoHookUseStateFactoryExample = `const [state, actions] = useStateFactory(
+  () => new DraftNoteHandler(),
+  []
+);`;
+
+const statusQuoHookUseStateSingletonExample = `const [state, actions] = useStateSingleton(sharedCounterSingleton);`;
+
 const statusQuoSubpathImports = `import {
   StateProvider,
   useProvidedStateSubscription,
@@ -981,8 +1003,23 @@ const statusQuoSubpathImports = `import {
 } from '@veams/status-quo/react';
 import { ObservableStateHandler, makeStateSingleton } from '@veams/status-quo/store';`;
 
+const statusQuoFrameworkCoreImports = `import {
+  ObservableStateHandler,
+  SignalStateHandler,
+  makeStateSingleton,
+  setupStatusQuo,
+} from '@veams/status-quo';`;
+
+const statusQuoFrameworkReactImports = `import {
+  StateProvider,
+  useProvidedStateSubscription,
+  useStateFactory,
+  useStateSingleton,
+  useStateSubscription,
+} from '@veams/status-quo/react';`;
+
 const statusQuoQueryApiImports = `import {
-  setupCache,
+  setupQueryProvider,
   setupMutation,
   setupQuery,
   isQueryLoading,
@@ -1028,6 +1065,15 @@ const statusQuoQueryPhilosophyCards: FeatureCard[] = [
       'Cross-query coordination should be explicit and centralized, so invalidation, refetching, and cache updates stay readable.',
     title: 'Coordinate through the cache',
     visual: 'cache-orchestration',
+  },
+];
+
+const formOverviewCards: FeatureCard[] = [
+  {
+    description:
+      'A feature handler can own one FormStateHandler as part of a broader screen workflow, while React bindings stay at the edge for inputs and submit wiring.',
+    title: 'FormState inside feature state',
+    visual: 'form-feature-owner',
   },
 ];
 
@@ -1152,38 +1198,34 @@ const methodologyMediaQueryGoodExample = `.is-col {
   }
 }`;
 
-const methodologyFullExample = `<section class="is-dashboard-page">
+const methodologyFullExample = `<section class="r-dashboard">
   <!-- Region context: finance variant of the dashboard layout -->
-  <header class="r-header">
-    <div class="r-header-left">
-      <div class="c-brand c-brand--compact">
-        <span class="c-brand__logo" aria-hidden="true"></span>
-        <span class="c-brand__title">SME Hub</span>
-      </div>
+  <header class="r-dashboard__header">
+    <div class="c-brand c-brand--compact">
+      <span class="c-brand__logo" aria-hidden="true"></span>
+      <span class="c-brand__title">SME Hub</span>
     </div>
 
-    <div class="r-header-right">
-      <nav class="c-navigation" aria-label="Primary">
-        <a class="c-navigation__link is-active" href="/">
-          <span class="c-navigation__icon" aria-hidden="true"></span>
-          <span class="c-navigation__text">Documentation</span>
-        </a>
-        <a class="c-navigation__link" href="/profile">
-          <span class="c-navigation__icon" aria-hidden="true"></span>
-          <span class="c-navigation__text">Profile</span>
-        </a>
-      </nav>
-    </div>
+    <nav class="c-navigation" aria-label="Primary">
+      <a class="c-navigation__link is-active" href="/">
+        <span class="c-navigation__icon" aria-hidden="true"></span>
+        <span class="c-navigation__text">Dashboard</span>
+      </a>
+      <a class="c-navigation__link" href="/profile">
+        <span class="c-navigation__icon" aria-hidden="true"></span>
+        <span class="c-navigation__text">Profile</span>
+      </a>
+    </nav>
   </header>
 
-  <main class="r-main">
+  <main class="r-dashboard__main">
     <div class="u-grid-row has-gap-lg">
-      <article class="c-card c-card--dashboard is-collapsed">
+      <article class="c-card c-card--dashboard">
         <header class="c-card__header">
           <h2 class="c-card__title">Revenue Overview</h2>
           <span class="c-card__badge is-active">Active</span>
         </header>
-        <div class="c-card__content">
+        <div class="c-card__content is-collapsed">
           <p class="c-card__text">Quarterly totals and trend indicators.</p>
         </div>
       </article>
@@ -1197,37 +1239,13 @@ const methodologyFullExample = `<section class="is-dashboard-page">
       </aside>
     </div>
   </main>
-
-  <footer class="r-footer">
-    <p>&copy; 2026 VEAMS Dashboard</p>
-  </footer>
 </section>`;
-
-const methodologyQuickStartMarkup = methodologyInstrumentExample;
 
 const methodologyUtilitiesExample = `${methodologyUtilitiesRowExample}
 
 ${methodologyUtilitiesCollapsedExample}
 
 ${methodologyUtilitiesColumnExample}`;
-
-const methodologyGlobalStylingExample = `.r-dashboard {
-  display: grid;
-  gap: 3rem;
-  padding: 3rem;
-}
-
-.c-card {
-  padding: 2rem;
-  border: 1px solid #d7dde8;
-  background: #ffffff;
-}
-
-.u-grid-row {
-  display: grid;
-  gap: 2rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}`;
 
 const methodologyContextStylingExample = `.c-brand {
   padding: 1.5rem;
@@ -1254,23 +1272,17 @@ const methodologyModifierExampleCss = `.c-navigation__link.is-active {
 
 const methodologyPatternExampleMarkup = methodologyFullExample;
 
-const methodologyPatternExampleCss = `.is-dashboard-page {
+const methodologyPatternExampleCss = `.r-dashboard {
   display: grid;
   gap: 3rem;
   padding: 3rem;
 }
 
-.r-header {
+.r-dashboard__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 2rem;
-}
-
-.r-header-left,
-.r-header-right {
-  display: flex;
-  align-items: center;
 }
 
 .c-card--dashboard {
@@ -1282,12 +1294,6 @@ const methodologyPatternExampleCss = `.is-dashboard-page {
 .c-panel--summary {
   padding: 2rem;
   background: #f5f8ff;
-}
-
-.r-footer {
-  margin-top: 4rem;
-  border-top: 1px solid #d7dde8;
-  padding-top: 2rem;
 }`;
 
 const formInstall = `npm install @veams/form @veams/status-quo react`;
@@ -1344,6 +1350,14 @@ function LoginForm() {
     </FormProvider>
   );
 }`;
+
+const formFrameworkCoreImports = `import { FormStateHandler } from '@veams/form';`;
+
+const formFrameworkReactImports = `import {
+  Controller,
+  FormProvider,
+  useUncontrolledField,
+} from '@veams/form/react';`;
 
 const formFeatureOwnedExample = `import { SignalStateHandler } from '@veams/status-quo';
 import { useStateFactory } from '@veams/status-quo/react';
@@ -1412,7 +1426,6 @@ function LoginFeature() {
   return (
     <FormProvider
       formHandlerInstance={actions.getFormHandler()}
-      initialValues={{ email: '', password: '' }}
       onSubmit={actions.submitLogin}
     >
       <PasswordField isVisible={state.isPasswordVisible} />
@@ -1456,6 +1469,409 @@ function RoleForm() {
   );
 }`;
 
+const formValidatorFlowExample = `import { FormStateHandler } from '@veams/form';
+
+type LoginValues = {
+  email: string;
+  password: string;
+};
+
+const validateLogin = (values: LoginValues) => {
+  const errors: Partial<Record<keyof LoginValues, string>> = {};
+
+  if (!values.email) {
+    errors.email = 'Email is required';
+  } else if (!/\\S+@\\S+\\.\\S+/.test(values.email)) {
+    errors.email = 'Enter a valid email address';
+  }
+
+  if (!values.password) {
+    errors.password = 'Password is required';
+  } else if (values.password.length < 12) {
+    errors.password = 'Use at least 12 characters';
+  }
+
+  return errors;
+};
+
+const loginForm = new FormStateHandler<LoginValues>({
+  initialValues: {
+    email: '',
+    password: '',
+  },
+  validator: validateLogin,
+});
+
+// Field updates re-run the validator and keep isValid in sync.
+loginForm.setFieldValue('email', 'john@veams.org');
+
+// Submit flow should validate the full snapshot before side effects.
+const isValid = loginForm.validateForm();
+if (!isValid) {
+  loginForm.touchAllFields();
+}`;
+
+const formValidatorServerErrorsExample = `import { FormStateHandler } from '@veams/form';
+
+type SignupValues = {
+  email: string;
+  password: string;
+};
+
+const form = new FormStateHandler<SignupValues>({
+  initialValues: {
+    email: '',
+    password: '',
+  },
+  validator: (values) => ({
+    ...(values.email ? {} : { email: 'Email is required' }),
+    ...(values.password ? {} : { password: 'Password is required' }),
+  }),
+});
+
+async function submitSignup() {
+  if (!form.validateForm()) {
+    form.touchAllFields();
+    return;
+  }
+
+  try {
+    await signupApi(form.getState().values);
+  } catch (error) {
+    if (isApiValidationError(error)) {
+      form.setFieldError('email', error.fieldErrors.email);
+      form.setFieldError('password', error.fieldErrors.password);
+      return;
+    }
+
+    throw error;
+  }
+}`;
+
+const formValidatorZodExample = `import { z } from 'zod';
+import { FormStateHandler } from '@veams/form';
+import { toZodValidator } from '@veams/form/validators/zod';
+
+const loginSchema = z.object({
+  email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
+  password: z.string().min(12, 'Use at least 12 characters'),
+});
+
+type LoginValues = z.infer<typeof loginSchema>;
+
+const loginForm = new FormStateHandler<LoginValues>({
+  initialValues: {
+    email: '',
+    password: '',
+  },
+  validator: toZodValidator(loginSchema),
+});`;
+
+const formValidatorTinyAdapterReference = `type ZodLikeIssue = {
+  message: string;
+  path: ReadonlyArray<unknown>;
+};
+
+type ZodLikeSchema<TValues extends Record<string, unknown>> = {
+  safeParse(input: unknown):
+    | { success: true }
+    | { success: false; error: { issues: ReadonlyArray<ZodLikeIssue> } };
+};
+
+const toZodValidator = <TValues extends Record<string, unknown>>(
+  schema: ZodLikeSchema<TValues>
+) => {
+  return (values: TValues) => {
+    const parsed = schema.safeParse(values);
+
+    if (parsed.success) {
+      return {};
+    }
+
+    const errors: Partial<Record<keyof TValues, string>> = {};
+
+    for (const issue of parsed.error.issues) {
+      const field = issue.path[0];
+
+      if (typeof field !== 'string') {
+        continue;
+      }
+
+      const fieldName = field as keyof TValues;
+
+      if (!errors[fieldName]) {
+        errors[fieldName] = issue.message;
+      }
+    }
+
+    return errors;
+  };
+};`;
+
+const formNestedStateExample = `import { FormStateHandler } from '@veams/form';
+
+type ProfileValues = {
+  profile: {
+    email: string;
+    name: string;
+  };
+  settings: {
+    newsletter: boolean;
+  };
+};
+
+const profileForm = new FormStateHandler<ProfileValues>({
+  initialValues: {
+    profile: {
+      email: '',
+      name: '',
+    },
+    settings: {
+      newsletter: false,
+    },
+  },
+  validator: (values) => ({
+    ...(values.profile.email ? {} : { 'profile.email': 'Email is required' }),
+    ...(values.profile.name ? {} : { 'profile.name': 'Name is required' }),
+  }),
+});
+
+profileForm.setFieldValue('profile.email', 'jane@veams.org');
+profileForm.setFieldValue('settings.newsletter', true);
+profileForm.setFieldTouched('profile.email', true);
+profileForm.validateForm();`;
+
+const formNestedReactExample = `import { FormProvider, useUncontrolledField } from '@veams/form/react';
+
+function ProfileEmailField() {
+  const { meta, registerProps } = useUncontrolledField('profile.email');
+
+  return (
+    <label>
+      Email
+      <input {...registerProps} type="email" />
+      {meta.showError ? <span>{meta.error}</span> : null}
+    </label>
+  );
+}
+
+function NewsletterField() {
+  const { registerProps } = useUncontrolledField('settings.newsletter', {
+    type: 'checkbox',
+  });
+
+  return (
+    <label>
+      <input {...registerProps} />
+      Newsletter
+    </label>
+  );
+}
+
+function ProfileForm() {
+  return (
+    <FormProvider
+      initialValues={{
+        profile: {
+          email: '',
+          name: '',
+        },
+        settings: {
+          newsletter: false,
+        },
+      }}
+      onSubmit={(values) => saveProfile(values)}
+      validator={(values) => ({
+        ...(values.profile.email ? {} : { 'profile.email': 'Email is required' }),
+      })}
+    >
+      <ProfileEmailField />
+      <NewsletterField />
+      <button type="submit">Save</button>
+    </FormProvider>
+  );
+}`;
+
+const formSimpleWorkingExample = `import { FormProvider, useUncontrolledField } from '@veams/form/react';
+
+function TextField({ label, name, type = 'text' }: { label: string; name: string; type?: string }) {
+  const { meta, registerProps } = useUncontrolledField(name, { type });
+
+  return (
+    <label>
+      {label}
+      <input {...registerProps} />
+      {meta.showError ? <span>{meta.error}</span> : null}
+    </label>
+  );
+}
+
+function LoginForm() {
+  return (
+    <FormProvider
+      initialValues={{
+        email: '',
+        password: '',
+      }}
+      onSubmit={async (values) => {
+        await login(values);
+      }}
+      validator={(values) => ({
+        ...(values.email ? {} : { email: 'Email is required' }),
+        ...(values.password ? {} : { password: 'Password is required' }),
+      })}
+    >
+      <TextField label="Email" name="email" type="email" />
+      <TextField label="Password" name="password" type="password" />
+      <button type="submit">Sign in</button>
+    </FormProvider>
+  );
+}`;
+
+const formNestedFeatureWorkingExample = `import { SignalStateHandler } from '@veams/status-quo';
+import { useStateFactory } from '@veams/status-quo/react';
+import { FormStateHandler } from '@veams/form';
+import { FormProvider, useUncontrolledField } from '@veams/form/react';
+
+type ProfileValues = {
+  profile: {
+    email: string;
+    name: string;
+  };
+};
+
+type FeatureState = {
+  isSaving: boolean;
+};
+
+type FeatureActions = {
+  getFormHandler: () => FormStateHandler<ProfileValues>;
+  saveProfile: (values: ProfileValues) => Promise<void>;
+};
+
+class ProfileFeatureHandler extends SignalStateHandler<FeatureState, FeatureActions> {
+  private readonly formHandler = new FormStateHandler<ProfileValues>({
+    initialValues: {
+      profile: {
+        email: '',
+        name: '',
+      },
+    },
+  });
+
+  constructor() {
+    super({
+      initialState: {
+        isSaving: false,
+      },
+    });
+  }
+
+  getActions(): FeatureActions {
+    return {
+      getFormHandler: () => this.formHandler,
+      saveProfile: async (_values) => undefined,
+    };
+  }
+}
+
+function ProfileFields() {
+  const email = useUncontrolledField('profile.email');
+  const name = useUncontrolledField('profile.name');
+
+  return (
+    <>
+      <input {...email.registerProps} placeholder="Email" />
+      <input {...name.registerProps} placeholder="Name" />
+    </>
+  );
+}
+
+function ProfileFeatureForm() {
+  const [, actions] = useStateFactory(() => new ProfileFeatureHandler(), []);
+
+  return (
+    <FormProvider
+      formHandlerInstance={actions.getFormHandler()}
+      onSubmit={actions.saveProfile}
+    >
+      <ProfileFields />
+      <button type="submit">Save profile</button>
+    </FormProvider>
+  );
+}`;
+
+const formFeatureValidationWorkingExample = `import { SignalStateHandler } from '@veams/status-quo';
+import { useStateFactory } from '@veams/status-quo/react';
+import { FormStateHandler } from '@veams/form';
+import { FormProvider, useUncontrolledField } from '@veams/form/react';
+
+type RegisterValues = {
+  account: {
+    email: string;
+    password: string;
+  };
+};
+
+type FeatureActions = {
+  getFormHandler: () => FormStateHandler<RegisterValues>;
+  submit: (values: RegisterValues) => Promise<void>;
+};
+
+class RegisterFeatureHandler extends SignalStateHandler<object, FeatureActions> {
+  private readonly formHandler = new FormStateHandler<RegisterValues>({
+    initialValues: {
+      account: {
+        email: '',
+        password: '',
+      },
+    },
+    validator: (values) => ({
+      ...(values.account.email ? {} : { 'account.email': 'Email is required' }),
+      ...(values.account.password.length >= 12
+        ? {}
+        : { 'account.password': 'Use at least 12 characters' }),
+    }),
+  });
+
+  constructor() {
+    super({ initialState: {} });
+  }
+
+  getActions(): FeatureActions {
+    return {
+      getFormHandler: () => this.formHandler,
+      submit: async (values) => {
+        try {
+          await registerUser(values);
+        } catch (error) {
+          if (isApiValidationError(error)) {
+            this.formHandler.setFieldError('account.email', error.fieldErrors.email);
+            this.formHandler.setFieldError('account.password', error.fieldErrors.password);
+            return;
+          }
+
+          throw error;
+        }
+      },
+    };
+  }
+}
+
+function RegisterForm() {
+  const [, actions] = useStateFactory(() => new RegisterFeatureHandler(), []);
+  const email = useUncontrolledField('account.email');
+  const password = useUncontrolledField('account.password', { type: 'password' });
+
+  return (
+    <FormProvider formHandlerInstance={actions.getFormHandler()} onSubmit={actions.submit}>
+      <input {...email.registerProps} />
+      <input {...password.registerProps} />
+      <button type="submit">Create account</button>
+    </FormProvider>
+  );
+}`;
+
 const formApiImports = `import {
   FormStateHandler,
   type FormActions,
@@ -1486,6 +1902,7 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   'How we scope and differentiate HTML.',
+                  'How we bind JavaScript to DOM elements.',
                   'How we structure layouts.',
                   'How we write CSS classes.',
                   'How we expand the project over time.',
@@ -1494,10 +1911,18 @@ export const docsPackages: DocsPackage[] = [
                 paragraphs: [
                   'Our methodology defines how projects are structured for modularity, scalability, and maintainability. It spans HTML, CSS, and JavaScript so we can apply the same mental model across the whole frontend stack.',
                   'This approach is BEM-inspired, but it is not strict BEM. We apply a restricted depth rule to keep class names readable and maintainable.',
+                  'This section focuses on the structure and styling rules. JavaScript binding rules are part of the same methodology but are documented separately.',
                 ],
                 title: 'Methodology Overview',
               },
               {
+                codeExamples: [
+                  {
+                    code: methodologyInstrumentExample,
+                    label: 'Instrument structure example',
+                    language: 'html',
+                  },
+                ],
                 featureCards: [
                   {
                     description: 'Structural sections like Header, Sidebar, and Main that shape the page skeleton. Never reused.',
@@ -1692,6 +2117,11 @@ export const docsPackages: DocsPackage[] = [
               {
                 codeExamples: [
                   {
+                    code: methodologyContextExample,
+                    label: 'Context markup',
+                    language: 'html',
+                  },
+                  {
                     code: methodologyContextStylingExample,
                     label: 'Context styling',
                     language: 'css',
@@ -1773,7 +2203,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'usage',
                 paragraphs: [
-                  'Naming: Use the `r-` prefix for region/layout classes, `u-` prefix for utilities, and `is-` prefix for state/variant classes.',
+                  'Naming: Use the `u-` prefix for utilities (example: `u-grid-row`) and `is-` / `has-` for state and variant helpers (example: `is-active`, `has-shadow`).',
                 ],
                 title: 'Support, do not hijack',
               },
@@ -1897,7 +2327,7 @@ export const docsPackages: DocsPackage[] = [
         title: 'Examples',
       },
     ],
-    title: 'Documentation',
+    title: 'Methodology',
   },
   {
     accent: 'ember',
@@ -1988,6 +2418,40 @@ export const docsPackages: DocsPackage[] = [
               {
                 codeExamples: [
                   {
+                    code: statusQuoFrameworkCoreImports,
+                    label: 'Framework-agnostic core',
+                    language: 'ts',
+                  },
+                  {
+                    code: statusQuoFrameworkReactImports,
+                    label: 'Optional React bindings',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  'The root package (`@veams/status-quo`) is framework-agnostic and owns the state model.',
+                  'React bindings live in a separate subpath (`@veams/status-quo/react`).',
+                  'Guides use React examples for readability, but the handler patterns stay the same outside React.',
+                ],
+                id: 'framework-support',
+                paragraphs: [
+                  'Status Quo is not tied to React. Keep handlers, actions, and lifecycle in the root package, then opt into React only for view-layer wiring when your app uses React.',
+                  'Using React in guides is a documentation choice, not an architectural requirement. The handler boundary and engine choice (observables or signals) remain framework-level decisions, independent from the UI layer.',
+                ],
+                title: 'Framework Support',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            id: 'framework-support',
+            intro: 'Use the root package as the framework-agnostic state layer, then add React bindings only where the UI needs them.',
+            summary: 'Framework-neutral core, optional React layer.',
+            title: 'Framework Support',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
                     code: statusQuoInstall,
                     label: 'Install',
                     language: 'bash',
@@ -2025,20 +2489,6 @@ export const docsPackages: DocsPackage[] = [
               {
                 codeExamples: [
                   {
-                    code: statusQuoQuickStartHandler,
-                    label: 'Draft note handler',
-                    language: 'ts',
-                  },
-                ],
-                id: 'local-store',
-                paragraphs: [
-                  'Start by defining the handler itself. Keep the transitions, action contract, and initial state in one place so the React layer only has to subscribe and trigger actions. This draft-note example stays deliberately local, which makes the lifecycle boundary obvious from the start.',
-                ],
-                title: 'Create a local handler',
-              },
-              {
-                codeExamples: [
-                  {
                     code: statusQuoQuickStartComponent,
                     label: 'Draft note component',
                     language: 'tsx',
@@ -2055,6 +2505,20 @@ export const docsPackages: DocsPackage[] = [
                   'Once the handler exists, wire it into React. `useStateFactory` is the fast path here because it creates the local instance and subscribes to snapshots in one step. The component can stay focused on inputs and presentation because the handler already owns the transitions.',
                 ],
                 title: 'Hook the handler into React',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: statusQuoQuickStartHandler,
+                    label: 'Draft note handler',
+                    language: 'ts',
+                  },
+                ],
+                id: 'local-store',
+                paragraphs: [
+                  'Start by defining the handler itself. Keep the transitions, action contract, and initial state in one place so the React layer only has to subscribe and trigger actions. This draft-note example stays deliberately local, which makes the lifecycle boundary obvious from the start.',
+                ],
+                title: 'Create a local handler',
               },
             ],
             eyebrow: 'Getting Started',
@@ -2119,24 +2583,47 @@ export const docsPackages: DocsPackage[] = [
           {
             blocks: [
               {
-                codeExamples: [
-                  {
-                    code: statusQuoSingletonHandlerExample,
-                    label: 'Workspace singleton handler',
-                    language: 'ts',
-                  },
-                  {
-                    code: statusQuoSingletonComponentExample,
-                    label: 'Workspace singleton consumers',
-                    language: 'tsx',
-                  },
-                ],
                 id: 'singleton-example',
                 liveExample: 'status-quo-singleton-workspace',
                 paragraphs: [
-                  'Most handlers should start local. That keeps ownership obvious and teardown automatic. Promote the handler to a singleton when two parts of the UI genuinely need the same instance or when the state should survive a remount. In this example, a toolbar and a summary panel both read the same workspace preferences without a parent owning the instance.',
+                  'Most handlers should start local. That keeps ownership obvious and teardown automatic. Promote the handler to a singleton when two parts of the UI genuinely need the same instance or when the state should survive a remount. In this example, a controls panel and a summary panel both read the same shared counter without a parent owning the instance.',
                 ],
                 title: 'Start local, then share',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: statusQuoSingletonHandlerExample,
+                    label: 'Counter singleton handler',
+                    language: 'ts',
+                  },
+                ],
+                id: 'singleton-handler-source',
+                paragraphs: [
+                  'Start with the handler file. It owns transitions and exports the singleton definition.',
+                ],
+                title: 'Source: handler',
+              },
+              {
+                id: 'singleton-source-bridge',
+                paragraphs: [
+                  'Once the singleton exists, consumers only subscribe to it. No parent has to recreate or pass the instance through props.',
+                ],
+                title: 'Bridge to consumers',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: statusQuoSingletonComponentExample,
+                    label: 'Counter singleton consumers',
+                    language: 'tsx',
+                  },
+                ],
+                id: 'singleton-consumer-source',
+                paragraphs: [
+                  'The consumer file stays thin: read the shared snapshot and trigger actions from any component that needs the same instance.',
+                ],
+                title: 'Source: consumers',
               },
               {
                 bullets: [
@@ -2162,6 +2649,15 @@ export const docsPackages: DocsPackage[] = [
               {
                 callout:
                   'A provider scope is shared local state, not app-global state in disguise.',
+                id: 'provider-scope-example',
+                liveExample: 'status-quo-provider-wizard',
+                paragraphs: [
+                  'This is the pattern for sharing one local handler instance across a subtree without promoting it to a singleton.',
+                  'The parent owns creation once with `useStateHandler()`, `StateProvider` shares the instance, and each child decides whether it needs snapshots, actions, or the raw handler.',
+                ],
+                title: 'Share one local instance across the subtree',
+              },
+              {
                 codeExamples: [
                   {
                     code: statusQuoProviderHandlerExample,
@@ -2174,12 +2670,11 @@ export const docsPackages: DocsPackage[] = [
                     language: 'tsx',
                   },
                 ],
-                id: 'provider-scope-example',
-                liveExample: 'status-quo-provider-wizard',
+                id: 'provider-scope-source',
                 paragraphs: [
-                  'This is the pattern for sharing one local handler instance across a subtree without promoting it to a singleton. The parent owns creation once with `useStateHandler()`, `StateProvider` shares the instance, and each child decides whether it needs snapshots, actions, or the raw handler. The flow still dies with the local scope; only access is shared.',
+                  'The source stays split on purpose: one file owns transitions, one file owns React wiring.',
                 ],
-                title: 'Share one local instance across the subtree',
+                title: 'Source split',
               },
               {
                 bullets: [
@@ -2189,6 +2684,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'provider-scope-tradeoffs',
                 paragraphs: [
+                  'The flow still dies with the local scope; only access is shared.',
                   'This is often the clean middle ground between a local shortcut and a singleton. You keep ownership local, but you stop threading the handler through props or cramming state reads and actions into the same component just because the instance needs to be shared.',
                 ],
                 title: 'Keep ownership local, share access on purpose',
@@ -2259,8 +2755,13 @@ export const docsPackages: DocsPackage[] = [
               {
                 codeExamples: [
                   {
+                    code: statusQuoSelectorSimpleExample,
+                    label: 'Simple selector',
+                    language: 'ts',
+                  },
+                  {
                     code: statusQuoSelectorExample,
-                    label: 'Selector subscription',
+                    label: 'Selector with equality',
                     language: 'ts',
                   },
                 ],
@@ -2269,6 +2770,39 @@ export const docsPackages: DocsPackage[] = [
                   'If a component only cares about `user.profile`, subscribe to `user.profile`. Selectors are the clean way to keep the store cohesive without pushing the whole state tree through every consumer.',
                 ],
                 title: 'Subscribe to the slice that matters',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: statusQuoSelectorProvidedExample,
+                    label: 'Provider-scoped selector',
+                    language: 'ts',
+                  },
+                  {
+                    code: statusQuoSelectorSingletonExample,
+                    label: 'Singleton selector',
+                    language: 'ts',
+                  },
+                ],
+                id: 'selector-surfaces',
+                paragraphs: [
+                  'Selectors are not limited to one hook. The same pattern applies when the source comes from provider scope or a singleton.',
+                ],
+                title: 'Use selectors on every subscription surface',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: statusQuoBindSubscribableExample,
+                    label: 'Selector-style derivation with bindSubscribable',
+                    language: 'ts',
+                  },
+                ],
+                id: 'selector-bind-subscribable',
+                paragraphs: [
+                  'Selectors are also useful inside handlers. `bindSubscribable()` lets you map upstream state into a derived slice and skip noisy updates with an equality check, so the same “listen only to what matters” rule applies beyond React hooks.',
+                ],
+                title: 'Apply selector thinking in handler composition',
               },
               {
                 callout: 'Selectors are the main tool for controlling rerender fanout.',
@@ -2390,6 +2924,13 @@ export const docsPackages: DocsPackage[] = [
                   'Accepts a factory and optional factory params.',
                   'Use it when you want full control over lifecycle and composition.',
                 ],
+                codeExamples: [
+                  {
+                    code: statusQuoHookUseStateHandlerExample,
+                    label: 'Simple example',
+                    language: 'tsx',
+                  },
+                ],
                 id: 'use-state-handler',
                 paragraphs: [
                   'Use `useStateHandler(factory, params?)` as the low-level hook for local handler creation. It gives you the handler instance itself, which makes it the right starting point when you want to compose state access and action access separately.',
@@ -2401,6 +2942,13 @@ export const docsPackages: DocsPackage[] = [
                   'Shares one handler instance with a subtree through React context.',
                   'Keeps creation ownership in the parent component.',
                   'Works well when state readers and action-only bricks should stay split.',
+                ],
+                codeExamples: [
+                  {
+                    code: statusQuoHookStateProviderExample,
+                    label: 'Simple example',
+                    language: 'tsx',
+                  },
                 ],
                 id: 'state-provider',
                 paragraphs: [
@@ -2414,6 +2962,13 @@ export const docsPackages: DocsPackage[] = [
                   'Useful when a descendant needs the raw handler for manual composition.',
                   'Throws when used outside a matching provider scope.',
                 ],
+                codeExamples: [
+                  {
+                    code: statusQuoHookUseProvidedStateHandlerExample,
+                    label: 'Simple example',
+                    language: 'tsx',
+                  },
+                ],
                 id: 'use-provided-state-handler',
                 paragraphs: [
                   'Use `useProvidedStateHandler()` when provider scope is already set up and a child component needs direct access to the shared handler instance. This is the low-level entry point for provider-based composition.',
@@ -2425,6 +2980,13 @@ export const docsPackages: DocsPackage[] = [
                   'Returns handler actions without subscribing to state.',
                   'Useful for action-only components or event wiring.',
                   'Pair it with `useStateHandler` when you want manual composition.',
+                ],
+                codeExamples: [
+                  {
+                    code: statusQuoHookUseStateActionsExample,
+                    label: 'Simple example',
+                    language: 'tsx',
+                  },
                 ],
                 id: 'use-state-actions',
                 paragraphs: [
@@ -2438,6 +3000,13 @@ export const docsPackages: DocsPackage[] = [
                   'Strong fit for toolbar, button row, or command-only bricks.',
                   'Lets action access stay separate from rendering concerns.',
                 ],
+                codeExamples: [
+                  {
+                    code: statusQuoHookUseProvidedStateActionsExample,
+                    label: 'Simple example',
+                    language: 'tsx',
+                  },
+                ],
                 id: 'use-provided-state-actions',
                 paragraphs: [
                   'Use `useProvidedStateActions()` when a child component only needs to trigger behavior from the shared scoped handler. This is the clean way to keep action-only UI out of rerender fanout.',
@@ -2449,6 +3018,13 @@ export const docsPackages: DocsPackage[] = [
                   'Subscribes to full state or a selected slice.',
                   'Works with either a handler instance or a singleton.',
                   'Accepts an optional equality function for stable selector results.',
+                ],
+                codeExamples: [
+                  {
+                    code: statusQuoHookUseStateSubscriptionExample,
+                    label: 'Simple example',
+                    language: 'tsx',
+                  },
                 ],
                 id: 'use-state-subscription',
                 paragraphs: [
@@ -2462,6 +3038,13 @@ export const docsPackages: DocsPackage[] = [
                   'Supports full snapshots, selectors, and custom equality just like `useStateSubscription`.',
                   'Best when the instance is already shared through provider scope.',
                 ],
+                codeExamples: [
+                  {
+                    code: statusQuoHookUseProvidedStateSubscriptionExample,
+                    label: 'Simple example',
+                    language: 'tsx',
+                  },
+                ],
                 id: 'use-provided-state-subscription',
                 paragraphs: [
                   'Use `useProvidedStateSubscription(selector?, isEqual?)` when the handler instance already comes from `StateProvider` and the component only needs to declare what slice it should listen to.',
@@ -2474,6 +3057,13 @@ export const docsPackages: DocsPackage[] = [
                   'Best for local component state with one obvious consumer.',
                   'The shortest path from factory to rendered state.',
                 ],
+                codeExamples: [
+                  {
+                    code: statusQuoHookUseStateFactoryExample,
+                    label: 'Simple example',
+                    language: 'tsx',
+                  },
+                ],
                 id: 'use-state-factory',
                 paragraphs: [
                   'Use `useStateFactory(factory, selector?, isEqual?, params?)` when you want the convenience path. It is the fastest way to create a local handler and subscribe to it in one step.',
@@ -2485,6 +3075,13 @@ export const docsPackages: DocsPackage[] = [
                   'Subscribes to a shared singleton instance.',
                   'Lets multiple consumers read the same handler state.',
                   'Lifecycle behavior comes from the singleton definition itself.',
+                ],
+                codeExamples: [
+                  {
+                    code: statusQuoHookUseStateSingletonExample,
+                    label: 'Simple example',
+                    language: 'tsx',
+                  },
                 ],
                 id: 'use-state-singleton',
                 paragraphs: [
@@ -2593,6 +3190,15 @@ export const docsPackages: DocsPackage[] = [
                 liveExample: 'status-quo-local-draft',
                 title: 'Local state with `useStateFactory`',
               },
+            ],
+            eyebrow: 'Examples',
+            id: 'example-local-state',
+            intro: 'Start with local ownership when one component owns the handler lifecycle.',
+            summary: 'Local state with the shortest valid setup.',
+            title: 'Local state with `useStateFactory`',
+          },
+          {
+            blocks: [
               {
                 bullets: [
                   'Use `makeStateSingleton()` only when several consumers truly need the same handler instance.',
@@ -2602,23 +3208,32 @@ export const docsPackages: DocsPackage[] = [
                 codeExamples: [
                   {
                     code: statusQuoSingletonHandlerExample,
-                    label: 'Workspace singleton handler',
+                    label: 'Counter singleton handler',
                     language: 'ts',
                   },
                   {
                     code: statusQuoSingletonComponentExample,
-                    label: 'Workspace singleton consumers',
+                    label: 'Counter singleton consumers',
                     language: 'tsx',
                   },
                 ],
                 id: 'singleton-example',
                 paragraphs: [
-                  'This example shows the moment where local state should become shared state. The handler is lifted into a singleton because both panels need the same workspace preferences and neither component should recreate the instance.',
-                  'The handler file only defines the shared state and exports the singleton. The React file stays thin and uses `useStateSingleton()` from two different consumers.',
+                  'This example shows the moment where local state should become shared state. The handler is lifted into a singleton because both panels need the same counter value and neither component should recreate the instance.',
+                  'The handler file only defines the shared counter and exports the singleton. The React file stays thin and uses `useStateSingleton()` from two different consumers.',
                 ],
                 liveExample: 'status-quo-singleton-workspace',
-                title: 'Singleton preferences shared across consumers',
+                title: 'Singleton counter shared across consumers',
               },
+            ],
+            eyebrow: 'Examples',
+            id: 'example-singleton-counter',
+            intro: 'Promote local state to shared state only when multiple consumers need one handler instance.',
+            summary: 'One counter handler shared by multiple consumers.',
+            title: 'Singleton counter shared across consumers',
+          },
+          {
+            blocks: [
               {
                 bullets: [
                   'Use the base hooks when the shortcut starts hiding too much.',
@@ -2628,12 +3243,12 @@ export const docsPackages: DocsPackage[] = [
                 codeExamples: [
                   {
                     code: statusQuoCompositionHandlerExample,
-                    label: 'Batch queue handler',
+                    label: 'Checklist handler',
                     language: 'ts',
                   },
                   {
                     code: statusQuoCompositionComponentExample,
-                    label: 'Batch queue components',
+                    label: 'Checklist components',
                     language: 'tsx',
                   },
                 ],
@@ -2642,9 +3257,18 @@ export const docsPackages: DocsPackage[] = [
                   'This example stays local, but it deliberately avoids the shortcut. The parent creates one handler instance with `useStateHandler()`, summary components subscribe only to the data they render, and controls read actions separately with `useStateActions()`.',
                   'That split is the value of base composition: ownership is still local, but lifecycle, subscriptions, and commands are each expressed in the place that actually needs them.',
                 ],
-                liveExample: 'status-quo-composition-queue',
+                liveExample: 'status-quo-composition-checklist',
                 title: 'Base hook composition without shortcuts',
               },
+            ],
+            eyebrow: 'Examples',
+            id: 'example-base-hook-composition',
+            intro: 'Use base hooks directly when ownership and subscriptions should stay explicit.',
+            summary: 'Composable lifecycle, subscriptions, and actions.',
+            title: 'Base hook composition without shortcuts',
+          },
+          {
+            blocks: [
               {
                 bullets: [
                   'Use provider scope when one local handler should be shared inside a subtree.',
@@ -2671,6 +3295,15 @@ export const docsPackages: DocsPackage[] = [
                 liveExample: 'status-quo-provider-wizard',
                 title: 'Scoped provider for shared local state',
               },
+            ],
+            eyebrow: 'Examples',
+            id: 'example-scoped-provider',
+            intro: 'Share one locally owned handler across a subtree without promoting to singleton scope.',
+            summary: 'Provider-scoped shared local state.',
+            title: 'Scoped provider for shared local state',
+          },
+          {
+            blocks: [
               {
                 bullets: [
                   'Selectors are how you control rerender fanout without fragmenting the handler.',
@@ -2699,11 +3332,10 @@ export const docsPackages: DocsPackage[] = [
               },
             ],
             eyebrow: 'Examples',
-            id: 'examples',
-            intro:
-              'Each example starts with a running demo, then splits the handler and React layer into separate source panes so the ownership boundary stays obvious.',
-            summary: 'Five patterns. One consistent mental model.',
-            title: 'Examples',
+            id: 'example-selector-optimization',
+            intro: 'Use selectors to minimize rerenders while keeping one coherent handler model.',
+            summary: 'Selector-based rerender control with custom equality.',
+            title: 'Selector optimization with custom equality',
           },
         ],
         title: 'Examples',
@@ -2787,6 +3419,35 @@ export const docsPackages: DocsPackage[] = [
               {
                 codeExamples: [
                   {
+                    code: statusQuoQueryFrameworkImports,
+                    label: 'Framework-agnostic service layer',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  'Built on `@tanstack/query-core`, not on framework hooks.',
+                  'No component bindings in this package; it exposes subscribable handles and cache commands.',
+                  'React can be used around it, but the query/mutation API stays framework-neutral.',
+                ],
+                id: 'framework-support',
+                paragraphs: [
+                  'Status Quo Query is not tied to React. Keep it in the service or handler layer, then let your UI framework consume snapshots and trigger commands.',
+                  'React examples in guides are integration examples only. They demonstrate one rendering layer, while the query facade itself remains framework-agnostic.',
+                ],
+                title: 'Framework Support',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            id: 'framework-support',
+            intro: 'Treat query and mutation handles as framework-neutral service objects, then consume them from your chosen UI layer.',
+            summary: 'Framework-neutral query facade.',
+            title: 'Framework Support',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
                     code: statusQuoQueryInstall,
                     label: 'Install',
                     language: 'bash',
@@ -2801,7 +3462,7 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   'Bring your own `QueryClient`.',
-                  'Use `setupCache(queryClient)` when you want the combined facade.',
+                  'Use `setupQueryProvider(queryClient)` when you want the combined facade.',
                   'Use `setupQuery` or `setupMutation` directly when you want a narrower entry point.',
                 ],
                 id: 'entry-points',
@@ -3048,13 +3709,14 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   'Returns `CacheApi` around one `QueryClient`.',
                   'Combines `createQuery` and `createMutation` with broader cache operations.',
+                  'Acts as the shared cache instance for one app runtime boundary.',
                   'Best fit when one integration owns orchestration across queries and mutations.',
                 ],
                 id: 'setup-cache',
                 paragraphs: [
-                  'Use `setupCache(queryClient)` when you want one top-level facade for the whole service layer. It is the right entry point when your code needs both handles and client-level cache operations.',
+                  'Use `setupQueryProvider(queryClient)` when you want one top-level facade for the whole service layer. The returned cache instance is a thin wrapper over your `QueryClient`: it creates query and mutation handles and centralizes cross-query cache commands in one place.',
                 ],
-                title: 'setupCache',
+                title: 'setupQueryProvider',
               },
               {
                 bullets: [
@@ -3109,6 +3771,15 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 title: 'User workflow example',
               },
+            ],
+            eyebrow: 'Examples',
+            id: 'example-user-workflow',
+            intro: 'Start with a complete query and mutation flow around one cache facade.',
+            summary: 'Query and mutation handles in one working flow.',
+            title: 'User workflow example',
+          },
+          {
+            blocks: [
               {
                 codeExamples: [
                   {
@@ -3125,10 +3796,10 @@ export const docsPackages: DocsPackage[] = [
               },
             ],
             eyebrow: 'Examples',
-            id: 'examples',
-            intro: 'Examples are most useful when they show both the handle API and the cache facade in one coherent workflow.',
-            summary: 'Real query flows, not toy snippets.',
-            title: 'Examples',
+            id: 'example-cache-follow-up',
+            intro: 'Use cache commands after mutations when workflows require coordinated follow-up behavior.',
+            summary: 'Cache orchestration after a mutation.',
+            title: 'Cache follow-up example',
           },
         ],
         title: 'Examples',
@@ -3149,6 +3820,14 @@ export const docsPackages: DocsPackage[] = [
         pages: [
           {
             blocks: [
+              {
+                featureCards: formOverviewCards,
+                id: 'ownership-map',
+                paragraphs: [
+                  'Use this as the mental model: feature state owns form state, and the React layer only binds inputs to that existing controller.',
+                ],
+                title: 'Ownership map',
+              },
               {
                 bullets: [
                   'Root entrypoint stays generic and framework-agnostic.',
@@ -3187,6 +3866,40 @@ export const docsPackages: DocsPackage[] = [
             intro: 'Start with the package split: generic form state at the root, React-only wiring under `@veams/form/react`.',
             summary: 'Explicit form state, clean React wiring.',
             title: 'Overview',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: formFrameworkCoreImports,
+                    label: 'Framework-agnostic core',
+                    language: 'ts',
+                  },
+                  {
+                    code: formFrameworkReactImports,
+                    label: 'Optional React bindings',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  'The root package (`@veams/form`) is framework-agnostic and owns the form model.',
+                  'React bindings are optional and live in `@veams/form/react`.',
+                  'Guides can use React examples for clarity while the core form patterns stay framework-independent.',
+                ],
+                id: 'framework-support',
+                paragraphs: [
+                  'VEAMS Form is not bound to React. Keep validation, errors, touched state, and submit state in `FormStateHandler`, then add React bindings only where the view needs them.',
+                  'Using React in docs examples is a teaching choice, not a runtime requirement. The form controller API remains portable outside React.',
+                ],
+                title: 'Framework Support',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            id: 'framework-support',
+            intro: 'Model form state in the framework-agnostic root package, then opt into React bindings only at the view boundary.',
+            summary: 'Framework-neutral form model, optional React binding.',
+            title: 'Framework Support',
           },
           {
             blocks: [
@@ -3304,6 +4017,103 @@ export const docsPackages: DocsPackage[] = [
               {
                 codeExamples: [
                   {
+                    code: formValidatorFlowExample,
+                    label: 'Typed validator flow',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  'Keep validators deterministic: same input values should always return the same error map.',
+                  'Return only active errors. Missing keys should mean valid fields.',
+                  'Use the validator for cross-field rules when one field depends on another.',
+                ],
+                id: 'validator-basics',
+                paragraphs: [
+                  'A validator in `FormStateHandler` is a pure function over the full value snapshot. That design is deliberate: it allows single-field updates and full-submit validation to run the same business rules and produce the same error shape.',
+                  'In practice, this means `setFieldValue()` and `validateForm()` stay consistent. The UI can trust `errors`, `isValid`, and touched state without adding hidden ad-hoc checks in components.',
+                ],
+                title: 'Model validation as one typed function',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: formValidatorServerErrorsExample,
+                    label: 'Merge API validation errors',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  'Use `validateForm()` for client-side rules before submit.',
+                  'Use `setFieldError()` for backend field errors after submit.',
+                  'Call `touchAllFields()` on invalid submit so errors become visible immediately.',
+                ],
+                id: 'validator-submit-cycle',
+                paragraphs: [
+                  'Client and server validation should not compete. The clean split is: local validator for synchronous checks, server responses mapped with `setFieldError()` for authoritative backend constraints.',
+                  'This keeps the submit cycle explicit and debuggable: validate, touch, submit, map remote errors, and retry with corrected values.',
+                ],
+                title: 'Compose client and server validation',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: formValidatorZodExample,
+                    label: 'Schema adapter with Zod',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  'Use `toZodValidator(schema)` from `@veams/form/validators/zod` for the common integration path.',
+                  'Keep schema declarations and form adapters close to each other in the feature boundary.',
+                ],
+                id: 'validator-zod-adapter',
+                paragraphs: [
+                  'When your project already has a schema layer, connect it to forms through one narrow adapter that returns the standard form error map.',
+                  'That keeps validation behavior consistent across forms while still giving each feature room to customize how schema issues are translated into field-level messages.',
+                ],
+                title: 'Integrate schema validation without coupling',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: formValidatorTinyAdapterReference,
+                    label: 'Tiny adapter reference',
+                    language: 'ts',
+                  },
+                ],
+                id: 'validator-zod-adapter-reference',
+                paragraphs: [
+                  'Need custom issue mapping or schema wrappers? Use this tiny adapter reference as a starting point.',
+                  'The package currently ships a Zod adapter because it is the most requested schema integration in current usage. Adapters for other schema libraries are welcome through PRs as long as the integration keeps the package dependency-free.',
+                ],
+                title: 'Adapter Reference',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'validators',
+            intro: 'Use one typed validator as the source of truth for field and submit checks, then layer server errors through explicit field updates.',
+            summary: 'Predictable validation, from keypress to submit.',
+            title: 'Validators',
+          },
+          {
+            blocks: [
+              {
+                bullets: [
+                  'Keep native inputs uncontrolled by default through `useUncontrolledField()`.',
+                  'This reduces render churn because typing does not require controlled `value` props on every keypress.',
+                  'Browser-native behavior like autofill and text selection stays predictable.',
+                  'Use `Controller` only for components that explicitly require controlled props.',
+                ],
+                id: 'uncontrolled-principle',
+                paragraphs: [
+                  'The default form path is intentionally uncontrolled for native fields. The form handler still owns values, errors, touched state, and submit state, while React primarily binds DOM events and metadata to that handler.',
+                  'This keeps field components small and avoids turning every native input into a controlled component without a concrete need.',
+                ],
+                title: 'Prefer uncontrolled fields by default',
+              },
+              {
+                codeExamples: [
+                  {
                     code: formControllerExample,
                     label: 'Controller bridge',
                     language: 'tsx',
@@ -3326,6 +4136,40 @@ export const docsPackages: DocsPackage[] = [
             intro: 'Controlled components should be the explicit exception for widgets that need them, not the default for every field.',
             summary: 'Stay uncontrolled by default. Control when required.',
             title: 'Controlled Fields',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: formNestedStateExample,
+                    label: 'Nested state with dot-paths',
+                    language: 'ts',
+                  },
+                  {
+                    code: formNestedReactExample,
+                    label: 'Nested fields in React',
+                    language: 'tsx',
+                  },
+                ],
+                bullets: [
+                  'Use dot-path field names such as `profile.email` and `settings.newsletter`.',
+                  'Return dot-path keys from validators so field metadata resolves correctly.',
+                  'Nested support is designed for object trees; treat array index paths as out of scope unless you provide your own mapping layer.',
+                ],
+                id: 'nested-fields',
+                paragraphs: [
+                  'Nested forms work by addressing fields through dot-path names. This keeps the API flat at the call site while values stay nested in state.',
+                  'The same path convention is used by `setFieldValue()`, field registration hooks, touched state, and error maps, so nested fields behave consistently across state and view.',
+                ],
+                title: 'Nested object fields with dot-paths',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'advanced-nested-fields',
+            intro: 'Use dot-path field names to model nested object forms without flattening your state shape.',
+            summary: 'Nested values, same API surface.',
+            title: 'Advanced Nested Fields',
           },
         ],
         title: 'Guides',
@@ -3352,8 +4196,10 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   '`FormStateHandler<T>` owns `values`, `errors`, `touched`, `isSubmitting`, and `isValid`.',
+                  'Nested fields are addressed with dot-path names such as `profile.email`.',
                   '`validateForm()`, `touchAllFields()`, `resetForm()`, and the field setters are the main imperative API.',
                   '`ValidatorFn<T>` returns a partial error map keyed by form field name.',
+                  '`@veams/form/validators/zod` exposes `toZodValidator(schema)` as an optional adapter without adding a package peer dependency.',
                 ],
                 id: 'core-api',
                 paragraphs: [
@@ -3364,6 +4210,7 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   '`FormProvider` creates one local controller unless you pass `formHandlerInstance`.',
+                  'When `formHandlerInstance` is provided, keep `initialValues` and `validator` on that handler instead of the provider.',
                   '`useUncontrolledField()` registers native inputs, selects, radios, checkboxes, and textareas.',
                   '`useFieldMeta()` exposes per-field error and touched state.',
                   '`Controller` bridges controlled component libraries through a render prop.',
@@ -3383,6 +4230,96 @@ export const docsPackages: DocsPackage[] = [
           },
         ],
         title: 'API',
+      },
+      {
+        id: 'examples',
+        pages: [
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: formSimpleWorkingExample,
+                    label: 'Working simple form',
+                    language: 'tsx',
+                  },
+                ],
+                bullets: [
+                  'Provider owns local form lifecycle.',
+                  'Validator stays close to the form values.',
+                  'Native fields register through `useUncontrolledField()`.',
+                ],
+                id: 'simple-form',
+                paragraphs: [
+                  'Start with a complete working form. Keep state local, wire fields directly, and validate synchronously before submit.',
+                ],
+                title: 'Simple form',
+              },
+            ],
+            eyebrow: 'Examples',
+            id: 'example-simple-form',
+            intro: 'Start with a complete local form before introducing feature-level orchestration.',
+            summary: 'Working local form with validator and native fields.',
+            title: 'Simple form',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: formNestedFeatureWorkingExample,
+                    label: 'Working nested feature form',
+                    language: 'tsx',
+                  },
+                ],
+                bullets: [
+                  'Feature handler owns the form instance.',
+                  'Nested values are addressed with dot-path fields.',
+                  'Provider binds the existing handler without duplicate initial values.',
+                ],
+                id: 'nested-feature-form',
+                paragraphs: [
+                  'When a form is only one part of a feature, keep ownership in the feature handler and keep the React layer focused on registration and rendering.',
+                ],
+                title: 'Nested feature form',
+              },
+            ],
+            eyebrow: 'Examples',
+            id: 'example-nested-feature-form',
+            intro: 'When form state is part of a larger feature, keep ownership in the feature handler.',
+            summary: 'Nested values with dot-path fields in a feature-owned form.',
+            title: 'Nested feature form',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: formFeatureValidationWorkingExample,
+                    label: 'Working feature form with validation',
+                    language: 'tsx',
+                  },
+                ],
+                bullets: [
+                  'Client rules live in the form validator.',
+                  'Server errors map back through `setFieldError()`.',
+                  'One feature action owns the submit lifecycle.',
+                ],
+                id: 'feature-form-validation',
+                paragraphs: [
+                  'This pattern keeps validation explicit from keystroke to backend response: local validator first, API field errors second, one consistent error map.',
+                ],
+                title: 'Feature form with validation',
+              },
+            ],
+            eyebrow: 'Examples',
+            id: 'example-feature-form-validation',
+            intro: 'Combine local validator rules with backend error mapping in one feature-owned submit flow.',
+            summary: 'Feature submit lifecycle with client and server validation.',
+            title: 'Feature form with validation',
+          },
+        ],
+        title: 'Examples',
       },
     ],
     title: 'Form',

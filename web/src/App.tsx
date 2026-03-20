@@ -227,6 +227,7 @@ function DocsPage() {
           </NavLink>
           <div className="topbar-actions">
             <button
+              aria-label="Packages"
               aria-controls="package-switcher"
               aria-expanded={isPackageNavOpen}
               className="topbar-menu-toggle"
@@ -385,6 +386,9 @@ function DocsPage() {
                     </a>
                   </div>
                   <div className="content-stack">
+                    {block.liveExample ? (
+                      <LiveExample id={block.liveExample} sourceExamples={block.codeExamples} />
+                    ) : null}
                     {block.paragraphs.map((paragraph) => (
                       <p key={paragraph}>{renderInlineText(paragraph)}</p>
                     ))}
@@ -405,9 +409,6 @@ function DocsPage() {
                         </div>
                         <div className="callout-copy">{renderInlineText(block.callout)}</div>
                       </div>
-                    ) : null}
-                    {block.liveExample ? (
-                      <LiveExample id={block.liveExample} sourceExamples={block.codeExamples} />
                     ) : null}
                     {block.featureCards ? <ConceptGrid items={block.featureCards} /> : null}
                     {block.codeExamples && !block.liveExample ? (

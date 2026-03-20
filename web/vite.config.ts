@@ -26,5 +26,28 @@ function spaFallbackPlugin() {
 
 export default defineConfig({
   base: githubPagesBase,
+  resolve: {
+    alias: {
+      '@veams/status-quo/react': path.resolve(
+        workspaceRoot,
+        'packages/status-quo/src/react/index.ts'
+      ),
+      '@veams/status-quo/store': path.resolve(
+        workspaceRoot,
+        'packages/status-quo/src/store/index.ts'
+      ),
+      '@veams/status-quo': path.resolve(workspaceRoot, 'packages/status-quo/src/index.ts'),
+      '@veams/status-quo-query': path.resolve(
+        workspaceRoot,
+        'packages/status-quo-query/src/index.ts'
+      ),
+      '@veams/form/react': path.resolve(workspaceRoot, 'packages/form/src/react/index.ts'),
+      '@veams/form/validators/zod': path.resolve(
+        workspaceRoot,
+        'packages/form/src/validators/zod.ts'
+      ),
+      '@veams/form': path.resolve(workspaceRoot, 'packages/form/src/index.ts'),
+    },
+  },
   plugins: [react(), spaFallbackPlugin()],
 });

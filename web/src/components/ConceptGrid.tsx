@@ -133,6 +133,84 @@ function ConceptIllustration({ visual }: Pick<FeatureCard, 'visual'>) {
           <circle cx="74" cy="90" fill="var(--visual-orange)" r="9" />
         </svg>
       );
+    case 'form-feature-owner':
+      return (
+        <svg
+          aria-hidden="true"
+          className="concept-illustration"
+          style={{ width: '70%' }}
+          viewBox="0 0 320 180"
+        >
+          <rect
+            fill="rgba(30, 37, 49, 0.96)"
+            height="114"
+            rx="14"
+            stroke="var(--visual-blue)"
+            strokeWidth="1.5"
+            width="172"
+            x="24"
+            y="32"
+          />
+          <text fill="var(--visual-blue)" fontFamily="var(--font-mono)" fontSize="10" x="36" y="50">
+            FeatureStateHandler
+          </text>
+          <rect
+            fill="rgba(255, 163, 39, 0.12)"
+            height="74"
+            rx="10"
+            stroke="var(--visual-orange)"
+            strokeWidth="1.5"
+            width="136"
+            x="40"
+            y="62"
+          />
+          <text
+            fill="var(--visual-orange)"
+            fontFamily="var(--font-mono)"
+            fontSize="10"
+            x="52"
+            y="84"
+          >
+            FormStateHandler
+          </text>
+          <rect fill="var(--visual-orange-dim)" height="8" rx="4" width="92" x="56" y="94" />
+          <rect fill="var(--visual-orange-dim)" height="8" rx="4" width="78" x="56" y="108" />
+          <rect fill="var(--visual-orange-dim)" height="8" rx="4" width="68" x="56" y="122" />
+
+          <rect
+            fill="rgba(34, 41, 56, 0.98)"
+            height="88"
+            rx="12"
+            stroke="var(--visual-slate)"
+            strokeWidth="1.5"
+            width="80"
+            x="218"
+            y="46"
+          />
+          <text fill="var(--visual-slate)" fontFamily="var(--font-mono)" fontSize="10" x="228" y="62">
+            React
+          </text>
+          <rect fill="var(--visual-blue-dim)" height="10" rx="5" width="56" x="230" y="74" />
+          <rect fill="var(--visual-slate-dim)" height="10" rx="5" width="56" x="230" y="90" />
+          <rect fill="var(--visual-blue)" height="12" rx="6" width="56" x="230" y="108" />
+
+          <path
+            d="M184 94 H218"
+            fill="none"
+            stroke="var(--visual-white)"
+            strokeLinecap="round"
+            strokeWidth="3"
+          />
+          <path
+            d="M206 84 L218 94 L206 104"
+            fill="none"
+            stroke="var(--visual-white)"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="3"
+          />
+        </svg>
+      );
     case 'passive-snapshot':
       return (
         <svg aria-hidden="true" className="concept-illustration" viewBox="0 0 320 180">
