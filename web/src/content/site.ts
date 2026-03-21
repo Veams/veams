@@ -1,5 +1,6 @@
 export type CodeExample = {
   code: string;
+  description?: string;
   label: string;
   language: string;
 };
@@ -8,7 +9,7 @@ export type FeatureCard = {
   description: string;
   title: string;
   visual:
-    | 'cache-orchestration'
+    | 'query-management'
     | 'form-feature-owner'
     | 'framework-core'
     | 'handle-command'
@@ -18,7 +19,12 @@ export type FeatureCard = {
     | 'methodology-regions'
     | 'methodology-components'
     | 'methodology-utilities'
-    | 'methodology-layout';
+    | 'methodology-layout'
+    | 'status-quo-architecture'
+    | 'query-architecture'
+    | 'query-facade'
+    | 'form-architecture'
+    | 'form-ref-bridge';
 };
 
 export type LiveExampleId =
@@ -66,7 +72,11 @@ export type DocsPackage = {
   title: string;
 };
 
-const statusQuoInstall = `npm install @veams/status-quo`;
+const statusQuoInstallNative = `npm install @veams/status-quo`;
+
+const statusQuoInstallObservable = `npm install @veams/status-quo rxjs`;
+
+const statusQuoInstallSignal = `npm install @veams/status-quo @preact/signals-core`;
 
 const statusQuoQueryInstall = `npm install @veams/status-quo-query @tanstack/query-core`;
 
@@ -612,6 +622,83 @@ const statusQuoSelectorSingletonExample = `const [count] = useStateSingleton(
   (state) => state.count
 );`;
 
+const statusQuoNativeHandlerExample = `import { NativeStateHandler } from '@veams/status-quo';
+
+type CounterState = { count: number };
+type CounterActions = { increase: () => void };
+
+// The native engine is zero-dependency and uses standard event listeners.
+export class NativeCounterHandler extends NativeStateHandler<CounterState, CounterActions> {
+  constructor() {
+    super({
+      initialState: { count: 0 },
+    });
+  }
+
+  getActions(): CounterActions {
+    return {
+      increase: () => this.setState({ count: this.getState().count + 1 }, 'increase'),
+    };
+  }
+}`;
+
+const statusQuoNativeHandlerCompositionExample = `import {
+  NativeStateHandler,
+  makeStateSingleton,
+} from '@veams/status-quo';
+
+type Viewport = 'compact' | 'wide';
+type UiState = { viewport: Viewport };
+type UiActions = { setViewport: (viewport: Viewport) => void };
+
+class UiStateHandler extends NativeStateHandler<UiState, UiActions> {
+  constructor() {
+    super({ initialState: { viewport: 'compact' } });
+  }
+
+  getActions(): UiActions {
+    return {
+      setViewport: (viewport) => this.setState({ viewport }, 'set-viewport'),
+    };
+  }
+}
+
+const uiStateSingleton = makeStateSingleton(() => new UiStateHandler());
+
+type CounterState = { count: number; step: number };
+type CounterActions = { increase: () => void };
+
+class CounterHandler extends NativeStateHandler<CounterState, CounterActions> {
+  constructor() {
+    super({ initialState: { count: 0, step: 1 } });
+
+    const uiStateHandler = uiStateSingleton.getInstance();
+
+    // Use the native bindSubscribable to sync state manually.
+    this.bindSubscribable(
+      uiStateHandler,
+      (selection) => {
+        this.setState({ step: selection.step }, 'sync-step');
+      },
+      // Manually derive the step from the upstream UI state.
+      (uiState) => ({
+        step: uiState.viewport === 'compact' ? 1 : 5,
+      }),
+      // Avoid redundant updates if the derived step stays the same.
+      (current, next) => current.step === next.step
+    );
+  }
+
+  getActions(): CounterActions {
+    return {
+      increase: () => {
+        const { count, step } = this.getState();
+        this.setState({ count: count + step }, 'increase');
+      },
+    };
+  }
+}`;
+
 const statusQuoObservableHandlerExample = `import {
   ObservableStateHandler,
   makeStateSingleton,
@@ -914,37 +1001,53 @@ setupStatusQuo({
 });`;
 
 const statusQuoQueryQuickStart = `import { QueryClient } from '@tanstack/query-core';
-import { setupQueryProvider } from '@veams/status-quo-query';
+import { setupQueryManager } from '@veams/status-quo-query';
 
 const queryClient = new QueryClient();
-const cache = setupQueryProvider(queryClient);
+const manager = setupQueryManager(queryClient);
 
-const userQuery = cache.createQuery(['user', 42], () => fetchUser(42), {
+const userQuery = manager.createQuery(['user', 42], () => fetchUser(42), {
   enabled: false,
 });
 
-const updateUser = cache.createMutation(saveUser);
+const updateUser = manager.createMutation(saveUser);
 
 await userQuery.refetch();
 await updateUser.mutate({ id: 42, name: 'Ada' });`;
 
 const statusQuoQueryInvalidateExample = `await userQuery.invalidate({ refetchType: 'none' });
-await cache.invalidateQueries({ queryKey: ['user'] });
+await manager.invalidateQueries({ queryKey: ['user'] });
 
-cache.setQueryData(['user', 42], (current) =>
+manager.setQueryData(['user', 42], (current) =>
   current ? { ...current, name: 'Ada' } : current
 );`;
 
+const statusQuoQuerySpecificExample = `// A handle (Query or Mutation) knows its own key and context.
+const userQuery = manager.createQuery(['user', 42], fetchUser);
+
+// Specific action: no keys required.
+await userQuery.refetch();
+await userQuery.invalidate();`;
+
+const statusQuoQueryGlobalExample = `// The Manager acts on the entire cache using filters.
+await manager.invalidateQueries({ 
+  queryKey: ['user'], 
+  exact: false 
+});
+
+// Orchestrate state across different keys.
+manager.setQueryData(['user', 42], (user) => ({ ...user, name: 'Grace' }));`;
+
 const statusQuoQueryEscapeHatchExample = `const rawResult = userQuery.unsafe_getResult();
-const rawClient = cache.unsafe_getClient();
+const rawClient = manager.unsafe_getClient();
 
 rawClient.cancelQueries({ queryKey: ['user', 42] });`;
 
 const statusQuoQueryFrameworkImports = `import { QueryClient } from '@tanstack/query-core';
-import { setupQueryProvider } from '@veams/status-quo-query';
+import { setupQueryManager } from '@veams/status-quo-query';
 
 const queryClient = new QueryClient();
-const cache = setupQueryProvider(queryClient);`;
+const manager = setupQueryManager(queryClient);`;
 
 const statusQuoApiImports = `import {
   NativeStateHandler,
@@ -1014,8 +1117,12 @@ const statusQuoFrameworkCoreImports = `import {
 
 const statusQuoFrameworkReactImports = `import {
   StateProvider,
+  useProvidedStateActions,
+  useProvidedStateHandler,
   useProvidedStateSubscription,
+  useStateActions,
   useStateFactory,
+  useStateHandler,
   useStateSingleton,
   useStateSubscription,
 } from '@veams/status-quo/react';`;
@@ -1058,15 +1165,15 @@ const statusQuoQueryPhilosophyCards: FeatureCard[] = [
   },
   {
     description:
-      'Exact-key behavior belongs on a handle. Broad cache work belongs on the cache facade. The API should make that scope visible.',
+      'Exact-key behavior belongs on a handle. Broad management work belongs on the query manager. The API should make that scope visible.',
     title: 'Keep command scope honest',
     visual: 'handle-command',
   },
   {
     description:
-      'Cross-query coordination should be explicit and centralized, so invalidation, refetching, and cache updates stay readable.',
-    title: 'Coordinate through the cache',
-    visual: 'cache-orchestration',
+      'Cross-query coordination should be explicit and centralized, so invalidation, refetching, and state updates stay readable.',
+    title: 'Coordinate through the manager',
+    visual: 'query-management',
   },
 ];
 
@@ -2344,14 +2451,6 @@ export const docsPackages: DocsPackage[] = [
           {
             blocks: [
               {
-                featureCards: statusQuoPhilosophyCards,
-                id: 'principles',
-                paragraphs: [
-                  'These principles are the shape of the package in practice: **a replaceable engine**, **a stable component contract**, and **state logic that stays outside the view layer**.',
-                ],
-                title: 'Principles in practice',
-              },
-              {
                 bullets: [
                   'Scale the service and state handler layer without rewriting component wiring.',
                   'Let state shape and derived logic grow without breeding custom nested hooks in the view.',
@@ -2418,6 +2517,49 @@ export const docsPackages: DocsPackage[] = [
           {
             blocks: [
               {
+                featureCards: [
+                  {
+                    description: 'State transitions are owned by the handler, while the view layer only subscribes to read-only snapshots.',
+                    title: 'Handler-Driven Flow',
+                    visual: 'status-quo-architecture',
+                  },
+                ],
+                id: 'core-flow',
+                paragraphs: [
+                  'Status Quo separates the state model from the UI layer. This separation is achieved through a clear boundary: handlers own transitions and lifecycle, while components subscribe to snapshots and trigger actions.',
+                ],
+                title: 'Core Architecture',
+              },
+              {
+                bullets: [
+                  'Immutability: Each state change creates a new snapshot.',
+                  'Explicit Transitions: All state changes go through the handler.',
+                  'Unidirectional Data Flow: Views read state and call actions.',
+                ],
+                id: 'core-contract',
+                paragraphs: [
+                  'The core contract ensures that your application state remains predictable and testable, regardless of its size or complexity.',
+                ],
+                title: 'The Core Contract',
+              },
+              {
+                featureCards: statusQuoPhilosophyCards,
+                id: 'why-it-scales',
+                paragraphs: [
+                  'Status Quo is designed for long-term growth by providing **a replaceable engine**, **a stable component contract**, and **state logic that stays outside the view layer**.',
+                ],
+                title: 'Why it scales',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            id: 'concepts',
+            intro: 'Understand the architectural boundary between handlers, engines, and the view layer.',
+            summary: 'The mental model behind the package.',
+            title: 'Concepts',
+          },
+          {
+            blocks: [
+              {
                 codeExamples: [
                   {
                     code: statusQuoFrameworkCoreImports,
@@ -2454,14 +2596,24 @@ export const docsPackages: DocsPackage[] = [
               {
                 codeExamples: [
                   {
-                    code: statusQuoInstall,
-                    label: 'Install',
+                    code: statusQuoInstallNative,
+                    label: 'Native (Zero-dependency)',
+                    language: 'bash',
+                  },
+                  {
+                    code: statusQuoInstallObservable,
+                    label: 'Observable (RxJS)',
+                    language: 'bash',
+                  },
+                  {
+                    code: statusQuoInstallSignal,
+                    label: 'Signal (Preact Signals)',
                     language: 'bash',
                   },
                 ],
                 id: 'install',
                 paragraphs: [
-                  'Install the core package. When using the native handler, the library is completely zero-dependency. You can also opt into peer-driven reactive backends like RxJS or Preact Signals if your state logic needs more powerful composition.',
+                  'Install the package based on your preferred reactive engine. The native handler is completely zero-dependency, while the observable and signal versions require their respective peer dependencies.',
                 ],
                 title: 'Install the package',
               },
@@ -2536,35 +2688,66 @@ export const docsPackages: DocsPackage[] = [
         id: 'guides',
         pages: [
           {
-            blocks: [
-              {
-                callout:
-                  'Same hooks. Same snapshots. The real choice is how the handler likes to think.',
-                codeExamples: [
-                  {
-                    code: statusQuoObservableHandlerExample,
-                    label: 'Observable handler',
-                    language: 'ts',
-                  },
-                  {
-                    code: statusQuoSignalHandlerExample,
-                    label: 'Signal handler',
-                    language: 'ts',
-                  },
-                ],
-                bullets: [
-                  'Use `NativeStateHandler` as your default for zero dependencies.',
-                  'Use `ObservableStateHandler` when the interesting work already feels like a stream.',
-                  'Use `SignalStateHandler` when you want direct reads and cheap synchronous derivation.',
-                ],
-                id: 'engine-choice',
-                paragraphs: [
-                  'This is not a React decision. It is a handler decision. Start with the zero-dependency native handler and promote to other engines only when necessary. In both examples, a shared UI singleton exposes the current viewport and a local counter reacts by changing its `step`. The observable version derives that step with `pipe(...)`. The signal version derives the same value with `computed(...)`. Both are then bridged into the same `bindSubscribable()` contract, so the surrounding composition still reads the same.',
-                ],
-                title: 'Pick the engine that matches the state',
-              },
-              {
-                bullets: [
+                         blocks: [
+                           {
+                             callout:
+                               'Same hooks. Same snapshots. The real choice is how the handler likes to think.',
+                                                               codeExamples: [
+                                                                 {
+                                                                   code: statusQuoNativeHandlerCompositionExample,
+                                                                   description:
+                                                                     'The native engine relies on `bindSubscribable()` to manually derive state. You provide a selector function to map upstream state and a comparison function to prevent redundant updates. This is the zero-dependency default.',
+                                                                   label: 'Native (Manual Sync)',
+                                                                   language: 'ts',
+                                                                 },
+                                                                 {
+                                                                   code: statusQuoObservableHandlerExample,
+                                                                   description:
+                                                                     'The observable engine uses RxJS operators like `pipe()` and `map()` to transform state into a stream. This is ideal when your transitions already feel like a reactive event flow.',
+                                                                   label: 'Observable (Streams)',
+                                                                   language: 'ts',
+                                                                 },
+                                                                 {
+                                                                   code: statusQuoSignalHandlerExample,
+                                                                   description:
+                                                                     'The signal engine uses `computed()` to automatically track dependencies. When the upstream signal changes, the derivation updates itself, making deep reactive trees easy to manage.',
+                                                                   label: 'Signal (Auto-Tracking)',
+                                                                   language: 'ts',
+                                                                 },
+                                                               ],                                              bullets: [
+                                                'Use `NativeStateHandler` as your zero-dependency default for standard state.',
+                                                'Use `ObservableStateHandler` when the interesting work already feels like a stream.',
+                                                'Use `SignalStateHandler` when you want direct reads and cheap synchronous derivation.',
+                                              ],
+                                              id: 'engine-choice',
+                                              paragraphs: [
+                                                'The engine is a handler decision, not a view decision. The native version is the cleanest starting point because it has no peer-dependency requirements. The observable version excels at complex async coordination through RxJS, while the signal version provides ultra-light reactive derivation via Preact Signals. All three options share the same `bindSubscribable()` contract, ensuring that the surrounding composition and React wiring remain identical regardless of the underlying engine.',
+                                              ],
+                                              title: 'Pick the engine that matches the state',
+                                            },
+                                            {
+                                              featureCards: [
+                                                {
+                                                  description:
+                                                    'When your handler needs to coordinate multiple async events, debouncing, or complex time-based transitions, RxJS streams provide the more powerful abstraction.',
+                                                  title: 'Stream-heavy logic',
+                                                  visual: 'swap-engine',
+                                                },
+                                                {
+                                                  description:
+                                                    'When your state tree has many interdependent derived values, signals allow for automatic tracking and fine-grained updates without manual sync logic.',
+                                                  title: 'Deeply reactive derivations',
+                                                  visual: 'view-state',
+                                                },
+                                              ],
+                                              id: 'when-to-scale',
+                                              paragraphs: [
+                                                'Native handlers are excellent for most features, as `bindSubscribable()` already allows for manual state derivation and synchronization. You should consider scaling to other engines only when the manual logic becomes repetitive or the state transitions become inherently complex.',
+                                              ],
+                                              title: 'When to scale',
+                                            },
+                                            {
+                                              bullets: [
                   'Choose observables when the interesting work happens over time.',
                   'Choose signals when the interesting work is derived from the current value right now.',
                   'If the hooks would have to change, the decision is happening at the wrong layer.',
@@ -2909,14 +3092,23 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  'Use it once during app startup, not inside components.',
-                  '`distinct.enabled` toggles package-wide distinct update behavior.',
-                  '`distinct.comparator` replaces the default equality strategy.',
-                  '`devTools.enabled` turns Redux DevTools on by default for handlers.',
+                  'Call this as early as possible in your application entry point.',
+                  'Sets package-wide defaults that apply to every handler instance.',
+                  '`devTools.enabled` turns Redux DevTools on by default for all handlers.',
+                  '`distinct.enabled` toggles default distinct update behavior.',
+                ],
+                codeExamples: [
+                  {
+                    code: statusQuoGlobalSetup,
+                    description:
+                      'Use `setupStatusQuo()` at your app entry point (e.g., in main.ts or index.ts) to set global defaults that apply to every handler instance, unless overridden locally.',
+                    label: 'Global Configuration',
+                    language: 'ts',
+                  },
                 ],
                 id: 'setup-status-quo',
                 paragraphs: [
-                  'Use `setupStatusQuo(config?)` when you want package-wide defaults for how handlers behave. The most important global knobs are distinct-update behavior and whether handlers should connect to Redux DevTools by default. Local handler options can still override those defaults.',
+                  'Use `setupStatusQuo(config?)` when you want package-wide defaults for how handlers behave. This should be called once, as early as possible during app startup. The most important global knobs are distinct-update behavior and whether handlers should connect to Redux DevTools by default. Local handler options can still override those defaults.',
                 ],
                 title: 'setupStatusQuo',
               },
@@ -3359,7 +3551,7 @@ export const docsPackages: DocsPackage[] = [
   },
   {
     accent: 'ocean',
-    description: 'Query and mutation handles over TanStack Query core, plus a cache facade for client-level operations.',
+    description: 'Query and mutation handles over TanStack Query core, plus a query manager for client-level operations.',
     githubPath: 'packages/status-quo-query',
     id: 'status-quo-query',
     npm: '@veams/status-quo-query',
@@ -3373,7 +3565,7 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   'Query and mutation handles shaped to fit the Status Quo model.',
                   'Passive snapshots that are easy to sync into state handlers.',
-                  'A cache facade for broader coordination when the flow crosses query boundaries.',
+                  'A query manager for broader coordination when the flow crosses query boundaries.',
                 ],
                 id: 'shape',
                 paragraphs: [
@@ -3385,48 +3577,61 @@ export const docsPackages: DocsPackage[] = [
                 featureCards: statusQuoQueryPhilosophyCards,
                 id: 'principles',
                 paragraphs: [
-                  'The wrapper stays useful when each layer keeps a narrow job: **snapshots are passive**, **commands are explicit**, and **broad cache work has one clear home**.',
+                  'The wrapper stays useful when each layer keeps a narrow job: **snapshots are passive**, **commands are explicit**, and **broad management work has one clear home**.',
                 ],
                 title: 'Principles in practice',
-              },
-              {
-                bullets: [
-                  'Snapshots are passive state only.',
-                  'Commands live on the handle: `refetch`, `mutate`, `reset`, `invalidate`.',
-                  'Broad orchestration stays on the cache facade.',
-                ],
-                id: 'passive-snapshots',
-                paragraphs: [
-                  'A snapshot should describe state, not smuggle behavioral commands inside it.',
-                ],
-                title: 'Keep snapshots passive',
-              },
-              {
-                bullets: [
-                  'Exact-key invalidation belongs on a query handle.',
-                  'Broad filters belong on the cache facade.',
-                  'Unsafe access is explicit so it does not become the default path.',
-                ],
-                id: 'scope',
-                paragraphs: [
-                  'The package separates command scope deliberately. A handle should act on the thing it already owns; broader cache work should stay in the cache layer.',
-                ],
-                title: 'Keep command scope honest',
               },
             ],
             eyebrow: 'Getting Started',
             heroBullets: [
               'Query and mutation handles that fit the Status Quo model.',
               'Passive snapshots that sync cleanly into state handlers.',
-              'Explicit cache orchestration when the flow goes broader.',
+              'Explicit management when the flow goes broader.',
             ],
             heroParagraphs: [
               'Status Quo Query connects TanStack Query to the Status Quo way of working. Queries and mutations expose passive snapshots and explicit commands, so syncing remote state into a handler feels natural instead of like an adapter bolted on afterward.',
             ],
             id: 'overview',
-            intro: 'Start by understanding how query handles, mutation handles, and cache orchestration line up with the Status Quo handler model.',
+            intro: 'Start by understanding how query handles, mutation handles, and query management line up with the Status Quo handler model.',
             summary: 'TanStack Query, aligned with Status Quo.',
             title: 'Overview',
+          },
+          {
+            blocks: [
+              {
+                featureCards: [
+                  {
+                    description: 'The service layer (Query/Mutation) syncs state into the handler. The handler can trigger service commands like `refetch()`, and the view observes the resulting snapshot.',
+                    title: 'Service-Enhanced Flow',
+                    visual: 'query-architecture',
+                  },
+                ],
+                id: 'command-boundary',
+                paragraphs: [
+                  'Status Quo Query extends the core architecture by adding a dedicated service layer. This layer handles the complexities of data fetching and cache management while keeping the handler as the single source of truth for the UI.',
+                ],
+                title: 'Service & Handler Integration',
+              },
+              {
+                featureCards: [
+                  {
+                    description: 'The Query Manager acts as a single command center for all queries and mutations, making coordination readable and predictable.',
+                    title: 'Centralized Management',
+                    visual: 'query-facade',
+                  },
+                ],
+                id: 'query-management',
+                paragraphs: [
+                  'Cross-query coordination should not be scattered across multiple hooks. The Query Manager provides a centralized API for invalidation, manual state updates, and global query management.',
+                ],
+                title: 'The Query Manager',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            id: 'concepts',
+            intro: 'Status Quo Query treats TanStack Query as an engine and provides a structured service layer focused on explicit commands and passive snapshots.',
+            summary: 'Structure the service layer, simplify the view.',
+            title: 'Concepts',
           },
           {
             blocks: [
@@ -3440,13 +3645,13 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 bullets: [
                   'Built on `@tanstack/query-core`, not on framework hooks.',
-                  'No component bindings in this package; it exposes subscribable handles and cache commands.',
+                  'No component bindings in this package; it exposes subscribable handles and manager commands.',
                   'React can be used around it, but the query/mutation API stays framework-neutral.',
                 ],
                 id: 'framework-support',
                 paragraphs: [
                   'Status Quo Query is not tied to React. Keep it in the service and state handler layer, then let your UI framework consume snapshots and trigger commands.',
-                  'React examples in guides are integration examples only. They demonstrate one rendering layer, while the query facade itself remains framework-agnostic.',
+                  'React examples in guides are integration examples only. They demonstrate one rendering layer, while the query manager itself remains framework-agnostic.',
                 ],
                 title: 'Framework Support',
               },
@@ -3454,7 +3659,7 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Getting Started',
             id: 'framework-support',
             intro: 'Treat query and mutation handles as framework-neutral service objects, then consume them from your chosen UI layer.',
-            summary: 'Framework-neutral query facade.',
+            summary: 'Framework-neutral query manager.',
             title: 'Framework Support',
           },
           {
@@ -3476,7 +3681,7 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   'Bring your own `QueryClient`.',
-                  'Use `setupQueryProvider(queryClient)` when you want the combined facade.',
+                  'Use `setupQueryManager(queryClient)` when you want the combined query manager.',
                   'Use `setupQuery` or `setupMutation` directly when you want a narrower entry point.',
                 ],
                 id: 'entry-points',
@@ -3488,7 +3693,7 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Getting Started',
             id: 'installation',
-            intro: 'The package builds on a normal `QueryClient`, then lets you decide whether you want the combined cache facade or the narrower factories.',
+            intro: 'The package builds on a normal `QueryClient`, then lets you decide whether you want the combined query manager or the narrower factories.',
             summary: 'Bring a QueryClient. Keep the rest simple.',
             title: 'Installation',
           },
@@ -3498,7 +3703,7 @@ export const docsPackages: DocsPackage[] = [
                 codeExamples: [
                   {
                     code: statusQuoQueryQuickStart,
-                    label: 'Setup cache, query, and mutation',
+                    label: 'Setup manager, query, and mutation',
                     language: 'ts',
                   },
                 ],
@@ -3510,8 +3715,8 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  'Use `cache.createQuery` for the query handle.',
-                  'Use `cache.createMutation` for the mutation handle.',
+                  'Use `manager.createQuery` for the query handle.',
+                  'Use `manager.createMutation` for the mutation handle.',
                   'Call commands on the handle, not on the snapshot.',
                 ],
                 id: 'workflow',
@@ -3523,8 +3728,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Getting Started',
             id: 'quick-start',
-            intro: 'Use the cache facade for a first working flow, then split into lower-level factories only when the app structure really benefits from it.',
-            summary: 'One cache. One query. One mutation.',
+            intro: 'Use the query manager for a first working flow, then split into lower-level factories only when the app structure really benefits from it.',
+            summary: 'One manager. One query. One mutation.',
             title: 'Quick Start',
           },
         ],
@@ -3537,22 +3742,36 @@ export const docsPackages: DocsPackage[] = [
             blocks: [
               {
                 bullets: [
-                  'Handle-local commands are for one query or one mutation.',
-                  'Cache-level commands are for broader orchestration.',
-                  'The same codebase will usually need both levels.',
+                  'Use the **Handle** when you are acting on one specific data source (e.g., refetching a single profile).',
+                  'Use the **Manager** for cross-cutting concerns (e.g., invalidating all user-related data).',
+                  'The Handle is for UI observation and local action; the Manager is for orchestration and manual cache control.',
                 ],
-                id: 'levels',
+                codeExamples: [
+                  {
+                    code: statusQuoQuerySpecificExample,
+                    label: 'Specific Action (Handle)',
+                    language: 'ts',
+                  },
+                  {
+                    code: statusQuoQueryGlobalExample,
+                    label: 'Global Action (Manager)',
+                    language: 'ts',
+                  },
+                ],
+                id: 'scope-levels',
                 paragraphs: [
-                  'The most important guide decision is not query versus mutation, it is handle scope versus cache scope. Keeping those two levels distinct is what makes the wrapper useful.',
+                  'Understanding command scope is key to using Status Quo Query effectively. We distinguish between **Specific Scope** (The Handle) and **Global Scope** (The Manager).',
+                  'A **Handle** (Query or Mutation) is a local instance that already knows its key and logic. It is the cleanest way to trigger actions like `refetch()` or `mutate()` because you do not need to repeat keys or configuration.',
+                  'The **Query Manager** is your central command center. It is the right place for operations that do not have a natural single owner, such as clearing the entire cache on logout or updating a user list after a creation mutation elsewhere.',
                 ],
-                title: 'Choose the right control level',
+                title: 'Specific vs. Global Control',
               },
             ],
             eyebrow: 'Guides',
-            id: 'cache-vs-handle',
-            intro: 'Use the handle when you already know the specific query or mutation you want to act on; use the cache facade when the operation spans multiple queries.',
-            summary: 'Keep local actions local.',
-            title: 'Cache vs Handle',
+            id: 'command-scope',
+            intro: 'Choose the right tool for the task: use focused handles for local data and the query manager for broad system coordination.',
+            summary: 'Understand when to use specific handles or the global manager.',
+            title: 'Global vs. Specific Control',
           },
           {
             blocks: [
@@ -3560,33 +3779,33 @@ export const docsPackages: DocsPackage[] = [
                 codeExamples: [
                   {
                     code: statusQuoQueryInvalidateExample,
-                    label: 'Invalidate and patch cache',
+                    label: 'Invalidate and patch state',
                     language: 'ts',
                   },
                 ],
                 id: 'invalidate-example',
                 paragraphs: [
-                  'Invalidation is where the handle/cache split becomes practical. Exact-key invalidation belongs on the query handle, while broader key filters and direct cache updates belong on the cache facade.',
+                  'Invalidation is where the handle/manager split becomes practical. Exact-key invalidation belongs on the query handle, while broader key filters and direct state updates belong on the query manager.',
                 ],
-                title: 'Coordinate invalidation and cache updates',
+                title: 'Coordinate invalidation and state updates',
               },
               {
                 bullets: [
                   '`query.invalidate()` targets the current query key.',
-                  '`cache.invalidateQueries()` supports broader filters.',
-                  '`cache.setQueryData()` is the imperative path when you already know the correct next cache value.',
+                  '`manager.invalidateQueries()` supports broader filters.',
+                  '`manager.setQueryData()` is the imperative path when you already know the correct next state value.',
                 ],
                 id: 'invalidate-guidelines',
                 paragraphs: [
-                  'Use the narrower command first. Reach for the broad cache methods when the behavior truly crosses query boundaries.',
+                  'Use the narrower command first. Reach for the broad manager methods when the behavior truly crosses query boundaries.',
                 ],
                 title: 'Keep invalidation deliberate',
               },
             ],
             eyebrow: 'Guides',
             id: 'invalidation',
-            intro: 'Invalidation is best when the API makes scope obvious. The wrapper does that by putting exact-key behavior on the handle and broader filters on the cache facade.',
-            summary: 'Make cache scope obvious.',
+            intro: 'Invalidation is best when the API makes scope obvious. The wrapper does that by putting exact-key behavior on the handle and broader filters on the query manager.',
+            summary: 'Make management scope obvious.',
             title: 'Invalidation',
           },
           {
@@ -3651,7 +3870,7 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   'Binds one TanStack `QueryClient` to the query factory.',
                   'Returns `createQuery` for building query handles.',
-                  'Use it when you want only the query surface without the full cache facade.',
+                  'Use it when you want only the query surface without the full query manager.',
                 ],
                 id: 'setup-query',
                 paragraphs: [
@@ -3721,16 +3940,16 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  'Returns `CacheApi` around one `QueryClient`.',
-                  'Combines `createQuery` and `createMutation` with broader cache operations.',
-                  'Acts as the shared cache instance for one app runtime boundary.',
-                  'Best fit when one integration owns orchestration across queries and mutations.',
+                  'Returns `QueryManager` around one `QueryClient`.',
+                  'Combines `createQuery` and `createMutation` with broader management operations.',
+                  'Acts as the shared management instance for one app runtime boundary.',
+                  'Best fit when one integration owns management across queries and mutations.',
                 ],
-                id: 'setup-cache',
+                id: 'setup-manager',
                 paragraphs: [
-                  'Use `setupQueryProvider(queryClient)` when you want one top-level facade for the whole service layer. The returned cache instance is a thin wrapper over your `QueryClient`: it creates query and mutation handles and centralizes cross-query cache commands in one place.',
+                  'Use `setupQueryManager(queryClient)` when you want one top-level facade for the whole service layer. The returned manager instance is a thin wrapper over your `QueryClient`: it creates query and mutation handles and centralizes cross-query management commands in one place.',
                 ],
-                title: 'setupQueryProvider',
+                title: 'setupQueryManager',
               },
               {
                 bullets: [
@@ -3738,11 +3957,11 @@ export const docsPackages: DocsPackage[] = [
                   'Also exposes `createQuery` and `createMutation` so setup stays centralized.',
                   '`unsafe_getClient()` is the explicit escape hatch back to the raw TanStack client.',
                 ],
-                id: 'cache-api',
+                id: 'query-manager',
                 paragraphs: [
-                  'Use `CacheApi` when the operation crosses query boundaries or when you need direct cache reads and writes. This is where orchestration belongs, not on individual snapshots.',
+                  'Use `QueryManager` when the operation crosses query boundaries or when you need direct state reads and writes. This is where management belongs, not on individual snapshots.',
                 ],
-                title: 'CacheApi',
+                title: 'QueryManager',
               },
               {
                 bullets: [
@@ -3759,7 +3978,7 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'API',
             id: 'api',
-            intro: 'The public surface is split into query handles, mutation handles, and one cache facade for broader orchestration.',
+            intro: 'The public surface is split into query handles, mutation handles, and one query manager for broader management.',
             summary: 'Everything you can call, in one place.',
             title: 'API',
           },
@@ -3781,14 +4000,14 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'user-flow',
                 paragraphs: [
-                  'This example shows the main package story: one cache facade, one query handle, one mutation handle, and commands that stay on the owning handle.',
+                  'This example shows the main package story: one query manager, one query handle, one mutation handle, and commands that stay on the owning handle.',
                 ],
                 title: 'User workflow example',
               },
             ],
             eyebrow: 'Examples',
             id: 'example-user-workflow',
-            intro: 'Start with a complete query and mutation flow around one cache facade.',
+            intro: 'Start with a complete query and mutation flow around one query manager.',
             summary: 'Query and mutation handles in one working flow.',
             title: 'User workflow example',
           },
@@ -3798,22 +4017,22 @@ export const docsPackages: DocsPackage[] = [
                 codeExamples: [
                   {
                     code: statusQuoQueryInvalidateExample,
-                    label: 'Follow-up cache coordination',
+                    label: 'Follow-up management coordination',
                     language: 'ts',
                   },
                 ],
-                id: 'cache-follow-up',
+                id: 'manager-follow-up',
                 paragraphs: [
-                  'A realistic example usually ends with some cache coordination after a mutation. That is why the cache facade exists alongside the narrower handles.',
+                  'A realistic example usually ends with some state coordination after a mutation. That is why the query manager exists alongside the narrower handles.',
                 ],
-                title: 'Cache follow-up example',
+                title: 'Manager follow-up example',
               },
             ],
             eyebrow: 'Examples',
-            id: 'example-cache-follow-up',
-            intro: 'Use cache commands after mutations when workflows require coordinated follow-up behavior.',
-            summary: 'Cache orchestration after a mutation.',
-            title: 'Cache follow-up example',
+            id: 'example-manager-follow-up',
+            intro: 'Use manager commands after mutations when workflows require coordinated follow-up behavior.',
+            summary: 'Manager management after a mutation.',
+            title: 'Manager follow-up example',
           },
         ],
         title: 'Examples',
@@ -3880,6 +4099,58 @@ export const docsPackages: DocsPackage[] = [
             intro: 'Start with the package split: generic form state at the root, React-only wiring under `@veams/form/react`.',
             summary: 'Explicit form state, clean React wiring.',
             title: 'Overview',
+          },
+          {
+            blocks: [
+              {
+                featureCards: [
+                  {
+                    description: 'The FormStateHandler is a pure, framework-agnostic object that manages values, errors, and validation logic independently of any UI library.',
+                    title: 'Generic Form Engine',
+                    visual: 'form-architecture',
+                  },
+                ],
+                id: 'form-engine',
+                paragraphs: [
+                  'Following the Status Quo philosophy, the `FormStateHandler` is the central engine of the package. It exists entirely outside the React lifecycle, owning the source of truth for all form data and validation states.',
+                  'This framework-agnostic core makes your form logic portable and testable. You can define complex validation rules and state transitions once and rely on the handler to maintain a consistent state snapshot, regardless of how or where it is rendered.',
+                ],
+                title: 'The FormStateHandler Engine',
+              },
+              {
+                featureCards: [
+                  {
+                    description: 'React bindings provide the bridge between the FormStateHandler and the DOM, utilizing hooks and refs for high-performance uncontrolled inputs.',
+                    title: 'React View Bindings',
+                    visual: 'form-ref-bridge',
+                  },
+                ],
+                id: 'react-bindings',
+                paragraphs: [
+                  'The React layer provides the "glue" that connects the generic engine to the browser. Registration happens through hooks like `useUncontrolledField()`, which creates a stable bridge between DOM elements and the handler.',
+                  'To keep render performance high, the UI does not render current values from state snapshots. Instead, only metadata (like validation errors or touched state) flows back via snapshots to trigger UI updates, while the DOM element itself maintains the value.',
+                  'When programmatic updates are needed, the bridge hook uses a `ref` to imperatively sync the DOM with the handler state, bypassing the React re-render cycle for input values.',
+                ],
+                title: 'React Integration & Performance',
+              },
+              {
+                bullets: [
+                  'Uncontrolled by Default: Sync DOM to state only when needed.',
+                  'Centralized Validation: One validator function for the whole form.',
+                  'Nested Snapshots: Subscribe to individual field meta for performance.',
+                ],
+                id: 'form-principles',
+                paragraphs: [
+                  'These principles keep form management predictable and ensure that your UI stays performant even with complex validation rules.',
+                ],
+                title: 'Key Principles',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            id: 'concepts',
+            intro: 'Status Quo Form separates the generic state engine from the React view bindings for maximum performance and portability.',
+            summary: 'Generic engine, optimized React bindings.',
+            title: 'Concepts',
           },
           {
             blocks: [

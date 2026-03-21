@@ -1,5 +1,5 @@
 import {
-  // Import the central QueryClient to handle cache and state management.
+  // Import the central QueryClient to handle management and state management.
   type QueryClient,
 } from '@tanstack/query-core';
 
@@ -8,9 +8,9 @@ import { type CreateMutation, setupMutation } from './mutation';
 import { type CreateQuery, setupQuery } from './query';
 
 /**
- * Defines the public API for the cache provider facade.
+ * Defines the public API for the query manager facade.
  */
-export interface CacheApi {
+export interface QueryManager {
   // Factory for creating a mutation service within the context of this provider.
   createMutation: CreateMutation;
   // Factory for creating a query service within the context of this provider.
@@ -23,21 +23,21 @@ export interface CacheApi {
   invalidateQueries: QueryClient['invalidateQueries'];
   // Forces a refetch of queries matching the specified filters.
   refetchQueries: QueryClient['refetchQueries'];
-  // Removes queries from the cache without canceling ongoing requests.
+  // Removes queries from the management without canceling ongoing requests.
   removeQueries: QueryClient['removeQueries'];
   // Resets queries to their initial state and refetches them.
   resetQueries: QueryClient['resetQueries'];
-  // Manually sets or updates data for a specific query in the cache.
+  // Manually sets or updates data for a specific query in the manager.
   setQueryData: QueryClient['setQueryData'];
   // Escape hatch: provides direct access to the underlying Tanstack QueryClient.
   unsafe_getClient: () => QueryClient;
 }
 
 /**
- * Prepares the cache API facade by binding all actions to a specific QueryClient instance.
+ * Prepares the query manager facade by binding all actions to a specific QueryClient instance.
  */
-export function setupQueryProvider(queryClient: QueryClient): CacheApi {
-  // Return the implementation of the CacheApi interface.
+export function setupQueryManager(queryClient: QueryClient): QueryManager {
+  // Return the implementation of the QueryManager interface.
   return {
     // Bind mutation factory to this QueryClient.
     createMutation: setupMutation(queryClient),

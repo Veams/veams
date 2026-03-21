@@ -268,7 +268,7 @@ function ConceptIllustration({ visual }: Pick<FeatureCard, 'visual'>) {
           <circle cx="262" cy="90" fill="var(--visual-orange)" r="10" />
         </svg>
       );
-    case 'cache-orchestration':
+    case 'query-management':
       return (
         <svg aria-hidden="true" className="concept-illustration" viewBox="0 0 320 180">
           <rect
@@ -484,6 +484,443 @@ function ConceptIllustration({ visual }: Pick<FeatureCard, 'visual'>) {
           />
           <text fill="var(--visual-blue)" fontFamily="var(--font-mono)" fontSize="8" x="30" y="163">
             r-footer
+          </text>
+        </svg>
+      );
+    case 'status-quo-architecture':
+      return (
+        <svg aria-hidden="true" className="concept-illustration" viewBox="0 0 320 125">
+          <rect
+            fill="rgba(30, 37, 49, 0.96)"
+            height="50"
+            rx="8"
+            stroke="var(--visual-blue)"
+            strokeWidth="2"
+            width="80"
+            x="20"
+            y="45"
+          />
+          <text fill="var(--visual-blue)" fontFamily="var(--font-mono)" fontSize="10" x="30" y="75">
+            HANDLER
+          </text>
+          <path
+            d="M100 70 H130"
+            fill="none"
+            stroke="var(--visual-white)"
+            strokeLinecap="round"
+            strokeWidth="2"
+          />
+          <path d="M130 70 L122 66 M130 70 L122 74" fill="none" stroke="var(--visual-white)" strokeWidth="2" />
+          <circle
+            cx="160"
+            cy="70"
+            fill="rgba(255, 163, 39, 0.15)"
+            r="30"
+            stroke="var(--visual-orange)"
+            strokeWidth="2"
+          />
+          <text
+            fill="var(--visual-orange)"
+            fontFamily="var(--font-mono)"
+            fontSize="8"
+            textAnchor="middle"
+            x="160"
+            y="74"
+          >
+            ENGINE
+          </text>
+          <path
+            d="M190 70 H220"
+            fill="none"
+            stroke="var(--visual-white)"
+            strokeLinecap="round"
+            strokeWidth="2"
+          />
+          <path d="M220 70 L212 66 M220 70 L212 74" fill="none" stroke="var(--visual-white)" strokeWidth="2" />
+          <rect
+            fill="rgba(139, 151, 172, 0.15)"
+            height="50"
+            rx="8"
+            stroke="var(--visual-slate)"
+            strokeWidth="2"
+            width="80"
+            x="220"
+            y="45"
+          />
+          <text
+            fill="var(--visual-slate)"
+            fontFamily="var(--font-mono)"
+            fontSize="10"
+            x="230"
+            y="75"
+          >
+            SNAPSHOT
+          </text>
+          <path
+            d="M260 45 V20 H60 V45"
+            fill="none"
+            stroke="var(--visual-white)"
+            strokeDasharray="4 4"
+            strokeLinecap="round"
+            strokeWidth="1.5"
+          />
+          <path d="M60 45 L56 37 M60 45 L64 37" fill="none" stroke="var(--visual-white)" strokeWidth="1.5" />
+          <text
+            fill="var(--visual-white)"
+            fontFamily="var(--font-body)"
+            fontSize="8"
+            textAnchor="middle"
+            x="160"
+            y="15"
+          >
+            VIEW (ACTIONS)
+          </text>
+        </svg>
+      );
+    case 'query-architecture':
+      return (
+        <svg aria-hidden="true" className="concept-illustration" viewBox="0 0 320 125">
+          {/* Service Layer */}
+          <rect
+            fill="rgba(31, 139, 143, 0.15)"
+            height="40"
+            rx="4"
+            stroke="var(--accent-teal)"
+            strokeDasharray="4 2"
+            strokeWidth="2"
+            width="70"
+            x="10"
+            y="45"
+          />
+          <text fill="var(--accent-teal)" fontFamily="var(--font-mono)" fontSize="8" x="15" y="68">
+            SERVICE
+          </text>
+
+          {/* Sync arrow from Service to Handler */}
+          <path
+            d="M80 65 H100"
+            fill="none"
+            stroke="var(--visual-white)"
+            strokeLinecap="round"
+            strokeWidth="2"
+          />
+          <path d="M100 65 L92 61 M100 65 L92 69" fill="none" stroke="var(--visual-white)" strokeWidth="2" />
+
+          {/* Handler */}
+          <rect
+            fill="rgba(30, 37, 49, 0.96)"
+            height="40"
+            rx="6"
+            stroke="var(--visual-blue)"
+            strokeWidth="2"
+            width="70"
+            x="100"
+            y="45"
+          />
+          <text fill="var(--visual-blue)" fontFamily="var(--font-mono)" fontSize="8" x="105" y="68">
+            HANDLER
+          </text>
+
+          {/* Command arrow from Handler to Service */}
+          <path
+            d="M100 55 H80"
+            fill="none"
+            stroke="var(--visual-orange)"
+            strokeLinecap="round"
+            strokeWidth="1.5"
+          />
+          <path d="M80 55 L88 51 M80 55 L88 59" fill="none" stroke="var(--visual-orange)" strokeWidth="1.5" />
+          <text fill="var(--visual-orange)" fontFamily="var(--font-mono)" fontSize="6" x="78" y="50" textAnchor="end">
+            refetch()
+          </text>
+
+          {/* Snapshot flow */}
+          <path
+            d="M170 65 H190"
+            fill="none"
+            stroke="var(--visual-white)"
+            strokeLinecap="round"
+            strokeWidth="2"
+          />
+          <path d="M190 65 L182 61 M190 65 L182 69" fill="none" stroke="var(--visual-white)" strokeWidth="2" />
+
+          {/* Snapshot */}
+          <rect
+            fill="rgba(139, 151, 172, 0.15)"
+            height="40"
+            rx="6"
+            stroke="var(--visual-slate)"
+            strokeWidth="2"
+            width="70"
+            x="190"
+            y="45"
+          />
+          <text fill="var(--visual-slate)" fontFamily="var(--font-mono)" fontSize="8" x="195" y="68">
+            SNAPSHOT
+          </text>
+
+          {/* View Layer */}
+          <path
+            d="M225 45 V20 H135 V45"
+            fill="none"
+            stroke="var(--visual-white)"
+            strokeDasharray="3 3"
+            strokeLinecap="round"
+            strokeWidth="1"
+          />
+          <path d="M135 45 L132 38 M135 45 L138 38" fill="none" stroke="var(--visual-white)" strokeWidth="1" />
+          <text
+            fill="var(--visual-white)"
+            fontFamily="var(--font-body)"
+            fontSize="7"
+            textAnchor="middle"
+            x="180"
+            y="12"
+          >
+            VIEW (triggers Handler actions)
+          </text>
+        </svg>
+      );
+    case 'query-facade':
+      return (
+        <svg aria-hidden="true" className="concept-illustration" viewBox="0 0 320 125">
+          <rect
+            fill="rgba(30, 37, 49, 0.96)"
+            height="40"
+            rx="20"
+            stroke="var(--accent)"
+            strokeWidth="2"
+            width="120"
+            x="100"
+            y="10"
+          />
+          <text
+            fill="var(--accent)"
+            fontFamily="var(--font-mono)"
+            fontSize="10"
+            textAnchor="middle"
+            x="160"
+            y="35"
+          >
+            QUERY MANAGER
+          </text>
+          <path
+            d="M160 50 V70 M160 70 L100 90 M160 70 L220 90"
+            fill="none"
+            stroke="var(--visual-white)"
+            strokeLinecap="round"
+            strokeWidth="2"
+          />
+          <rect
+            fill="rgba(30, 37, 49, 0.96)"
+            height="30"
+            rx="4"
+            stroke="var(--visual-blue)"
+            strokeWidth="1.5"
+            width="60"
+            x="70"
+            y="90"
+          />
+          <rect
+            fill="rgba(30, 37, 49, 0.96)"
+            height="30"
+            rx="4"
+            stroke="var(--visual-blue)"
+            strokeWidth="1.5"
+            width="60"
+            x="190"
+            y="90"
+          />
+          <text fill="var(--visual-blue)" fontFamily="var(--font-mono)" fontSize="7" x="75" y="108">
+            Query A
+          </text>
+          <text fill="var(--visual-blue)" fontFamily="var(--font-mono)" fontSize="7" x="195" y="108">
+            Query B
+          </text>
+          <circle cx="160" cy="70" fill="var(--visual-orange)" r="4" />
+          <text
+            fill="var(--visual-orange)"
+            fontFamily="var(--font-mono)"
+            fontSize="8"
+            x="170"
+            y="73"
+          >
+            Invalidate
+          </text>
+        </svg>
+      );
+    case 'form-architecture':
+      return (
+        <svg aria-hidden="true" className="concept-illustration" viewBox="0 0 320 125">
+          {/* Inputs */}
+          <rect
+            fill="rgba(255, 255, 255, 0.05)"
+            height="30"
+            rx="4"
+            stroke="var(--visual-slate)"
+            strokeWidth="1"
+            width="60"
+            x="10"
+            y="45"
+          />
+          <text fill="var(--visual-slate)" fontFamily="var(--font-mono)" fontSize="7" x="15" y="63">
+            DOM INPUTS
+          </text>
+
+          {/* Registration arrow */}
+          <path
+            d="M70 60 H90"
+            fill="none"
+            stroke="var(--visual-white)"
+            strokeLinecap="round"
+            strokeWidth="2"
+          />
+          <path d="M90 60 L82 56 M90 60 L82 64" fill="none" stroke="var(--visual-white)" strokeWidth="2" />
+
+          {/* Form Handler */}
+          <rect
+            fill="rgba(30, 37, 49, 0.96)"
+            height="60"
+            rx="6"
+            stroke="var(--accent-violet)"
+            strokeWidth="2"
+            width="100"
+            x="90"
+            y="35"
+          />
+          <text fill="var(--accent-violet)" fontFamily="var(--font-mono)" fontSize="8" x="95" y="50">
+            FORM HANDLER
+          </text>
+          <rect fill="rgba(122, 82, 224, 0.2)" height="10" rx="2" width="80" x="100" y="60" />
+          <text fill="var(--accent-violet)" fontFamily="var(--font-mono)" fontSize="6" x="105" y="67">
+            Validation
+          </text>
+          <rect fill="rgba(122, 82, 224, 0.2)" height="10" rx="2" width="80" x="100" y="75" />
+          <text fill="var(--accent-violet)" fontFamily="var(--font-mono)" fontSize="6" x="105" y="82">
+            State (T)
+          </text>
+
+          {/* Snapshot arrow */}
+          <path
+            d="M190 65 H210"
+            fill="none"
+            stroke="var(--visual-white)"
+            strokeLinecap="round"
+            strokeWidth="2"
+          />
+          <path d="M210 65 L202 61 M210 65 L202 69" fill="none" stroke="var(--visual-white)" strokeWidth="2" />
+
+          {/* Snapshot */}
+          <rect
+            fill="rgba(139, 151, 172, 0.15)"
+            height="40"
+            rx="6"
+            stroke="var(--visual-slate)"
+            strokeWidth="2"
+            width="80"
+            x="210"
+            y="45"
+          />
+          <text fill="var(--visual-slate)" fontFamily="var(--font-mono)" fontSize="8" x="215" y="68">
+            SNAPSHOT
+          </text>
+
+          {/* View Layer */}
+          <path
+            d="M250 45 V20 H140 V35"
+            fill="none"
+            stroke="var(--visual-white)"
+            strokeDasharray="3 3"
+            strokeLinecap="round"
+            strokeWidth="1"
+          />
+          <path d="M140 35 L137 28 M140 35 L143 28" fill="none" stroke="var(--visual-white)" strokeWidth="1" />
+          <text
+            fill="var(--visual-white)"
+            fontFamily="var(--font-body)"
+            fontSize="7"
+            textAnchor="middle"
+            x="190"
+            y="12"
+          >
+            VIEW (hooks bridge inputs)
+          </text>
+        </svg>
+      );
+    case 'form-ref-bridge':
+      return (
+        <svg aria-hidden="true" className="concept-illustration" viewBox="0 0 320 125">
+          {/* Form Handler */}
+          <rect
+            fill="rgba(30, 37, 49, 0.96)"
+            height="40"
+            rx="6"
+            stroke="var(--accent-violet)"
+            strokeWidth="2"
+            width="80"
+            x="20"
+            y="45"
+          />
+          <text fill="var(--accent-violet)" fontFamily="var(--font-mono)" fontSize="8" x="25" y="68">
+            HANDLER
+          </text>
+
+          {/* Update trigger */}
+          <path
+            d="M100 65 H130"
+            fill="none"
+            stroke="var(--visual-orange)"
+            strokeLinecap="round"
+            strokeWidth="2"
+          />
+          <path d="M130 65 L122 61 M130 65 L122 69" fill="none" stroke="var(--visual-orange)" strokeWidth="2" />
+          <text fill="var(--visual-orange)" fontFamily="var(--font-mono)" fontSize="6" x="115" y="60" textAnchor="middle">
+            update
+          </text>
+
+          {/* Hook with ref */}
+          <rect
+            fill="rgba(255, 255, 255, 0.1)"
+            height="50"
+            rx="25"
+            stroke="var(--visual-white)"
+            strokeWidth="1"
+            width="80"
+            x="130"
+            y="40"
+          />
+          <text fill="var(--visual-white)" fontFamily="var(--font-mono)" fontSize="8" x="145" y="68">
+            HOOK
+          </text>
+          <circle cx="170" cy="40" fill="var(--visual-blue)" r="6" />
+          <text fill="var(--visual-white)" fontFamily="var(--font-body)" fontSize="6" x="180" y="42">
+            ref
+          </text>
+
+          {/* Imperative bridge */}
+          <path
+            d="M170 40 V20 H250 V45"
+            fill="none"
+            stroke="var(--visual-blue)"
+            strokeDasharray="3 3"
+            strokeLinecap="round"
+            strokeWidth="1.5"
+          />
+          <path d="M250 45 L247 38 M250 45 L253 38" fill="none" stroke="var(--visual-blue)" strokeWidth="1.5" />
+
+          {/* DOM Input */}
+          <rect
+            fill="rgba(255, 255, 255, 0.05)"
+            height="30"
+            rx="4"
+            stroke="var(--visual-slate)"
+            strokeWidth="1"
+            width="70"
+            x="220"
+            y="45"
+          />
+          <text fill="var(--visual-slate)" fontFamily="var(--font-mono)" fontSize="7" x="225" y="63">
+            DOM INPUT
           </text>
         </svg>
       );

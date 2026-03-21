@@ -1207,10 +1207,8 @@ button {
 }
 
 .code-label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.4rem;
+  display: grid;
+  gap: 1.2rem;
   padding: 1.3rem 1.6rem;
   border-bottom: 1px solid rgba(151, 168, 196, 0.22);
   background: linear-gradient(180deg, rgba(243, 247, 255, 0.96) 0%, rgba(250, 252, 255, 0.92) 100%);
@@ -1220,8 +1218,23 @@ button {
   font-weight: 400;
 }
 
+.code-label-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.4rem;
+}
+
 .code-label-title {
   min-width: 0;
+  font-weight: 500;
+}
+
+.code-description {
+  color: #5b6883;
+  font-size: 1.4rem;
+  line-height: 1.5;
+  font-weight: 300;
 }
 
 .code-label-actions {

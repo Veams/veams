@@ -142,19 +142,24 @@ export function CodeBlock({ example }: CodeBlockProps) {
       {({ className, getLineProps, getTokenProps, style, tokens }) => (
         <figure className="code-panel">
           <figcaption className="code-label">
-            <span className="code-label-title">{example.label}</span>
-            <span className="code-label-actions">
-              <span className="code-language">{example.language}</span>
-              <button
-                className="code-copy-button"
-                onClick={() => {
-                  void handleCopy();
-                }}
-                type="button"
-              >
-                {copyLabel}
-              </button>
-            </span>
+            <div className="code-label-top">
+              <span className="code-label-title">{example.label}</span>
+              <span className="code-label-actions">
+                <span className="code-language">{example.language}</span>
+                <button
+                  className="code-copy-button"
+                  onClick={() => {
+                    void handleCopy();
+                  }}
+                  type="button"
+                >
+                  {copyLabel}
+                </button>
+              </span>
+            </div>
+            {example.description ? (
+              <div className="code-description">{example.description}</div>
+            ) : null}
           </figcaption>
           <pre className={`code-block ${className}`} style={style}>
             <code>

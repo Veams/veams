@@ -12,7 +12,7 @@ npm install @veams/status-quo-query @tanstack/query-core
 
 Root exports:
 
-- `setupQueryProvider`
+- `setupQueryManager`
 - `setupQuery`
 - `setupMutation`
 - `isQueryLoading`
@@ -20,7 +20,7 @@ Root exports:
 - `QueryFetchStatus`
 - `QueryStatus`
 - `MutationStatus`
-- `CacheApi`
+- `QueryManager`
 - `CreateQuery`
 - `CreateMutation`
 - `QueryService`
@@ -43,32 +43,32 @@ Subpath exports:
 ```ts
 import { QueryClient } from '@tanstack/query-core';
 import {
-  setupQueryProvider,
+  setupQueryManager,
 } from '@veams/status-quo-query';
 
 const queryClient = new QueryClient();
-const cache = setupQueryProvider(queryClient);
+const manager = setupQueryManager(queryClient);
 
-const userQuery = cache.createQuery(['user', 42], () => fetchUser(42), {
+const userQuery = manager.createQuery(['user', 42], () => fetchUser(42), {
   enabled: false,
 });
 await userQuery.refetch();
 await userQuery.invalidate({ refetchType: 'none' });
 
-const updateUser = cache.createMutation((payload: UpdateUserPayload) => saveUser(payload));
+const updateUser = manager.createMutation((payload: UpdateUserPayload) => saveUser(payload));
 await updateUser.mutate({ id: 42 });
 
-await cache.invalidateQueries({ queryKey: ['user'] });
-cache.setQueryData(['user', 42], (current) => current);
+await manager.invalidateQueries({ queryKey: ['user'] });
+manager.setQueryData(['user', 42], (current) => current);
 ```
 
 ## API
 
-### `setupQueryProvider(queryClient)`
+### `setupQueryManager(queryClient)`
 
-Creates the package-level cache facade around an existing TanStack `QueryClient`.
+Creates the package-level query manager facade around an existing TanStack `QueryClient`.
 
-Returns `CacheApi` with:
+Returns `QueryManager` with:
 
 - `createQuery(queryKey, queryFn, options?)`
 - `createMutation(mutationFn, options?)`
@@ -81,7 +81,7 @@ Returns `CacheApi` with:
 - `setQueryData(...)`
 - `unsafe_getClient()`
 
-All cache methods forward directly to the corresponding `QueryClient` methods. `unsafe_getClient()` returns the raw TanStack client as an explicit escape hatch.
+All manager methods forward directly to the corresponding `QueryClient` methods. `unsafe_getClient()` returns the raw TanStack client as an explicit escape hatch.
 
 ### `setupQuery(queryClient)`
 
@@ -170,4 +170,4 @@ Creates a `createMutation` factory bound to a `QueryClient`.
 - `getSnapshot()` always returns passive state only.
 - Commands live on the handle itself: `refetch`, `invalidate`, `mutate`, `reset`.
 - Raw TanStack observer and client access is explicit through `unsafe_getResult()` and `unsafe_getClient()`.
-- Cache-level operations live on `setupQueryProvider()`, not on individual snapshots.
+- Manager-level operations live on `setupQueryManager()`, not on individual snapshots.
