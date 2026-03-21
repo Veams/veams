@@ -66,11 +66,11 @@ export type DocsPackage = {
   title: string;
 };
 
-const statusQuoInstall = `npm install @veams/status-quo rxjs @preact/signals-core`;
+const statusQuoInstall = `npm install @veams/status-quo`;
 
 const statusQuoQueryInstall = `npm install @veams/status-quo-query @tanstack/query-core`;
 
-const statusQuoQuickStartHandler = `import { SignalStateHandler } from '@veams/status-quo';
+const statusQuoQuickStartHandler = `import { NativeStateHandler } from '@veams/status-quo';
 
 type DraftState = {
   summary: string;
@@ -91,7 +91,7 @@ const initialDraftState: DraftState = {
   tone: 'plain',
 };
 
-export class DraftNoteHandler extends SignalStateHandler<DraftState, DraftActions> {
+export class DraftNoteHandler extends NativeStateHandler<DraftState, DraftActions> {
   constructor() {
     super({ initialState: initialDraftState });
   }
@@ -140,7 +140,7 @@ function DraftNoteCard() {
 }`;
 
 const statusQuoSingletonHandlerExample = `import {
-  SignalStateHandler,
+  NativeStateHandler,
   makeStateSingleton,
 } from '@veams/status-quo';
 
@@ -155,7 +155,7 @@ type CounterActions = {
   reset: () => void;
 };
 
-class SharedCounterHandler extends SignalStateHandler<CounterState, CounterActions> {
+class SharedCounterHandler extends NativeStateHandler<CounterState, CounterActions> {
   constructor() {
     super({
       initialState: {
@@ -214,7 +214,7 @@ function CounterSummary() {
   );
 }`;
 
-const statusQuoProviderHandlerExample = `import { SignalStateHandler } from '@veams/status-quo';
+const statusQuoProviderHandlerExample = `import { NativeStateHandler } from '@veams/status-quo';
 
 export type WizardState = {
   completed: number;
@@ -229,7 +229,7 @@ export type WizardActions = {
   reset: () => void;
 };
 
-class WizardFlowHandler extends SignalStateHandler<WizardState, WizardActions> {
+class WizardFlowHandler extends NativeStateHandler<WizardState, WizardActions> {
   constructor() {
     super({
       initialState: {
@@ -318,7 +318,7 @@ function WizardCommands() {
   );
 }`;
 
-const statusQuoCompositionHandlerExample = `import { SignalStateHandler } from '@veams/status-quo';
+const statusQuoCompositionHandlerExample = `import { NativeStateHandler } from '@veams/status-quo';
 
 type ChecklistState = {
   completed: number;
@@ -336,7 +336,7 @@ const initialChecklistState: ChecklistState = {
   total: 4,
 };
 
-class ChecklistHandler extends SignalStateHandler<ChecklistState, ChecklistActions> {
+class ChecklistHandler extends NativeStateHandler<ChecklistState, ChecklistActions> {
   constructor() {
     super({ initialState: initialChecklistState });
   }
@@ -409,7 +409,7 @@ function ChecklistControls({ handler }: { handler: ChecklistHandler }) {
   );
 }`;
 
-const statusQuoSelectorHandlerExample = `import { SignalStateHandler } from '@veams/status-quo';
+const statusQuoSelectorHandlerExample = `import { NativeStateHandler } from '@veams/status-quo';
 
 type ProfileState = {
   profile: {
@@ -430,7 +430,7 @@ type ProfileActions = {
   touchSave: () => void;
 };
 
-class ProfileHandler extends SignalStateHandler<ProfileState, ProfileActions> {
+class ProfileHandler extends NativeStateHandler<ProfileState, ProfileActions> {
   constructor() {
     super({
       initialState: {
@@ -947,6 +947,7 @@ const queryClient = new QueryClient();
 const cache = setupQueryProvider(queryClient);`;
 
 const statusQuoApiImports = `import {
+  NativeStateHandler,
   ObservableStateHandler,
   SignalStateHandler,
   makeStateSingleton,
@@ -1004,6 +1005,7 @@ const statusQuoSubpathImports = `import {
 import { ObservableStateHandler, makeStateSingleton } from '@veams/status-quo/store';`;
 
 const statusQuoFrameworkCoreImports = `import {
+  NativeStateHandler,
   ObservableStateHandler,
   SignalStateHandler,
   makeStateSingleton,
@@ -1029,8 +1031,8 @@ const statusQuoQueryApiImports = `import {
 const statusQuoPhilosophyCards: FeatureCard[] = [
   {
     description:
-      'Move between RxJS observables and Signals without rewriting your components. Stores keep the same shape; only the internal runtime changes.',
-    title: 'Swap the engine, keep the API',
+      'The native handler has zero dependencies. When you need more, move to RxJS or Signals without rewriting your components. Stores keep the same shape; only the internal runtime changes.',
+    title: 'Zero dependencies, total scale',
     visual: 'swap-engine',
   },
   {
@@ -1359,7 +1361,7 @@ const formFrameworkReactImports = `import {
   useUncontrolledField,
 } from '@veams/form/react';`;
 
-const formFeatureOwnedExample = `import { SignalStateHandler } from '@veams/status-quo';
+const formFeatureOwnedExample = `import { NativeStateHandler } from '@veams/status-quo';
 import { useStateFactory } from '@veams/status-quo/react';
 import { FormStateHandler } from '@veams/form';
 import { FormProvider, useUncontrolledField } from '@veams/form/react';
@@ -1379,7 +1381,7 @@ type LoginActions = {
   togglePasswordVisibility: () => void;
 };
 
-class LoginStateHandler extends SignalStateHandler<LoginState, LoginActions> {
+class LoginStateHandler extends NativeStateHandler<LoginState, LoginActions> {
   private readonly formHandler = new FormStateHandler<LoginValues>({
     initialValues: {
       email: '',
@@ -1728,7 +1730,7 @@ function LoginForm() {
   );
 }`;
 
-const formNestedFeatureWorkingExample = `import { SignalStateHandler } from '@veams/status-quo';
+const formNestedFeatureWorkingExample = `import { NativeStateHandler } from '@veams/status-quo';
 import { useStateFactory } from '@veams/status-quo/react';
 import { FormStateHandler } from '@veams/form';
 import { FormProvider, useUncontrolledField } from '@veams/form/react';
@@ -1749,7 +1751,7 @@ type FeatureActions = {
   saveProfile: (values: ProfileValues) => Promise<void>;
 };
 
-class ProfileFeatureHandler extends SignalStateHandler<FeatureState, FeatureActions> {
+class ProfileFeatureHandler extends NativeStateHandler<FeatureState, FeatureActions> {
   private readonly formHandler = new FormStateHandler<ProfileValues>({
     initialValues: {
       profile: {
@@ -1801,7 +1803,7 @@ function ProfileFeatureForm() {
   );
 }`;
 
-const formFeatureValidationWorkingExample = `import { SignalStateHandler } from '@veams/status-quo';
+const formFeatureValidationWorkingExample = `import { NativeStateHandler } from '@veams/status-quo';
 import { useStateFactory } from '@veams/status-quo/react';
 import { FormStateHandler } from '@veams/form';
 import { FormProvider, useUncontrolledField } from '@veams/form/react';
@@ -1818,7 +1820,7 @@ type FeatureActions = {
   submit: (values: RegisterValues) => Promise<void>;
 };
 
-class RegisterFeatureHandler extends SignalStateHandler<object, FeatureActions> {
+class RegisterFeatureHandler extends NativeStateHandler<object, FeatureActions> {
   private readonly formHandler = new FormStateHandler<RegisterValues>({
     initialValues: {
       account: {
@@ -2351,13 +2353,13 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  'Scale the service or handler layer without rewriting component wiring.',
+                  'Scale the service and state handler layer without rewriting component wiring.',
                   'Let state shape and derived logic grow without breeding custom nested hooks in the view.',
                   'Keep ownership obvious because subscriptions, actions, and teardown do not get trapped inside components.',
                 ],
                 id: 'why',
                 paragraphs: [
-                  'The split between **service or handler logic**, **state**, and the **component view** is the real payoff. Each layer gets room to grow on its own. Business logic can become richer, state can become more composed, and the component can stay focused on rendering snapshots and triggering actions.',
+                  'The split between **service**, **state handler**, and the **component view** is the real payoff. Each layer gets room to grow on its own. Business logic can become richer, state can become more composed, and the component can stay focused on rendering snapshots and triggering actions.',
                   'That separation keeps React components from turning into ownership puzzles. You do not end up wondering which nested hook owns the subscription, where cleanup should happen, or which component secretly became the home of stateful behavior.',
                 ],
                 title: 'Why the split matters',
@@ -2388,25 +2390,25 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
+                  'Native handlers are zero-dependency and perfect for simple state.',
                   'Observable handlers are strong for stream-heavy composition.',
                   'Signal handlers are strong for compact value-style reactivity.',
-                  'The component contract stays the same either way.',
                 ],
                 id: 'swap-engine',
                 paragraphs: [
-                  'One of the core ideas is that the reactive engine should be an implementation choice. You can choose observables or signals without forcing the UI layer to relearn the state model.',
+                  'One of the core ideas is that the reactive engine should be an implementation choice. Start with the zero-dependency native handler and scale up to observables or signals when necessary, without forcing the UI layer to relearn the state model.',
                 ],
-                title: 'Swap the engine, keep the API',
+                title: 'Scale the engine, keep the API',
               },
             ],
             eyebrow: 'Getting Started',
             heroBullets: [
+              'Zero-dependency native state handler by default.',
               'Small handler objects with explicit lifecycle.',
               'Snapshot subscriptions instead of framework-specific store APIs.',
-              'One public contract across observables and signals.',
             ],
             heroParagraphs: [
-              'Status Quo treats state handlers as small, composable objects with explicit lifecycle and a tiny interface. Components subscribe to snapshots, not framework-specific store APIs. That makes it easy to swap the engine under the hood: RxJS for observable streams or Preact Signals for ultra-light reactive state.',
+              'Status Quo treats state handlers as small, composable objects with explicit lifecycle and a tiny interface. The native handler has zero dependencies, making it the perfect starting point. When you need more, easily swap the engine under the hood: RxJS for observable streams or Preact Signals for ultra-light reactive state.',
             ],
             id: 'overview',
             intro: 'Start with the mental model first: handlers own state and lifecycle, hooks only translate snapshots into the UI layer.',
@@ -2459,7 +2461,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'install',
                 paragraphs: [
-                  'Install the package plus the reactive backend you plan to use. RxJS and Preact Signals stay peer-driven because the library supports both styles of state handler.',
+                  'Install the core package. When using the native handler, the library is completely zero-dependency. You can also opt into peer-driven reactive backends like RxJS or Preact Signals if your state logic needs more powerful composition.',
                 ],
                 title: 'Install the package',
               },
@@ -2480,7 +2482,7 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Getting Started',
             id: 'installation',
-            intro: 'Install the package, choose your reactive backend, and add global setup only if you want shared runtime defaults.',
+            intro: 'Install the zero-dependency package and start with the native handler, then opt into other reactive backends only when you need them.',
             summary: 'Install fast. Start clean.',
             title: 'Installation',
           },
@@ -2516,7 +2518,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'local-store',
                 paragraphs: [
-                  'Start by defining the handler itself. Keep the transitions, action contract, and initial state in one place so the React layer only has to subscribe and trigger actions. This draft-note example stays deliberately local, which makes the lifecycle boundary obvious from the start.',
+                  'Start by defining the handler itself. Keep the transitions, action contract, and initial state in one place so the React layer only has to subscribe and trigger actions. This draft-note example uses the native handler, which is completely zero-dependency and keeps the lifecycle boundary obvious from the start.',
                 ],
                 title: 'Create a local handler',
               },
@@ -2524,7 +2526,7 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Getting Started',
             id: 'quick-start',
             intro: 'The fastest path is a local handler plus `useStateFactory`, then expand into lower-level hooks only when you need more control.',
-            summary: 'Go from zero to handler in minutes.',
+            summary: 'Zero dependencies. Fast local state.',
             title: 'Quick Start',
           },
         ],
@@ -2551,13 +2553,13 @@ export const docsPackages: DocsPackage[] = [
                   },
                 ],
                 bullets: [
+                  'Use `NativeStateHandler` as your default for zero dependencies.',
                   'Use `ObservableStateHandler` when the interesting work already feels like a stream.',
                   'Use `SignalStateHandler` when you want direct reads and cheap synchronous derivation.',
-                  'Choose based on handler internals, not because the component API needs to change.',
                 ],
-                id: 'observable-vs-signal',
+                id: 'engine-choice',
                 paragraphs: [
-                  'This is not a React decision. It is a handler decision. In both examples, a shared UI singleton exposes the current viewport and a local counter reacts by changing its `step`. The observable version derives that step with `pipe(...)`. The signal version derives the same value with `computed(...)`. Both are then bridged into the same `bindSubscribable()` contract, so the surrounding composition still reads the same.',
+                  'This is not a React decision. It is a handler decision. Start with the zero-dependency native handler and promote to other engines only when necessary. In both examples, a shared UI singleton exposes the current viewport and a local counter reacts by changing its `step`. The observable version derives that step with `pipe(...)`. The signal version derives the same value with `computed(...)`. Both are then bridged into the same `bindSubscribable()` contract, so the surrounding composition still reads the same.',
                 ],
                 title: 'Pick the engine that matches the state',
               },
@@ -2576,9 +2578,9 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Guides',
             id: 'handler-patterns',
-            intro: 'You are not picking a React API here. You are picking the engine the handler composes with.',
-            summary: 'Streams or signals. Same outside shape.',
-            title: 'Observable vs Signal',
+            intro: 'Start with the zero-dependency native engine and scale to observables or signals when you need them.',
+            summary: 'Native, streams, or signals. Same outside shape.',
+            title: 'Pick your Engine',
           },
           {
             blocks: [
@@ -2849,7 +2851,7 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  'Works for both `ObservableStateHandler` and `SignalStateHandler`.',
+                  'Works for `NativeStateHandler`, `ObservableStateHandler`, and `SignalStateHandler`.',
                   'Every `setState(nextState, actionName)` call is sent to the Redux DevTools timeline.',
                   'If you omit `namespace`, Status Quo uses the handler class name by default.',
                 ],
@@ -3100,6 +3102,18 @@ export const docsPackages: DocsPackage[] = [
                   'Use `BaseStateHandler` as the shared foundation when you are reasoning about the handler contract itself. Most app code will extend one of the concrete handler implementations rather than extending the base class directly.',
                 ],
                 title: 'BaseStateHandler',
+              },
+              {
+                bullets: [
+                  'Zero-dependency native handler implementation.',
+                  'Plain JS based and perfect for simple state management.',
+                  'Keeps the same external contract as the other handlers.',
+                ],
+                id: 'native-state-handler',
+                paragraphs: [
+                  'Use `NativeStateHandler` as your default starting point. It has zero external dependencies and provides a clean, predictable state model using plain JavaScript. Scale up to other handlers only when your composition needs it.',
+                ],
+                title: 'NativeStateHandler',
               },
               {
                 bullets: [
@@ -3431,7 +3445,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'framework-support',
                 paragraphs: [
-                  'Status Quo Query is not tied to React. Keep it in the service or handler layer, then let your UI framework consume snapshots and trigger commands.',
+                  'Status Quo Query is not tied to React. Keep it in the service and state handler layer, then let your UI framework consume snapshots and trigger commands.',
                   'React examples in guides are integration examples only. They demonstrate one rendering layer, while the query facade itself remains framework-agnostic.',
                 ],
                 title: 'Framework Support',
