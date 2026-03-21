@@ -97,5 +97,19 @@
   },
   "bugs": {
     "url": "https://github.com/Veams/veams/issues"
+  },
+  "release-it": {
+    "git": {
+      "tagName": "${name}@${version}",
+      "pushRepo": "git+https://github.com/Veams/veams.git",
+      "commitMessage": "chore(status-quo): release ${name}@${version}"
+    },
+    "github": {
+      "release": true,
+      "releaseName": "${name}@${version}"
+    },
+    "npm": {
+      "publish": true
+    }
   }
 }
