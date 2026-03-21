@@ -37,7 +37,7 @@ const devToolsFeatures = {
   reorder: true, // Allow reordering actions.
   dispatch: false, // Do not allow dispatching actions from DevTools.
   test: false, // Do not generate tests.
-};
+} as const;
 
 /**
  * Abstract base class for all state handlers in the system.
