@@ -7,11 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- `NativeStateHandler` for zero-dependency state management using plain JavaScript.
 - `StateProvider` for sharing one handler instance across a scoped React subtree.
 - `useProvidedStateHandler()`, `useProvidedStateActions()`, and `useProvidedStateSubscription()` for provider-scoped composition.
 - `setupStatusQuo({ devTools: { enabled } })` for global Redux DevTools defaults.
 
 ### Changed
+- The library is now **zero-dependency** when only `NativeStateHandler` is used (`rxjs` and `@preact/signals-core` are peer dependencies).
 - React-specific exports now live under `@veams/status-quo/react`.
 - `options.devTools.namespace` is now optional and falls back to the handler class name.
 - `ObservableStateHandler#getObservable(options?)` is now the canonical API for the full state stream.

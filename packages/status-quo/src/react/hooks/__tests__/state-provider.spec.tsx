@@ -6,7 +6,7 @@ import {
   useProvidedStateActions,
   useProvidedStateHandler,
   useProvidedStateSubscription,
-} from '../state-provider.js';
+} from '../index.js';
 
 import type { StateSubscriptionHandler } from '../../../types/types.js';
 
@@ -279,7 +279,7 @@ describe('StateProvider', () => {
       act(() => {
         root.render(<MissingProviderConsumer />);
       });
-    }).toThrow('No StateProvider instance found in the current React tree.');
+    }).toThrow('useProvidedStateHandler must be used within a StateProvider');
 
     consoleErrorSpy.mockRestore();
   });

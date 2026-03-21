@@ -28,7 +28,9 @@ This README summarizes the package API. The full routed documentation lives in V
 
 ## Overview
 
-StatusQuo is a small, framework-agnostic state layer that focuses on explicit lifecycle, clear action APIs, and a minimal subscription surface. It ships two handler implementations with the same public interface: RxJS-backed observables and signals-backed stores.
+StatusQuo is a small, framework-agnostic state layer that focuses on explicit lifecycle, clear action APIs, and a minimal subscription surface. It ships three handler implementations with the same public interface: **Native** (zero-dependency), **RxJS-backed** (observables), and **Signals-backed** (stores).
+
+When using the `NativeStateHandler`, the library is **completely zero-dependency**.
 
 ## Philosophy
 
@@ -47,13 +49,17 @@ Live docs:
 Install:
 
 ```bash
-npm install @veams/status-quo rxjs @preact/signals-core
+# Minimal installation (Native only)
+npm install @veams/status-quo
+
+# Optional engines
+npm install rxjs @preact/signals-core
 ```
 
 Create a store and use it in a component:
 
 ```ts
-import { ObservableStateHandler } from '@veams/status-quo';
+import { NativeStateHandler } from '@veams/status-quo';
 import { useStateFactory } from '@veams/status-quo/react';
 
 type CounterState = { count: number };
@@ -63,7 +69,7 @@ type CounterActions = {
   decrease: () => void;
 };
 
-class CounterStore extends ObservableStateHandler<CounterState, CounterActions> {
+class CounterStore extends NativeStateHandler<CounterState, CounterActions> {
   constructor() {
     super({ initialState: { count: 0 } });
   }
@@ -97,12 +103,13 @@ setupStatusQuo({
 
 ## Handlers
 
-StatusQuo provides two handler implementations with the same public interface:
+StatusQuo provides three handler implementations with the same public interface:
 
+- `NativeStateHandler` (**Zero dependency**, plain JS)
 - `ObservableStateHandler` (RxJS-backed)
 - `SignalStateHandler` (Signals-backed)
 
-Both are built on `BaseStateHandler`, which provides the shared lifecycle and devtools support.
+All are built on `BaseStateHandler`, which provides the shared lifecycle and devtools support.
 
 ## Hooks
 
@@ -489,7 +496,7 @@ const [name] = useStateSingleton(UserSingleton, (state) => state.user.name);
 
 ## Devtools
 
-Status Quo supports the Redux DevTools browser extension on both `ObservableStateHandler` and `SignalStateHandler`.
+Status Quo supports the Redux DevTools browser extension on `NativeStateHandler`, `ObservableStateHandler`, and `SignalStateHandler`.
 
 Turn it on globally:
 
@@ -586,6 +593,43 @@ Protected helpers:
   - Registers the subscription on `this.subscriptions` and invokes `onChange` with the current snapshot when available.
   - If `selector` is omitted, identity selection is used.
   - `onChange` is only called when selected value changes according to `isEqual` (default `Object.is`).
+
+### `NativeStateHandler<S, A>`
+
+**Zero-dependency**, plain JS handler. Extends `BaseStateHandler`.
+
+Constructor:
+
+```ts
+protected constructor({
+  initialState,
+  options
+}: {
+  initialState: S;
+  options?: {
+    devTools?: { enabled?: boolean; namespace?: string };
+    distinct?: {
+      enabled?: boolean;
+      comparator?: (previous: S, next: S) => boolean;
+    };
+    useDistinctUntilChanged?: boolean;
+  };
+})
+```
+
+Public methods:
+
+- `subscribe(listener: () => void): () => void`
+- `subscribe(listener: (value: S) => void): () => void`
+
+Notes:
+- The handler uses plain JS and a `Set` for listener management.
+- Zero external dependencies.
+- Distinct behavior defaults to enabled.
+- Configure it globally via `setupStatusQuo` or per handler via `options.distinct`.
+- Devtools can be enabled globally via `setupStatusQuo({ devTools: { enabled: true } })` or overridden per handler via `options.devTools`.
+- `subscribe` fires immediately with the current snapshot and then on subsequent changes.
+- Subscribers receive the next state snapshot as a callback argument.
 
 ### `ObservableStateHandler<S, A>`
 

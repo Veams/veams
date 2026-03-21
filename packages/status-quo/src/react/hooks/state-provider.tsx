@@ -1,56 +1,52 @@
+/**
+ * Utility hook for providing a state handler through React Context.
+ * Allows components deep in the component tree to access a common state handler instance.
+ */
 import React, { createContext, useContext } from 'react';
 
-import { useStateActions } from './state-actions.js';
-import { useStateSubscription } from './state-subscription.js';
-
-import type { PropsWithChildren } from 'react';
 import type { StateSubscriptionHandler } from '../../types/types.js';
 
-type StateSelector<State, SelectedState> = (state: State) => SelectedState;
-type EqualityFn<SelectedState> = (current: SelectedState, next: SelectedState) => boolean;
-type SharedStateHandler = StateSubscriptionHandler<unknown, unknown>;
-
-const StateProviderContext = createContext<SharedStateHandler | null>(null);
-const identitySelector = <State,>(state: State) => state;
-
-export type StateProviderProps<V, A> = PropsWithChildren<{
+/**
+ * Interface for the state provider component props.
+ */
+interface StateProviderProps<V, A> {
+  // Children components that will have access to the state handler.
+  children: React.ReactNode;
+  // The state handler instance to be provided to the component tree.
   instance: StateSubscriptionHandler<V, A>;
-}>;
-
-export function useProvidedStateHandler<V, A>() {
-  const stateHandler = useContext(StateProviderContext);
-
-  if (!stateHandler) {
-    throw new Error('No StateProvider instance found in the current React tree.');
-  }
-
-  return stateHandler as StateSubscriptionHandler<V, A>;
 }
 
+/**
+ * Creates a React Context for storing and providing the state handler instance.
+ * Initialized with null as there is no default state handler.
+ */
+const StateContext = createContext<StateSubscriptionHandler<unknown, unknown> | null>(null);
+
+/**
+ * Provides a state handler instance to its descendant components using React Context.
+ */
 export function StateProvider<V, A>({ children, instance }: StateProviderProps<V, A>) {
+  // Use a context provider to share the state handler instance.
   return (
-    <StateProviderContext.Provider value={instance as SharedStateHandler}>
+    <StateContext.Provider value={instance as StateSubscriptionHandler<unknown, unknown>}>
       {children}
-    </StateProviderContext.Provider>
+    </StateContext.Provider>
   );
 }
 
-export function useProvidedStateActions<V, A>() {
-  const stateHandler = useProvidedStateHandler<V, A>();
+/**
+ * Custom hook to access the state handler provided by the StateProvider.
+ * Throws an error if the hook is used outside of a StateProvider.
+ */
+export function useProvidedStateHandler<V, A>(): StateSubscriptionHandler<V, A> {
+  // Retrieve the state handler from the nearest context provider.
+  const stateHandler = useContext(StateContext);
 
-  return useStateActions(stateHandler);
-}
+  // If no state handler is found, it means the hook is being used incorrectly.
+  if (!stateHandler) {
+    throw new Error('useProvidedStateHandler must be used within a StateProvider');
+  }
 
-export function useProvidedStateSubscription<V, A>(): [V, A];
-export function useProvidedStateSubscription<V, A, Sel>(
-  selector: StateSelector<V, Sel>,
-  isEqual?: EqualityFn<Sel>
-): [Sel, A];
-export function useProvidedStateSubscription<V, A, Sel = V>(
-  selector: StateSelector<V, Sel> = identitySelector as StateSelector<V, Sel>,
-  isEqual: EqualityFn<Sel> = Object.is
-) {
-  const stateHandler = useProvidedStateHandler<V, A>();
-
-  return useStateSubscription(stateHandler, selector, isEqual);
+  // Cast and return the state handler instance.
+  return stateHandler as StateSubscriptionHandler<V, A>;
 }
