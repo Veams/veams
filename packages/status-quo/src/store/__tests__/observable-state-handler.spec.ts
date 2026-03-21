@@ -5,6 +5,14 @@ import { ObservableStateHandler } from '../observable-state-handler.js';
 
 import type { DevToolsOptions, DistinctOptions } from '../../config/status-quo-config.js';
 
+declare global {
+  interface Window {
+    __REDUX_DEVTOOLS_EXTENSION__?: {
+      connect: (options: any) => any;
+    };
+  }
+}
+
 type TestState = { test: string; test2: string };
 type TestActions = { testAction: () => void };
 type TestObservableHandlerOptions = {
