@@ -30,6 +30,12 @@
       ],
       "@veams/status-quo-query/*": [
         "../packages/status-quo-query/src/*"
+      ],
+      "@veams/partial-hydration": [
+        "../packages/partial-hydration/src/index.ts"
+      ],
+      "@veams/partial-hydration/*": [
+        "../packages/partial-hydration/src/*"
       ]
     },
     "skipLibCheck": true,

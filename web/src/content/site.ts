@@ -2425,69 +2425,33 @@ export const docsPackages: DocsPackage[] = [
         title: 'Guides',
       },
       {
-        id: 'api',
+        id: 'examples',
         pages: [
           {
             blocks: [
               {
                 codeExamples: [
                   {
-                    code: partialHydrationApiExample,
-                    label: 'Public entry points',
+                    code: partialHydrationQuickStart,
+                    label: 'Complete React Setup',
                     language: 'ts',
                   },
                 ],
-                id: 'entry-points',
+                id: 'complete-setup',
                 paragraphs: [
-                  'The package surface is focused on three main exports: the client-side orchestrator, the SSR metadata binder, and the isomorphic ID helper.',
+                  'This example demonstrates a complete React setup. It mixes non-lazy components for critical UI (like Navigation) with lazy components that only load when they enter the viewport.',
                 ],
-                title: 'Entry points',
-              },
-              {
-                bullets: [
-                  '`createHydration(options)` returns an object with `init(context)` and `clearAllObservers()`.',
-                  '`options.components` maps names to `ComponentOption` objects.',
-                  '`init(context)` starts scanning the DOM for component wrappers.',
-                ],
-                id: 'create-hydration',
-                paragraphs: [
-                  'Use `createHydration` to define your client-side activation logic. It is framework-agnostic, meaning you define exactly how each component is rendered in the `render` callback.',
-                ],
-                title: 'createHydration',
-              },
-              {
-                bullets: [
-                  '`withHydration(Component, config?)` wraps a React component.',
-                  'Serializes props into the HTML during server rendering.',
-                  'Adds `data-component` and `data-internal-id` attributes to the wrapper.',
-                ],
-                id: 'with-hydration',
-                paragraphs: [
-                  'Use `withHydration` during SSR to ensure that the client-side loader has all the data it needs to activate the component without a full page re-render.',
-                ],
-                title: 'withHydration',
-              },
-              {
-                bullets: [
-                  'Generates a unique string ID based on the parent hydration unit.',
-                  'Stable across server and client renders.',
-                  'Required for accessible forms and aria labels in hydrated islands.',
-                ],
-                id: 'use-isomorphic-id',
-                paragraphs: [
-                  'Use `useIsomorphicId` inside your interactive components to maintain DOM consistency between the initial static HTML and the later hydrated state.',
-                ],
-                title: 'useIsomorphicId',
+                title: 'Mix Lazy and Non-Lazy Components',
               },
             ],
-            eyebrow: 'API',
-            id: 'api',
-            intro: 'The package provides a minimal but powerful API for implementing the Islands Architecture in your project.',
-            summary: 'Core factory and bindings reference.',
-            title: 'API',
+            eyebrow: 'Examples',
+            id: 'example-complete-setup',
+            intro: 'See how to orchestrate a full page with both immediate and deferred hydration strategies.',
+            summary: 'Complete setup mixing lazy and non-lazy components.',
+            title: 'Complete Setup',
           },
         ],
-        title: 'API',
+        title: 'Examples',
       },
     ],
     title: 'Partial Hydration',

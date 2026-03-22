@@ -7,6 +7,7 @@ This is the official monorepo for [VEAMS](https://github.com/Veams/veams) packag
 - `@veams/status-quo`: framework-agnostic state handlers and React hooks.
 - `@veams/form`: form state handlers with optional React field bindings.
 - `@veams/status-quo-query`: TanStack Query service helpers with a subscribable API surface.
+- `@veams/partial-hydration`: framework-agnostic partial hydration engine with optional React bindings.
 
 ## Docs
 
