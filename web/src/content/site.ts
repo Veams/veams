@@ -2317,17 +2317,12 @@ export const docsPackages: DocsPackage[] = [
                 visual: 'partial-hydration-architecture',
               },
             ],
-            heroBullets: [
-              'Framework-agnostic core logic.',
-              'Optional, high-performance React bindings.',
-              'Designed for scalability and maintainability.',
-            ],
             heroParagraphs: [
               'VEAMS provides a suite of modular, framework-agnostic packages designed to keep your frontend architecture clean, scalable, and highly performant. From structural methodologies to advanced state management and partial hydration, each tool is built to solve complex problems without coupling your business logic to a specific UI framework.',
             ],
             id: 'landing',
             intro: '',
-            summary: 'Structure, State, and Hydration.',
+            summary: 'Clean Architecture for Ambitious Web Interfaces',
             title: 'Ecosystem Overview',
           },
         ],

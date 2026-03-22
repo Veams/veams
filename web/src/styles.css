@@ -1444,6 +1444,25 @@ button {
   font-size: 1.1rem;
 }
 
+.site-footer {
+  margin-top: 8rem;
+  padding: 4rem 0;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  color: var(--muted);
+  font-size: 1.5rem;
+  font-weight: 300;
+}
+
+.footer-heart-icon {
+  display: inline-block;
+  vertical-align: middle;
+  width: 1.8rem;
+  height: 1.8rem;
+  margin: 0 0.4rem;
+  color: var(--accent);
+}
+
 @media (max-width: 1180px) {
   .workspace-frame,
   .article-grid {
