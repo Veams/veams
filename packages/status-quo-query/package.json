@@ -83,13 +83,13 @@
   },
   "release-it": {
     "git": {
-      "tagName": "${name}@${version}",
+      "tagName": "${npm.name}@${version}",
       "pushRepo": "git+https://github.com/Veams/veams.git",
-      "commitMessage": "chore(status-quo-query): release ${name}@${version}"
+      "commitMessage": "chore(status-quo-query): release ${npm.name}@${version}"
     },
     "github": {
       "release": true,
-      "releaseName": "${name}@${version}"
+      "releaseName": "${npm.name}@${version}"
     },
     "npm": {
       "publish": true
