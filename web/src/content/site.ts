@@ -5382,7 +5382,7 @@ export const docsPackages: DocsPackage[] = [
   },
   {
     accent: 'pink',
-    description: 'A collection of CSS animations for VEAMS.',
+    description: 'A curated collection of high-performance CSS animations for modern web interfaces.',
     githubPath: 'packages/css-animations',
     id: 'css-animations',
     npm: '@veams/css-animations',
@@ -5393,12 +5393,36 @@ export const docsPackages: DocsPackage[] = [
           {
             blocks: [
               {
-                id: 'overview',
+                featureCards: [
+                  {
+                    description: 'A collection of layout and page transition animations designed for modern interfaces.',
+                    title: 'In/Out Animations',
+                    visual: 'css-animations-architecture',
+                  },
+                ],
+                id: 'overview-intro',
                 paragraphs: [
                   '@veams/css-animations provides a curated set of high-performance CSS animations designed for the VEAMS ecosystem. It is available as SCSS mixins, pre-compiled CSS, and TypeScript constants for type-safe usage.',
                 ],
-                title: 'Overview',
+                title: 'High-Performance Animations',
               },
+            ],
+            eyebrow: 'Getting Started',
+            heroBullets: [
+              'SCSS mixins for maximum flexibility.',
+              'Pre-compiled CSS for quick integration.',
+              'Type-safe TypeScript constants for class names.',
+            ],
+            heroParagraphs: [
+              'VEAMS CSS Animations is more than just a stylesheet. It is a structured library of performance-optimized animations that follow the VEAMS methodology, ensuring smooth transitions and feedback effects with minimal impact on frame rates.',
+            ],
+            id: 'overview',
+            intro: 'Curated CSS animations for modern web interfaces.',
+            summary: 'Smooth transitions and feedback effects.',
+            title: 'Overview',
+          },
+          {
+            blocks: [
               {
                 codeExamples: [
                   {
@@ -5409,16 +5433,16 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'installation',
                 paragraphs: [
-                  'Install the package via npm to start using the animations in your project.',
+                  'Install the package via npm to start using the animations in your project. The package includes SCSS sources, compiled CSS, and TypeScript types.',
                 ],
                 title: 'Installation',
               },
             ],
             eyebrow: 'Getting Started',
-            id: 'overview',
-            intro: 'Curated CSS animations for modern web interfaces.',
-            summary: 'Animations for the VEAMS ecosystem.',
-            title: 'Overview',
+            id: 'install',
+            intro: 'Add the animations package to your project.',
+            summary: 'Get started with CSS animations.',
+            title: 'Installation',
           },
         ],
         title: 'Getting Started',
