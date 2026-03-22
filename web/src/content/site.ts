@@ -34,7 +34,8 @@ export type LiveExampleId =
   | 'status-quo-singleton-workspace'
   | 'status-quo-composition-checklist'
   | 'status-quo-provider-wizard'
-  | 'status-quo-selector-profile';
+  | 'status-quo-selector-profile'
+  | 'css-animations-showcase';
 
 export type ContentBlock = {
   bullets?: string[];
@@ -2245,6 +2246,12 @@ export const docsPackages: DocsPackage[] = [
                       'Generic form state engine with optional React bindings for high-performance uncontrolled inputs.',
                     title: 'Form',
                     visual: 'form-architecture',
+                  },
+                  {
+                    description:
+                      'A collection of CSS animations for VEAMS, available as SCSS, CSS, or TypeScript constants.',
+                    title: 'CSS Animations',
+                    visual: 'methodology-utilities',
                   },
                   {
                     description:
@@ -4981,6 +4988,7 @@ export const docsPackages: DocsPackage[] = [
           {
             blocks: [
               {
+                callout: 'The data-internal-ref and data-internal-id attributes are a fallback solution we support to re-connect the data script with the component if the DOM is structurally manipulated before hydration. In standard setups where the script tag stays directly adjacent to the wrapper, these attributes are actually not necessary.',
                 codeExamples: [
                   {
                     code: partialHydrationDomExample,
@@ -4992,7 +5000,6 @@ export const docsPackages: DocsPackage[] = [
                 paragraphs: [
                   'The hydration process relies on two key HTML elements generated on the server: a hidden script tag containing the serialized props, and a wrapper div identifying the component.',
                   'When the client-side loader encounters this structure and the activation trigger fires, it extracts the props, parses the JSON, and hands control over to the defined render function.',
-                  'Note: The `data-internal-ref` and `data-internal-id` attributes are a fallback solution we support to re-connect the data script with the component if the DOM is structurally manipulated before hydration. In standard setups where the script tag stays directly adjacent to the wrapper, these attributes are actually not necessary.',
                 ],
                 title: 'DOM Architecture',
               },
@@ -5328,6 +5335,75 @@ export const docsPackages: DocsPackage[] = [
       },
     ],
     title: 'Partial Hydration',
+  },
+  {
+    accent: 'violet',
+    description: 'A collection of CSS animations for VEAMS.',
+    githubPath: 'packages/css-animations',
+    id: 'css-animations',
+    npm: '@veams/css-animations',
+    sections: [
+      {
+        id: 'getting-started',
+        pages: [
+          {
+            blocks: [
+              {
+                id: 'overview',
+                paragraphs: [
+                  '@veams/css-animations provides a curated set of high-performance CSS animations designed for the VEAMS ecosystem. It is available as SCSS mixins, pre-compiled CSS, and TypeScript constants for type-safe usage.',
+                ],
+                title: 'Overview',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: 'npm install @veams/css-animations',
+                    label: 'Install',
+                    language: 'bash',
+                  },
+                ],
+                id: 'installation',
+                paragraphs: [
+                  'Install the package via npm to start using the animations in your project.',
+                ],
+                title: 'Installation',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            id: 'overview',
+            intro: 'Curated CSS animations for modern web interfaces.',
+            summary: 'Animations for the VEAMS ecosystem.',
+            title: 'Overview',
+          },
+        ],
+        title: 'Getting Started',
+      },
+      {
+        id: 'guides',
+        pages: [
+          {
+            blocks: [
+              {
+                id: 'showcase',
+                liveExample: 'css-animations-showcase' as any,
+                paragraphs: [
+                  'Interact with all available animations in this showcase. Hit the button next to each animation name to see it in action on the preview element.',
+                ],
+                title: 'Interactive Showcase',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'showcase',
+            intro: 'Preview all available animations in real-time.',
+            summary: 'Live animation showcase.',
+            title: 'Animation Showcase',
+          },
+        ],
+        title: 'Guides',
+      },
+    ],
+    title: 'CSS Animations',
   },
 ];
 
