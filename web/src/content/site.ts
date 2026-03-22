@@ -2318,7 +2318,7 @@ export const docsPackages: DocsPackage[] = [
               },
             ],
             heroParagraphs: [
-              'VEAMS provides a suite of modular, framework-agnostic packages designed to keep your frontend architecture clean, scalable, and highly performant. From structural methodologies to advanced state management and partial hydration, each tool is built to solve complex problems without coupling your business logic to a specific UI framework.',
+              'VEAMS provides a suite of modular, framework-agnostic packages designed to keep your frontend architecture **clean**, **scalable**, and **highly performant** without too much magic! From structural methodologies to advanced state management and partial hydration, each tool is built to solve complex problems without coupling your business logic to a specific UI framework.',
             ],
             id: 'landing',
             intro: '',

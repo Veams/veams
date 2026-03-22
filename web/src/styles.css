@@ -1445,9 +1445,9 @@ button {
 }
 
 .site-footer {
-  margin-top: 8rem;
-  padding: 4rem 0;
+  padding: 6rem 0;
   border-top: 1px solid var(--border);
+  background: var(--page);
   text-align: center;
   color: var(--muted);
   font-size: 1.5rem;

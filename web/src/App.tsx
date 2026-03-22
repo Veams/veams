@@ -494,10 +494,10 @@ function DocsPage() {
               </aside>
             ) : null}
           </div>
-
-          <Footer />
         </main>
       </div>
+
+      <Footer />
     </div>
   );
 }
