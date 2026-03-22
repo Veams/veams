@@ -1183,8 +1183,12 @@ button {
 
 .concept-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(28rem, 1fr));
   gap: 2rem;
+}
+
+.concept-grid.is-single-item {
+  grid-template-columns: 1fr;
 }
 
 .concept-card {

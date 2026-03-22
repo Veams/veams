@@ -1126,7 +1126,7 @@ function ConceptIllustration({ visual }: Pick<FeatureCard, 'visual'>) {
 
 export function ConceptGrid({ items }: ConceptGridProps) {
   return (
-    <div className="concept-grid">
+    <div className={`concept-grid${items.length === 1 ? ' is-single-item' : ''}`}>
       {items.map((item) => {
         const content = (
           <>
