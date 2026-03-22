@@ -1558,6 +1558,63 @@ function CustomHydrationWrapper({ children, cmpId }: { children: React.ReactNode
   );
 }`;
 
+const partialHydrationCompleteExample = `// 1. Server-Side (or Static Site Generation)
+import { withHydration } from '@veams/partial-hydration/react';
+import { Navigation } from './Navigation';
+import { HeavyChart } from './HeavyChart';
+
+// Wrap components to inject hydration metadata into HTML
+const HydratedNav = withHydration(Navigation);
+HydratedNav.displayName = 'Navigation';
+
+const HydratedChart = withHydration(HeavyChart);
+HydratedChart.displayName = 'HeavyChart';
+
+export function Page() {
+  return (
+    <main>
+      <HydratedNav items={['Home', 'About']} />
+      <article>Static content here...</article>
+      <HydratedChart data={[1, 2, 3]} />
+    </main>
+  );
+}
+
+// 2. Client-Side (Entry Point)
+import { createHydration } from '@veams/partial-hydration';
+import { createRoot } from 'react-dom/client';
+import { Navigation } from './Navigation'; // Imported immediately
+
+const hydration = createHydration({
+  components: {
+    // Non-lazy: Initialize critical UI immediately
+    Navigation: {
+      Component: Navigation,
+      on: 'init',
+      render: (Component, props, el) => {
+        const root = createRoot(el);
+        root.render(<Component {...props} />);
+      }
+    },
+    // Lazy: Load heavy UI only when scrolled into view
+    HeavyChart: {
+      Component: () => import('./HeavyChart'),
+      on: 'in-viewport',
+      config: { rootMargin: '200px' },
+      render: async (Loader, props, el) => {
+        const mod = await Loader();
+        const Component = mod.default ?? mod.HeavyChart;
+        
+        const root = createRoot(el);
+        root.render(<Component {...props} />);
+      }
+    }
+  }
+});
+
+// Start the hydration engine
+hydration.init(document);`;
+
 const partialHydrationIsomorphicIdExample = `import { useIsomorphicId } from '@veams/partial-hydration/react';
 
 function MyField() {
@@ -2421,12 +2478,6 @@ export const docsPackages: DocsPackage[] = [
             summary: 'Hydration provider.',
             title: 'Hydration Provider',
           },
-        ],
-        title: 'Guides',
-      },
-      {
-        id: 'api',
-        pages: [
           {
             blocks: [
               {
@@ -2449,7 +2500,7 @@ export const docsPackages: DocsPackage[] = [
                   '`options.components` maps names to `ComponentOption` objects.',
                   '`init(context)` starts scanning the DOM for component wrappers.',
                 ],
-                id: 'create-hydration',
+                id: 'create-hydration-api',
                 paragraphs: [
                   'Use `createHydration` to define your client-side activation logic. It is framework-agnostic, meaning you define exactly how each component is rendered in the `render` callback.',
                 ],
@@ -2461,7 +2512,7 @@ export const docsPackages: DocsPackage[] = [
                   'Serializes props into the HTML during server rendering.',
                   'Adds `data-component` and `data-internal-id` attributes to the wrapper.',
                 ],
-                id: 'with-hydration',
+                id: 'with-hydration-api',
                 paragraphs: [
                   'Use `withHydration` during SSR to ensure that the client-side loader has all the data it needs to activate the component without a full page re-render.',
                 ],
@@ -2473,21 +2524,21 @@ export const docsPackages: DocsPackage[] = [
                   'Stable across server and client renders.',
                   'Required for accessible forms and aria labels in hydrated islands.',
                 ],
-                id: 'use-isomorphic-id',
+                id: 'use-isomorphic-id-api',
                 paragraphs: [
                   'Use `useIsomorphicId` inside your interactive components to maintain DOM consistency between the initial static HTML and the later hydrated state.',
                 ],
                 title: 'useIsomorphicId',
               },
             ],
-            eyebrow: 'API',
-            id: 'api',
+            eyebrow: 'Guides',
+            id: 'api-reference',
             intro: 'The package provides a minimal but powerful API for implementing the Islands Architecture in your project.',
             summary: 'Core factory and bindings reference.',
-            title: 'API',
+            title: 'API Reference',
           },
         ],
-        title: 'API',
+        title: 'Guides',
       },
       {
         id: 'examples',
@@ -2497,7 +2548,7 @@ export const docsPackages: DocsPackage[] = [
               {
                 codeExamples: [
                   {
-                    code: partialHydrationQuickStart,
+                    code: partialHydrationCompleteExample,
                     label: 'Complete React Setup',
                     language: 'ts',
                   },
