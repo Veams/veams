@@ -377,7 +377,7 @@ function DocsPage() {
             ) : null}
           </section>
 
-          <div className="article-grid">
+          <div className={`article-grid${tocBlocks.length === 0 ? ' is-full' : ''}`}>
             <article className="article-card">
               {contentBlocks.map((block) => (
                 <section className="content-block" id={block.id} key={block.id}>
@@ -452,21 +452,23 @@ function DocsPage() {
               ) : null}
             </article>
 
-            <aside className="toc-panel">
-              <div className="sidebar-card">
-                <p className="eyebrow">On This Page</p>
-                <nav aria-label="Table of contents" className="toc-nav">
-                  {tocBlocks.map((block) => (
-                    <a href={`#${block.id}`} key={block.id}>
-                      <span aria-hidden="true" className="toc-link-icon">
-                        #
-                      </span>
-                      <span>{renderInlineText(block.title)}</span>
-                    </a>
-                  ))}
-                </nav>
-              </div>
-            </aside>
+            {tocBlocks.length > 0 ? (
+              <aside className="toc-panel">
+                <div className="sidebar-card">
+                  <p className="eyebrow">On This Page</p>
+                  <nav aria-label="Table of contents" className="toc-nav">
+                    {tocBlocks.map((block) => (
+                      <a href={`#${block.id}`} key={block.id}>
+                        <span aria-hidden="true" className="toc-link-icon">
+                          #
+                        </span>
+                        <span>{renderInlineText(block.title)}</span>
+                      </a>
+                    ))}
+                  </nav>
+                </div>
+              </aside>
+            ) : null}
           </div>
         </main>
       </div>
