@@ -1189,6 +1189,10 @@ button {
   grid-template-columns: 1fr;
 }
 
+.concept-grid.is-single-item .concept-card-visual {
+  min-height: 32rem;
+}
+
 .concept-card {
   overflow: hidden;
   border: 1px solid rgba(190, 192, 181, 0.74);
@@ -1216,9 +1220,13 @@ button {
 .concept-card-visual {
   display: grid;
   place-items: center;
-  height: 19rem;
+  min-height: 19rem;
   padding: 1.2rem;
   background: var(--visual-panel);
+}
+
+.hero-body .concept-card-visual {
+  max-height: 19rem;
 }
 
 .concept-illustration {
@@ -1445,7 +1453,7 @@ button {
 }
 
 .site-footer {
-  padding: 6rem 0;
+  padding: 1rem 0;
   border-top: 1px solid var(--border);
   background: var(--page);
   text-align: center;
