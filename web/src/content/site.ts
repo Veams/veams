@@ -1495,12 +1495,58 @@ const hydration = createHydration({
 
 hydration.init(document);`;
 
+const partialHydrationLazyExample = `const hydration = createHydration({
+  components: {
+    MyLazyComponent: {
+      // Return a dynamic import instead of the component itself
+      Component: () => import('./MyLazyComponent'),
+      on: 'in-viewport',
+      render: async (Loader, props, el) => {
+        // Await the loader to get the module when the trigger fires
+        const mod = await Loader();
+        const Component = mod.default;
+        
+        // Render the component
+        const root = createRoot(el);
+        root.render(<Component {...props} />);
+      }
+    }
+  }
+});`;
+
 const partialHydrationHocExample = `import { withHydration } from '@veams/partial-hydration/react';
 
 // Wrap your component to enable partial hydration metadata.
 // This will serialize props into the HTML during SSR.
 export const MyHydratedComponent = withHydration(MyComponent);
 MyHydratedComponent.displayName = 'MyComponent';`;
+
+const partialHydrationHocConfigExample = `import { withHydration } from '@veams/partial-hydration/react';
+
+const MyComponent = ({ title }: { title: string }) => <h1>{title}</h1>;
+
+// Add custom classes and attributes to the wrapper div
+export const MyHydratedComponent = withHydration(MyComponent, {
+  modifiers: 'my-custom-wrapper-class',
+  attributes: {
+    'data-testid': 'hydrated-wrapper',
+    'aria-live': 'polite'
+  }
+});
+MyHydratedComponent.displayName = 'MyComponent';`;
+
+const partialHydrationProviderExample = `import { HydrationProvider } from '@veams/partial-hydration/react';
+
+function CustomHydrationWrapper({ children, cmpId }: { children: React.ReactNode, cmpId: string }) {
+  return (
+    <div data-component="Custom" data-internal-id={cmpId}>
+      {/* Provide the ID to the React tree */}
+      <HydrationProvider componentId={cmpId}>
+        {children}
+      </HydrationProvider>
+    </div>
+  );
+}`;
 
 const partialHydrationIsomorphicIdExample = `import { useIsomorphicId } from '@veams/partial-hydration/react';
 
@@ -2277,10 +2323,93 @@ export const docsPackages: DocsPackage[] = [
               },
             ],
             eyebrow: 'Guides',
-            id: 'hydration-strategies',
-            intro: 'Optimize your application by choosing the most efficient activation trigger for each component.',
-            summary: 'Strategies for efficient component activation.',
-            title: 'Hydration Strategies',
+            id: 'create-hydration',
+            intro: 'Orchestrate components and choose the most efficient activation trigger for each.',
+            summary: 'Orchestrate components with createHydration.',
+            title: 'createHydration & Strategies',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: partialHydrationLazyExample,
+                    label: 'Lazy loading example',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  'Use dynamic imports to load components only when needed.',
+                  'Return a Promise from the `render` function to await the module.',
+                  'Combine with `in-viewport` for maximum performance.',
+                ],
+                id: 'lazy-loading-guide',
+                paragraphs: [
+                  'To truly benefit from partial hydration, you should lazy load your component code. By passing a dynamic import (e.g., `() => import(...)`) as your Component definition and awaiting it in the `render` function, the browser only downloads the JavaScript when the component is actually activated.',
+                ],
+                title: 'Dynamic Imports',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'lazy-loading',
+            intro: 'Load component code only when the activation trigger fires.',
+            summary: 'Lazy loading in the component itself.',
+            title: 'Lazy Loading',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: partialHydrationHocConfigExample,
+                    label: 'withHydration options',
+                    language: 'tsx',
+                  },
+                ],
+                bullets: [
+                  'Pass `modifiers` to add CSS classes to the wrapper div.',
+                  'Pass `attributes` to add custom HTML attributes like `data-testid`.',
+                ],
+                id: 'hoc-options',
+                paragraphs: [
+                  'The `withHydration` HOC accepts an optional configuration object to customize the wrapper `div` it generates. This allows you to apply specific layout classes or accessibility attributes without wrapping the element an additional time.',
+                ],
+                title: 'Wrapper Configuration',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'with-hydration',
+            intro: 'Customize the HTML wrapper generated by the withHydration HOC.',
+            summary: 'withHydration options.',
+            title: 'withHydration Options',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: partialHydrationProviderExample,
+                    label: 'HydrationProvider usage',
+                    language: 'tsx',
+                  },
+                ],
+                bullets: [
+                  'Manages the `componentId` for the hydration unit.',
+                  'Provides a counter for `useIsomorphicId`.',
+                  'Automatically applied by `withHydration`.',
+                ],
+                id: 'provider-guide',
+                paragraphs: [
+                  'The `HydrationProvider` is a React context provider that supplies metadata to the hydrated component tree. While it is automatically included when using `withHydration`, you can also use it manually if you are building custom hydration wrappers or orchestrating complex isomorphic setups.',
+                ],
+                title: 'Context Provider',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'hydration-provider',
+            intro: 'Understand how the HydrationProvider supplies metadata to your components.',
+            summary: 'Hydration provider.',
+            title: 'Hydration Provider',
           },
         ],
         title: 'Guides',
