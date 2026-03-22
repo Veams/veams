@@ -5481,6 +5481,15 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 title: 'Pre-compiled CSS',
               },
+            ],
+            eyebrow: 'Guides',
+            id: 'usage',
+            intro: 'Learn how to integrate animations via SCSS mixins or plain CSS imports.',
+            summary: 'Mixins and CSS imports.',
+            title: 'Usage Guide',
+          },
+          {
+            blocks: [
               {
                 codeExamples: [
                   {
@@ -5495,6 +5504,15 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 title: 'TypeScript Constants',
               },
+            ],
+            eyebrow: 'Guides',
+            id: 'typescript-usage',
+            intro: 'Use type-safe constants to toggle animation classes in your components.',
+            summary: 'Constants for type-safe class names.',
+            title: 'TypeScript Usage',
+          },
+          {
+            blocks: [
               {
                 codeExamples: [
                   {
@@ -5511,12 +5529,17 @@ export const docsPackages: DocsPackage[] = [
               },
             ],
             eyebrow: 'Guides',
-            id: 'usage',
-            intro:
-              'Learn how to integrate animations via SCSS mixins, plain CSS, or TypeScript constants.',
-            summary: 'Mixins, CSS imports, and constants.',
-            title: 'Usage Guide',
+            id: 'api-reference',
+            intro: 'All animations are driven by customizable CSS Custom Properties.',
+            summary: 'Core variables and customization reference.',
+            title: 'API Reference',
           },
+        ],
+        title: 'Guides',
+      },
+      {
+        id: 'examples',
+        pages: [
           {
             blocks: [
               {
@@ -5528,14 +5551,14 @@ export const docsPackages: DocsPackage[] = [
                 title: 'Interactive Showcase',
               },
             ],
-            eyebrow: 'Guides',
+            eyebrow: 'Examples',
             id: 'showcase',
             intro: 'Preview all available animations in real-time.',
             summary: 'Live animation showcase.',
             title: 'Animation Showcase',
           },
         ],
-        title: 'Guides',
+        title: 'Examples',
       },
     ],
     title: 'CSS Animations',
