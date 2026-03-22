@@ -1509,6 +1509,21 @@ const hydration = createHydration({
 // Start scanning the DOM for these components
 hydration.init(document);`;
 
+const partialHydrationDomExample = `<!-- The encoded props are placed immediately before the component wrapper -->
+<script type="application/hydration-data" data-internal-ref="Navigation-1234abcd">
+  {"items":["Home","About"]}
+</script>
+
+<!-- The client-side engine uses these attributes to locate and mount the component -->
+<div 
+  data-component="Navigation" 
+  data-internal-id="Navigation-1234abcd" 
+  class="site-nav"
+>
+  <!-- Pre-rendered SSR HTML goes here -->
+  <nav><h1>Welcome</h1></nav>
+</div>`;
+
 const partialHydrationLazyExample = `const hydration = createHydration({
   components: {
     MyLazyComponent: {
@@ -4933,10 +4948,13 @@ export const docsPackages: DocsPackage[] = [
           {
             blocks: [
               {
-                bullets: [
-                  'Keep the initial page load fast by serving static HTML.',
-                  'Hydrate only the interactive "Islands" of your page.',
-                  'Choose when to hydrate: on init, dom-ready, or when in viewport.',
+                featureCards: [
+                  {
+                    description:
+                      'Interactive islands are embedded in a static HTML frame and activated by specific triggers like viewport intersection.',
+                    title: 'Islands Architecture',
+                    visual: 'partial-hydration-architecture',
+                  },
                 ],
                 id: 'islands-architecture',
                 paragraphs: [
@@ -4963,19 +4981,19 @@ export const docsPackages: DocsPackage[] = [
           {
             blocks: [
               {
-                featureCards: [
+                codeExamples: [
                   {
-                    description:
-                      'Interactive islands are embedded in a static HTML frame and activated by specific triggers like viewport intersection.',
-                    title: 'Islands Architecture',
-                    visual: 'partial-hydration-architecture',
+                    code: partialHydrationDomExample,
+                    label: 'Generated DOM structure',
+                    language: 'html',
                   },
                 ],
                 id: 'hydration-flow',
                 paragraphs: [
-                  'The hydration process follows a simple flow: components are rendered to static HTML on the server, their props are encoded into the DOM, and the client-side loader activates them based on the defined strategy.',
+                  'The hydration process relies on two key HTML elements generated on the server: a hidden script tag containing the serialized props, and a wrapper div identifying the component and linking to the props via an internal ID.',
+                  'When the client-side loader encounters this structure and the activation trigger fires, it extracts the props, parses the JSON, and hands control over to the defined render function.',
                 ],
-                title: 'Architecture',
+                title: 'DOM Architecture',
               },
               {
                 bullets: [
