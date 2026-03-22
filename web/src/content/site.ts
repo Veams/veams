@@ -2208,27 +2208,32 @@ export const docsPackages: DocsPackage[] = [
               {
                 featureCards: [
                   {
-                    description: 'A structural CSS and HTML methodology to keep large codebases scalable and predictable.',
+                    description:
+                      'A structural CSS and HTML methodology to keep large codebases scalable and predictable.',
                     title: 'Methodology',
                     visual: 'methodology-layout',
                   },
                   {
-                    description: 'Framework-agnostic state handlers with React hooks and explicit lifecycle management.',
+                    description:
+                      'Framework-agnostic state handlers with React hooks and explicit lifecycle management.',
                     title: 'Status Quo',
                     visual: 'framework-core',
                   },
                   {
-                    description: 'Stable query and mutation handles over TanStack Query, plus a centralized query manager.',
+                    description:
+                      'Stable query and mutation handles over TanStack Query, plus a centralized query manager.',
                     title: 'Status Quo Query',
                     visual: 'query-facade',
                   },
                   {
-                    description: 'Generic form state engine with optional React bindings for high-performance uncontrolled inputs.',
+                    description:
+                      'Generic form state engine with optional React bindings for high-performance uncontrolled inputs.',
                     title: 'Form',
                     visual: 'form-architecture',
                   },
                   {
-                    description: 'Activate interactive components in a static HTML environment using the Islands Architecture.',
+                    description:
+                      'Activate interactive components in a static HTML environment using the Islands Architecture.',
                     title: 'Partial Hydration',
                     visual: 'partial-hydration-architecture',
                   },
@@ -2250,7 +2255,8 @@ export const docsPackages: DocsPackage[] = [
               'The VEAMS ecosystem helps you build frontends that scale. By enforcing strict boundaries between your business logic, state management, and view layer, VEAMS ensures your codebase remains predictable and adaptable over time.',
             ],
             id: 'landing',
-            intro: 'Explore the individual packages to learn how they can improve your architecture.',
+            intro:
+              'Explore the individual packages to learn how they can improve your architecture.',
             summary: 'Structure, State, and Hydration.',
             title: 'Ecosystem Overview',
           },
@@ -2259,387 +2265,6 @@ export const docsPackages: DocsPackage[] = [
       },
     ],
     title: 'Ecosystem',
-  },
-  {
-    accent: 'forest',
-    description: 'Activate interactive components in a static HTML environment using the Islands Architecture.',
-    githubPath: 'packages/partial-hydration',
-    id: 'partial-hydration',
-    npm: '@veams/partial-hydration',
-    sections: [
-      {
-        id: 'getting-started',
-        pages: [
-          {
-            blocks: [
-              {
-                bullets: [
-                  'Keep the initial page load fast by serving static HTML.',
-                  'Hydrate only the interactive "Islands" of your page.',
-                  'Choose when to hydrate: on init, dom-ready, or when in viewport.',
-                ],
-                id: 'islands-architecture',
-                paragraphs: [
-                  'Partial Hydration allows you to build high-performance web applications by combining the speed of static HTML with the interactivity of modern UI frameworks. Instead of hydrating the entire page, you only activate specific components based on user interaction or environment triggers.',
-                ],
-                title: 'Islands of Interactivity',
-              },
-            ],
-            eyebrow: 'Getting Started',
-            heroBullets: [
-              'Zero-bundle impact for static regions.',
-              'No custom compiler or bundler lock-in required.',
-              'Flexible hydration triggers: viewport, ready, or immediate.',
-            ],
-            heroParagraphs: [
-              'VEAMS Partial Hydration provides the core infrastructure for activating components in a static HTML environment. It enables the Islands Architecture by serializing component props into the DOM during server-rendering and selectively hydrating them on the client. Unlike many modern meta-frameworks, it achieves this purely at runtime, meaning you do not need a custom compiler and are never locked into a specific bundler.',
-            ],
-            id: 'overview',
-            intro: 'Leverage the Islands Architecture to activate interactive UI components exactly when and where they are needed.',
-            summary: 'Selective hydration for peak performance.',
-            title: 'Overview',
-          },
-          {
-            blocks: [
-              {
-                featureCards: [
-                  {
-                    description: 'Interactive islands are embedded in a static HTML frame and activated by specific triggers like viewport intersection.',
-                    title: 'Islands Architecture',
-                    visual: 'partial-hydration-architecture',
-                  },
-                ],
-                id: 'hydration-flow',
-                paragraphs: [
-                  'The hydration process follows a simple flow: components are rendered to static HTML on the server, their props are encoded into the DOM, and the client-side loader activates them based on the defined strategy.',
-                ],
-                title: 'Architecture',
-              },
-              {
-                bullets: [
-                  'Props Serialization: Metadata stays with the HTML.',
-                  'Lazy Activation: Download and run JS only when triggered.',
-                  'Stable Identity: useIsomorphicId ensures DOM consistency.',
-                ],
-                id: 'hydration-principles',
-                paragraphs: [
-                  'By following these principles, you ensure that your application remains fast, accessible, and easy to maintain as it grows in complexity.',
-                ],
-                title: 'Core Principles',
-              },
-            ],
-            eyebrow: 'Getting Started',
-            id: 'concepts',
-            intro: 'Understand how selective component activation keeps your page fast while providing a rich user experience.',
-            summary: 'Hydrate what matters, when it matters.',
-            title: 'Concepts',
-          },
-          {
-            blocks: [
-              {
-                codeExamples: [
-                  {
-                    code: `import { createHydration } from '@veams/partial-hydration';`,
-                    label: 'Framework-agnostic core',
-                    language: 'ts',
-                  },
-                  {
-                    code: `import { withHydration, useIsomorphicId } from '@veams/partial-hydration/react';`,
-                    label: 'Optional React bindings',
-                    language: 'ts',
-                  },
-                ],
-                bullets: [
-                  'The root package (`@veams/partial-hydration`) is framework-agnostic and owns the core engine.',
-                  'React bindings live in a separate subpath (`@veams/partial-hydration/react`).',
-                  'The `render` function gives you full control over how any framework is initialized.',
-                ],
-                id: 'framework-support',
-                paragraphs: [
-                  'Partial Hydration is not tied to React. The core engine handles DOM scanning, event listeners, and data extraction independently. You can use it with Vue, Svelte, or even Vanilla JS by providing the appropriate `render` function.',
-                  'For React users, we provide dedicated bindings under the `/react` subpath to handle SSR metadata injection and stable ID generation.',
-                ],
-                title: 'Framework Support',
-              },
-            ],
-            eyebrow: 'Getting Started',
-            id: 'framework-support',
-            intro: 'Use the framework-agnostic root for the client-side engine, then add React bindings only for SSR component preparation.',
-            summary: 'Framework-neutral core, optional React layer.',
-            title: 'Framework Support',
-          },
-          {
-            blocks: [
-              {
-                codeExamples: [
-                  {
-                    code: partialHydrationInstall,
-                    label: 'Install',
-                    language: 'bash',
-                  },
-                ],
-                id: 'install',
-                paragraphs: [
-                  'Install the hydration package. It is framework-agnostic at its core, but provides optional React bindings for easier integration.',
-                ],
-                title: 'Install the package',
-              },
-            ],
-            eyebrow: 'Getting Started',
-            id: 'installation',
-            intro: 'Add the package to your project and start defining your hydration strategies.',
-            summary: 'Small impact, huge performance wins.',
-            title: 'Installation',
-          },
-          {
-            blocks: [
-              {
-                codeExamples: [
-                  {
-                    code: partialHydrationQuickStart,
-                    label: 'Client-side initialization',
-                    language: 'ts',
-                  },
-                ],
-                id: 'client-init',
-                paragraphs: [
-                  'To start the hydration process on the client, you create a hydration instance with a map of your components and call `init()`. The loader will then scan the DOM and activate components based on their trigger configuration.',
-                ],
-                title: 'Initialize on the client',
-              },
-            ],
-            eyebrow: 'Getting Started',
-            id: 'quick-start',
-            intro: 'The quickest path to an interactive page is defining your component map and calling the hydration initializer.',
-            summary: 'From static HTML to interactive islands in seconds.',
-            title: 'Quick Start',
-          },
-        ],
-        title: 'Getting Started',
-      },
-      {
-        id: 'guides',
-        pages: [
-          {
-            blocks: [
-              {
-                featureCards: [
-                  {
-                    description: 'Interactive islands are the primary target for hydration. They represent autonomous UI units that require JavaScript to function.',
-                    title: 'Interactive Islands',
-                    visual: 'status-quo-leaf',
-                  },
-                ],
-                id: 'strategies',
-                paragraphs: [
-                  'Choosing the right hydration strategy is crucial for balancing performance and interactivity. We recommend a "lazy-first" approach: only hydrate components when they are actually needed by the user.',
-                ],
-                title: 'Choosing a Trigger',
-              },
-              {
-                codeExamples: [
-                  {
-                    code: partialHydrationCreateOptionsExample,
-                    label: 'Hydration Configuration',
-                    language: 'ts',
-                  },
-                ],
-                bullets: [
-                  '**init**: Use for critical UI that must be interactive immediately (e.g., global navigation).',
-                  '**dom-ready**: Use for components that are visible above the fold but less critical than the main layout.',
-                  '**in-viewport**: The most efficient strategy. Activate components only when the user scrolls them into view.',
-                  '**fonts-ready**: Use for text-heavy interactive elements that rely on specific typography layout.',
-                ],
-                id: 'trigger-guide',
-                paragraphs: [
-                  'The `createHydration` options map component names to their activation rules. Each component in the map requires a `render` function, which provides full control over how the framework (like React or Vue) is initialized on the DOM element.',
-                  'For viewport-based hydration, you can provide an optional `config.rootMargin` to trigger activation slightly before the element enters the visible area, ensuring a seamless experience for the user.',
-                ],
-                title: 'Trigger Reference & Options',
-              },
-            ],
-            eyebrow: 'Guides',
-            id: 'create-hydration',
-            intro: 'Orchestrate components and choose the most efficient activation trigger for each.',
-            summary: 'Orchestrate components with createHydration.',
-            title: 'createHydration & Strategies',
-          },
-          {
-            blocks: [
-              {
-                codeExamples: [
-                  {
-                    code: partialHydrationLazyExample,
-                    label: 'Lazy loading example',
-                    language: 'ts',
-                  },
-                ],
-                bullets: [
-                  'Use dynamic imports to load components only when needed.',
-                  'Return a Promise from the `render` function to await the module.',
-                  'Combine with `in-viewport` for maximum performance.',
-                ],
-                id: 'lazy-loading-guide',
-                paragraphs: [
-                  'To truly benefit from partial hydration, you should lazy load your component code. By passing a dynamic import (e.g., `() => import(...)`) as your Component definition and awaiting it in the `render` function, the browser only downloads the JavaScript when the component is actually activated.',
-                ],
-                title: 'Dynamic Imports',
-              },
-            ],
-            eyebrow: 'Guides',
-            id: 'lazy-loading',
-            intro: 'Load component code only when the activation trigger fires.',
-            summary: 'Lazy loading in the component itself.',
-            title: 'Lazy Loading',
-          },
-          {
-            blocks: [
-              {
-                codeExamples: [
-                  {
-                    code: partialHydrationHocConfigExample,
-                    label: 'withHydration options',
-                    language: 'tsx',
-                  },
-                ],
-                bullets: [
-                  'Pass `modifiers` to add CSS classes to the wrapper div.',
-                  'Pass `attributes` to add custom HTML attributes like `data-testid`.',
-                ],
-                id: 'hoc-options',
-                paragraphs: [
-                  'The `withHydration` HOC accepts an optional configuration object to customize the wrapper `div` it generates. This allows you to apply specific layout classes or accessibility attributes without wrapping the element an additional time.',
-                ],
-                title: 'Wrapper Configuration',
-              },
-            ],
-            eyebrow: 'Guides',
-            id: 'with-hydration',
-            intro: 'Customize the HTML wrapper generated by the withHydration HOC.',
-            summary: 'withHydration options.',
-            title: 'withHydration Options',
-          },
-          {
-            blocks: [
-              {
-                codeExamples: [
-                  {
-                    code: partialHydrationProviderExample,
-                    label: 'HydrationProvider usage',
-                    language: 'tsx',
-                  },
-                ],
-                bullets: [
-                  'Manages the `componentId` for the hydration unit.',
-                  'Provides a counter for `useIsomorphicId`.',
-                  'Automatically applied by `withHydration`.',
-                ],
-                id: 'provider-guide',
-                paragraphs: [
-                  'The `HydrationProvider` is a React context provider that supplies metadata to the hydrated component tree. While it is automatically included when using `withHydration`, you can also use it manually if you are building custom hydration wrappers or orchestrating complex isomorphic setups.',
-                ],
-                title: 'Context Provider',
-              },
-            ],
-            eyebrow: 'Guides',
-            id: 'hydration-provider',
-            intro: 'Understand how the HydrationProvider supplies metadata to your components.',
-            summary: 'Hydration provider.',
-            title: 'Hydration Provider',
-          },
-          {
-            blocks: [
-              {
-                codeExamples: [
-                  {
-                    code: partialHydrationApiExample,
-                    label: 'Public entry points',
-                    language: 'ts',
-                  },
-                ],
-                id: 'entry-points',
-                paragraphs: [
-                  'The package surface is focused on three main exports: the client-side hydration engine, the SSR metadata binder, and the isomorphic ID helper.',
-                ],
-                title: 'Entry points',
-              },
-              {
-                bullets: [
-                  '`createHydration(options)` returns an object with `init(context)` and `clearAllObservers()`.',
-                  '`options.components` maps names to `ComponentOption` objects.',
-                  '`init(context)` starts scanning the DOM for component wrappers.',
-                ],
-                id: 'create-hydration-api',
-                paragraphs: [
-                  'Use `createHydration` to define your client-side activation logic. It is framework-agnostic, meaning you define exactly how each component is rendered in the `render` callback.',
-                ],
-                title: 'createHydration',
-              },
-              {
-                bullets: [
-                  '`withHydration(Component, config?)` wraps a React component.',
-                  'Serializes props into the HTML during server rendering.',
-                  'Adds `data-component` and `data-internal-id` attributes to the wrapper.',
-                ],
-                id: 'with-hydration-api',
-                paragraphs: [
-                  'Use `withHydration` during SSR to ensure that the client-side loader has all the data it needs to activate the component without a full page re-render.',
-                ],
-                title: 'withHydration',
-              },
-              {
-                bullets: [
-                  'Generates a unique string ID based on the parent hydration unit.',
-                  'Stable across server and client renders.',
-                  'Required for accessible forms and aria labels in hydrated islands.',
-                ],
-                id: 'use-isomorphic-id-api',
-                paragraphs: [
-                  'Use `useIsomorphicId` inside your interactive components to maintain DOM consistency between the initial static HTML and the later hydrated state.',
-                ],
-                title: 'useIsomorphicId',
-              },
-            ],
-            eyebrow: 'Guides',
-            id: 'api-reference',
-            intro: 'The package provides a minimal but powerful API for implementing the Islands Architecture in your project.',
-            summary: 'Core factory and bindings reference.',
-            title: 'API Reference',
-          },
-        ],
-        title: 'Guides',
-      },
-      {
-        id: 'examples',
-        pages: [
-          {
-            blocks: [
-              {
-                codeExamples: [
-                  {
-                    code: partialHydrationCompleteExample,
-                    label: 'Complete React Setup',
-                    language: 'ts',
-                  },
-                ],
-                id: 'complete-setup',
-                paragraphs: [
-                  'This example demonstrates a complete React setup. It mixes non-lazy components for critical UI (like Navigation) with lazy components that only load when they enter the viewport.',
-                ],
-                title: 'Mix Lazy and Non-Lazy Components',
-              },
-            ],
-            eyebrow: 'Examples',
-            id: 'example-complete-setup',
-            intro: 'See how to orchestrate a full page with both immediate and deferred hydration strategies.',
-            summary: 'Complete setup mixing lazy and non-lazy components.',
-            title: 'Complete Setup',
-          },
-        ],
-        title: 'Examples',
-      },
-    ],
-    title: 'Partial Hydration',
   },
   {
     accent: 'teal',
@@ -2677,17 +2302,20 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 featureCards: [
                   {
-                    description: 'Structural sections like Header, Sidebar, and Main that shape the page skeleton. Never reused.',
+                    description:
+                      'Structural sections like Header, Sidebar, and Main that shape the page skeleton. Never reused.',
                     title: 'Regions',
                     visual: 'methodology-regions',
                   },
                   {
-                    description: 'Reusable UI elements like Cards, Buttons, and Navs that live inside regions.',
+                    description:
+                      'Reusable UI elements like Cards, Buttons, and Navs that live inside regions.',
                     title: 'Components',
                     visual: 'methodology-components',
                   },
                   {
-                    description: 'Low-level helpers like Grid systems or spacing that provide structure without content.',
+                    description:
+                      'Low-level helpers like Grid systems or spacing that provide structure without content.',
                     title: 'Utilities',
                     visual: 'methodology-utilities',
                   },
@@ -2709,8 +2337,7 @@ export const docsPackages: DocsPackage[] = [
               'VEAMS Methodology gives every piece of markup a clear job. **Regions** shape page structure, **Components** carry reusable UI, and **Utilities** handle small helper work. That keeps HTML legible and CSS predictable as the project grows.',
             ],
             id: 'overview',
-            intro:
-              'Start with the mental model first: name by responsibility, not by convenience.',
+            intro: 'Start with the mental model first: name by responsibility, not by convenience.',
             summary: 'Structure first. Scale without chaos.',
             title: 'Overview',
           },
@@ -2780,7 +2407,8 @@ export const docsPackages: DocsPackage[] = [
               {
                 featureCards: [
                   {
-                    description: 'Regions are high-level structural areas (Header, Sidebar, Main, Footer) that compose the page skeleton.',
+                    description:
+                      'Regions are high-level structural areas (Header, Sidebar, Main, Footer) that compose the page skeleton.',
                     title: 'The Page Skeleton',
                     visual: 'methodology-layout',
                   },
@@ -2839,9 +2467,7 @@ export const docsPackages: DocsPackage[] = [
                   },
                 ],
                 id: 'markup',
-                paragraphs: [
-                  'Naming: Prefix component classes with `c-`.',
-                ],
+                paragraphs: ['Naming: Prefix component classes with `c-`.'],
                 title: 'Name the reusable thing once',
               },
             ],
@@ -2888,7 +2514,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Guides',
             id: 'contexts',
-            intro: 'When a component needs to look different, let the component own the difference.',
+            intro:
+              'When a component needs to look different, let the component own the difference.',
             summary: 'Style by contexts.',
             title: 'Contexts',
           },
@@ -3009,9 +2636,7 @@ export const docsPackages: DocsPackage[] = [
                   'Do not mix components: Avoid declaring two component classes for one HTML element.',
                 ],
                 id: 'styling-rules',
-                paragraphs: [
-                  'These principles help maintain a clean and scalable CSS codebase.',
-                ],
+                paragraphs: ['These principles help maintain a clean and scalable CSS codebase.'],
                 title: 'Styling Rules',
               },
               {
@@ -3028,9 +2653,7 @@ export const docsPackages: DocsPackage[] = [
                   },
                 ],
                 id: 'mq-nesting',
-                paragraphs: [
-                  'Keep media queries nested inside the selector they affect.',
-                ],
+                paragraphs: ['Keep media queries nested inside the selector they affect.'],
                 title: 'Media Query Nesting',
               },
             ],
@@ -3153,7 +2776,8 @@ export const docsPackages: DocsPackage[] = [
               'Status Quo treats state handlers as small, composable objects with explicit lifecycle and a tiny interface. The native handler has zero dependencies, making it the perfect starting point. When you need more, easily swap the engine under the hood: RxJS for observable streams or Preact Signals for ultra-light reactive state.',
             ],
             id: 'overview',
-            intro: 'Start with the mental model first: handlers own state and lifecycle, hooks only translate snapshots into the UI layer.',
+            intro:
+              'Start with the mental model first: handlers own state and lifecycle, hooks only translate snapshots into the UI layer.',
             summary: 'State management that stays out of your way.',
             title: 'Overview',
           },
@@ -3162,7 +2786,8 @@ export const docsPackages: DocsPackage[] = [
               {
                 featureCards: [
                   {
-                    description: 'State transitions are owned by the handler, while the view layer only subscribes to read-only snapshots.',
+                    description:
+                      'State transitions are owned by the handler, while the view layer only subscribes to read-only snapshots.',
                     title: 'Handler-Driven Flow',
                     visual: 'status-quo-architecture',
                   },
@@ -3196,7 +2821,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Getting Started',
             id: 'concepts',
-            intro: 'Understand the architectural boundary between handlers, engines, and the view layer.',
+            intro:
+              'Understand the architectural boundary between handlers, engines, and the view layer.',
             summary: 'The mental model behind the package.',
             title: 'Concepts',
           },
@@ -3230,7 +2856,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Getting Started',
             id: 'framework-support',
-            intro: 'Use the root package as the framework-agnostic state layer, then add React bindings only where the UI needs them.',
+            intro:
+              'Use the root package as the framework-agnostic state layer, then add React bindings only where the UI needs them.',
             summary: 'Framework-neutral core, optional React layer.',
             title: 'Framework Support',
           },
@@ -3277,7 +2904,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Getting Started',
             id: 'installation',
-            intro: 'Install the zero-dependency package and start with the native handler, then opt into other reactive backends only when you need them.',
+            intro:
+              'Install the zero-dependency package and start with the native handler, then opt into other reactive backends only when you need them.',
             summary: 'Install fast. Start clean.',
             title: 'Installation',
           },
@@ -3320,7 +2948,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Getting Started',
             id: 'quick-start',
-            intro: 'The fastest path is a local handler plus `useStateFactory`, then expand into lower-level hooks only when you need more control.',
+            intro:
+              'The fastest path is a local handler plus `useStateFactory`, then expand into lower-level hooks only when you need more control.',
             summary: 'Zero dependencies. Fast local state.',
             title: 'Quick Start',
           },
@@ -3331,66 +2960,67 @@ export const docsPackages: DocsPackage[] = [
         id: 'guides',
         pages: [
           {
-                         blocks: [
-                           {
-                             callout:
-                               'Same hooks. Same snapshots. The real choice is how the handler likes to think.',
-                                                               codeExamples: [
-                                                                 {
-                                                                   code: statusQuoNativeHandlerCompositionExample,
-                                                                   description:
-                                                                     'The native engine relies on `bindSubscribable()` to manually derive state. You provide a selector function to map upstream state and a comparison function to prevent redundant updates. This is the zero-dependency default.',
-                                                                   label: 'Native (Manual Sync)',
-                                                                   language: 'ts',
-                                                                 },
-                                                                 {
-                                                                   code: statusQuoObservableHandlerExample,
-                                                                   description:
-                                                                     'The observable engine uses RxJS operators like `pipe()` and `map()` to transform state into a stream. This is ideal when your transitions already feel like a reactive event flow.',
-                                                                   label: 'Observable (Streams)',
-                                                                   language: 'ts',
-                                                                 },
-                                                                 {
-                                                                   code: statusQuoSignalHandlerExample,
-                                                                   description:
-                                                                     'The signal engine uses `computed()` to automatically track dependencies. When the upstream signal changes, the derivation updates itself, making deep reactive trees easy to manage.',
-                                                                   label: 'Signal (Auto-Tracking)',
-                                                                   language: 'ts',
-                                                                 },
-                                                               ],                                              bullets: [
-                                                'Use `NativeStateHandler` as your zero-dependency default for standard state.',
-                                                'Use `ObservableStateHandler` when the interesting work already feels like a stream.',
-                                                'Use `SignalStateHandler` when you want direct reads and cheap synchronous derivation.',
-                                              ],
-                                              id: 'engine-choice',
-                                              paragraphs: [
-                                                'The engine is a handler decision, not a view decision. The native version is the cleanest starting point because it has no peer-dependency requirements. The observable version excels at complex async coordination through RxJS, while the signal version provides ultra-light reactive derivation via Preact Signals. All three options share the same `bindSubscribable()` contract, ensuring that the surrounding composition and React wiring remain identical regardless of the underlying engine.',
-                                              ],
-                                              title: 'Pick the engine that matches the state',
-                                            },
-                                            {
-                                              featureCards: [
-                                                {
-                                                  description:
-                                                    'When your handler needs to coordinate multiple async events, debouncing, or complex time-based transitions, RxJS streams provide the more powerful abstraction.',
-                                                  title: 'Stream-heavy logic',
-                                                  visual: 'swap-engine',
-                                                },
-                                                {
-                                                  description:
-                                                    'When your state tree has many interdependent derived values, signals allow for automatic tracking and fine-grained updates without manual sync logic.',
-                                                  title: 'Deeply reactive derivations',
-                                                  visual: 'view-state',
-                                                },
-                                              ],
-                                              id: 'when-to-scale',
-                                              paragraphs: [
-                                                'Native handlers are excellent for most features, as `bindSubscribable()` already allows for manual state derivation and synchronization. You should consider scaling to other engines only when the manual logic becomes repetitive or the state transitions become inherently complex.',
-                                              ],
-                                              title: 'When to scale',
-                                            },
-                                            {
-                                              bullets: [
+            blocks: [
+              {
+                callout:
+                  'Same hooks. Same snapshots. The real choice is how the handler likes to think.',
+                codeExamples: [
+                  {
+                    code: statusQuoNativeHandlerCompositionExample,
+                    description:
+                      'The native engine relies on `bindSubscribable()` to manually derive state. You provide a selector function to map upstream state and a comparison function to prevent redundant updates. This is the zero-dependency default.',
+                    label: 'Native (Manual Sync)',
+                    language: 'ts',
+                  },
+                  {
+                    code: statusQuoObservableHandlerExample,
+                    description:
+                      'The observable engine uses RxJS operators like `pipe()` and `map()` to transform state into a stream. This is ideal when your transitions already feel like a reactive event flow.',
+                    label: 'Observable (Streams)',
+                    language: 'ts',
+                  },
+                  {
+                    code: statusQuoSignalHandlerExample,
+                    description:
+                      'The signal engine uses `computed()` to automatically track dependencies. When the upstream signal changes, the derivation updates itself, making deep reactive trees easy to manage.',
+                    label: 'Signal (Auto-Tracking)',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  'Use `NativeStateHandler` as your zero-dependency default for standard state.',
+                  'Use `ObservableStateHandler` when the interesting work already feels like a stream.',
+                  'Use `SignalStateHandler` when you want direct reads and cheap synchronous derivation.',
+                ],
+                id: 'engine-choice',
+                paragraphs: [
+                  'The engine is a handler decision, not a view decision. The native version is the cleanest starting point because it has no peer-dependency requirements. The observable version excels at complex async coordination through RxJS, while the signal version provides ultra-light reactive derivation via Preact Signals. All three options share the same `bindSubscribable()` contract, ensuring that the surrounding composition and React wiring remain identical regardless of the underlying engine.',
+                ],
+                title: 'Pick the engine that matches the state',
+              },
+              {
+                featureCards: [
+                  {
+                    description:
+                      'When your handler needs to coordinate multiple async events, debouncing, or complex time-based transitions, RxJS streams provide the more powerful abstraction.',
+                    title: 'Stream-heavy logic',
+                    visual: 'swap-engine',
+                  },
+                  {
+                    description:
+                      'When your state tree has many interdependent derived values, signals allow for automatic tracking and fine-grained updates without manual sync logic.',
+                    title: 'Deeply reactive derivations',
+                    visual: 'view-state',
+                  },
+                ],
+                id: 'when-to-scale',
+                paragraphs: [
+                  'Native handlers are excellent for most features, as `bindSubscribable()` already allows for manual state derivation and synchronization. You should consider scaling to other engines only when the manual logic becomes repetitive or the state transitions become inherently complex.',
+                ],
+                title: 'When to scale',
+              },
+              {
+                bullets: [
                   'Choose observables when the interesting work happens over time.',
                   'Choose signals when the interesting work is derived from the current value right now.',
                   'If the hooks would have to change, the decision is happening at the wrong layer.',
@@ -3404,7 +3034,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Guides',
             id: 'handler-patterns',
-            intro: 'Start with the zero-dependency native engine and scale to observables or signals when you need them.',
+            intro:
+              'Start with the zero-dependency native engine and scale to observables or signals when you need them.',
             summary: 'Native, streams, or signals. Same outside shape.',
             title: 'Pick your Engine',
           },
@@ -3468,7 +3099,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Guides',
             id: 'local-vs-singleton',
-            intro: 'Local is the default. Singleton is the move once the same handler really has more than one owner.',
+            intro:
+              'Local is the default. Singleton is the move once the same handler really has more than one owner.',
             summary: 'Start local. Share on purpose.',
             title: 'Local vs Singleton',
           },
@@ -3520,7 +3152,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Guides',
             id: 'scoped-provider',
-            intro: 'Use a provider scope when one local handler should be shared inside a subtree, while state readers and action-only components stay split.',
+            intro:
+              'Use a provider scope when one local handler should be shared inside a subtree, while state readers and action-only components stay split.',
             summary: 'One handler. One scope. Cleaner bricks.',
             title: 'Scoped Provider',
           },
@@ -3574,7 +3207,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Guides',
             id: 'composition',
-            intro: 'There are two kinds of composition here: wiring hooks in React and wiring handlers to other subscribable sources.',
+            intro:
+              'There are two kinds of composition here: wiring hooks in React and wiring handlers to other subscribable sources.',
             summary: 'Shortcuts when you can. Low-level when it pays off.',
             title: 'Composition',
           },
@@ -3648,7 +3282,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Guides',
             id: 'selectors',
-            intro: 'Do not pipe the whole handler into every component just because it is easy. Subscribe to the part that really drives the UI.',
+            intro:
+              'Do not pipe the whole handler into every component just because it is easy. Subscribe to the part that really drives the UI.',
             summary: 'Listen to less. Rerender less.',
             title: 'Selectors',
           },
@@ -3702,7 +3337,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Guides',
             id: 'devtools',
-            intro: 'Use Redux DevTools when you want to inspect handler transitions in the browser without changing the state model itself.',
+            intro:
+              'Use Redux DevTools when you want to inspect handler transitions in the browser without changing the state model itself.',
             summary: 'Inspect transitions with Redux DevTools.',
             title: 'Devtools',
           },
@@ -4001,7 +3637,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'API',
             id: 'api',
-            intro: 'Start at the root for framework-agnostic pieces, then import the React integration from `@veams/status-quo/react` when you are wiring handlers into React.',
+            intro:
+              'Start at the root for framework-agnostic pieces, then import the React integration from `@veams/status-quo/react` when you are wiring handlers into React.',
             summary: 'The full surface, minus the noise.',
             title: 'API',
           },
@@ -4077,7 +3714,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Examples',
             id: 'example-singleton-counter',
-            intro: 'Promote local state to shared state only when multiple consumers need one handler instance.',
+            intro:
+              'Promote local state to shared state only when multiple consumers need one handler instance.',
             summary: 'One counter handler shared by multiple consumers.',
             title: 'Singleton counter shared across consumers',
           },
@@ -4147,7 +3785,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Examples',
             id: 'example-scoped-provider',
-            intro: 'Share one locally owned handler across a subtree without promoting to singleton scope.',
+            intro:
+              'Share one locally owned handler across a subtree without promoting to singleton scope.',
             summary: 'Provider-scoped shared local state.',
             title: 'Scoped provider for shared local state',
           },
@@ -4194,7 +3833,8 @@ export const docsPackages: DocsPackage[] = [
   },
   {
     accent: 'ocean',
-    description: 'Query and mutation handles over TanStack Query core, plus a query manager for client-level operations.',
+    description:
+      'Query and mutation handles over TanStack Query core, plus a query manager for client-level operations.',
     githubPath: 'packages/status-quo-query',
     id: 'status-quo-query',
     npm: '@veams/status-quo-query',
@@ -4235,7 +3875,8 @@ export const docsPackages: DocsPackage[] = [
               'Status Quo Query connects TanStack Query to the Status Quo way of working. Queries and mutations expose passive snapshots and explicit commands, so syncing remote state into a handler feels natural instead of like an adapter bolted on afterward.',
             ],
             id: 'overview',
-            intro: 'Start by understanding how query handles, mutation handles, and query management line up with the Status Quo handler model.',
+            intro:
+              'Start by understanding how query handles, mutation handles, and query management line up with the Status Quo handler model.',
             summary: 'TanStack Query, aligned with Status Quo.',
             title: 'Overview',
           },
@@ -4244,7 +3885,8 @@ export const docsPackages: DocsPackage[] = [
               {
                 featureCards: [
                   {
-                    description: 'The service layer (Query/Mutation) syncs state into the handler. The handler can trigger service commands like `refetch()`, and the view observes the resulting snapshot.',
+                    description:
+                      'The service layer (Query/Mutation) syncs state into the handler. The handler can trigger service commands like `refetch()`, and the view observes the resulting snapshot.',
                     title: 'Service-Enhanced Flow',
                     visual: 'query-architecture',
                   },
@@ -4258,7 +3900,8 @@ export const docsPackages: DocsPackage[] = [
               {
                 featureCards: [
                   {
-                    description: 'The Query Manager acts as a single command center for all queries and mutations, making coordination readable and predictable.',
+                    description:
+                      'The Query Manager acts as a single command center for all queries and mutations, making coordination readable and predictable.',
                     title: 'Centralized Management',
                     visual: 'query-facade',
                   },
@@ -4272,7 +3915,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Getting Started',
             id: 'concepts',
-            intro: 'Status Quo Query treats TanStack Query as an engine and provides a structured service layer focused on explicit commands and passive snapshots.',
+            intro:
+              'Status Quo Query treats TanStack Query as an engine and provides a structured service layer focused on explicit commands and passive snapshots.',
             summary: 'Structure the service layer, simplify the view.',
             title: 'Concepts',
           },
@@ -4301,7 +3945,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Getting Started',
             id: 'framework-support',
-            intro: 'Treat query and mutation handles as framework-neutral service objects, then consume them from your chosen UI layer.',
+            intro:
+              'Treat query and mutation handles as framework-neutral service objects, then consume them from your chosen UI layer.',
             summary: 'Framework-neutral query manager.',
             title: 'Framework Support',
           },
@@ -4336,7 +3981,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Getting Started',
             id: 'installation',
-            intro: 'The package builds on a normal `QueryClient`, then lets you decide whether you want the combined query manager or the narrower factories.',
+            intro:
+              'The package builds on a normal `QueryClient`, then lets you decide whether you want the combined query manager or the narrower factories.',
             summary: 'Bring a QueryClient. Keep the rest simple.',
             title: 'Installation',
           },
@@ -4371,7 +4017,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Getting Started',
             id: 'quick-start',
-            intro: 'Use the query manager for a first working flow, then split into lower-level factories only when the app structure really benefits from it.',
+            intro:
+              'Use the query manager for a first working flow, then split into lower-level factories only when the app structure really benefits from it.',
             summary: 'One manager. One query. One mutation.',
             title: 'Quick Start',
           },
@@ -4412,7 +4059,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Guides',
             id: 'command-scope',
-            intro: 'Choose the right tool for the task: use focused handles for local data and the query manager for broad system coordination.',
+            intro:
+              'Choose the right tool for the task: use focused handles for local data and the query manager for broad system coordination.',
             summary: 'Understand when to use specific handles or the global manager.',
             title: 'Global vs. Specific Control',
           },
@@ -4447,7 +4095,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Guides',
             id: 'invalidation',
-            intro: 'Invalidation is best when the API makes scope obvious. The wrapper does that by putting exact-key behavior on the handle and broader filters on the query manager.',
+            intro:
+              'Invalidation is best when the API makes scope obvious. The wrapper does that by putting exact-key behavior on the handle and broader filters on the query manager.',
             summary: 'Make management scope obvious.',
             title: 'Invalidation',
           },
@@ -4483,7 +4132,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Guides',
             id: 'escape-hatches',
-            intro: 'Escape hatches are healthy when they are explicit. Use them when you truly need raw TanStack behavior, not as the first integration step.',
+            intro:
+              'Escape hatches are healthy when they are explicit. Use them when you truly need raw TanStack behavior, not as the first integration step.',
             summary: 'Stay small. Escape when you must.',
             title: 'Escape Hatches',
           },
@@ -4621,7 +4271,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'API',
             id: 'api',
-            intro: 'The public surface is split into query handles, mutation handles, and one query manager for broader management.',
+            intro:
+              'The public surface is split into query handles, mutation handles, and one query manager for broader management.',
             summary: 'Everything you can call, in one place.',
             title: 'API',
           },
@@ -4673,7 +4324,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Examples',
             id: 'example-manager-follow-up',
-            intro: 'Use manager commands after mutations when workflows require coordinated follow-up behavior.',
+            intro:
+              'Use manager commands after mutations when workflows require coordinated follow-up behavior.',
             summary: 'Manager management after a mutation.',
             title: 'Manager follow-up example',
           },
@@ -4739,7 +4391,8 @@ export const docsPackages: DocsPackage[] = [
               'VEAMS Form builds on Status Quo to give forms the same explicit ownership model as the rest of the state layer. Keep the form controller generic, then opt into the React bindings only where the view needs them.',
             ],
             id: 'overview',
-            intro: 'Start with the package split: generic form state at the root, React-only wiring under `@veams/form/react`.',
+            intro:
+              'Start with the package split: generic form state at the root, React-only wiring under `@veams/form/react`.',
             summary: 'Explicit form state, clean React wiring.',
             title: 'Overview',
           },
@@ -4748,7 +4401,8 @@ export const docsPackages: DocsPackage[] = [
               {
                 featureCards: [
                   {
-                    description: 'The FormStateHandler is a pure, framework-agnostic object that manages values, errors, and validation logic independently of any UI library.',
+                    description:
+                      'The FormStateHandler is a pure, framework-agnostic object that manages values, errors, and validation logic independently of any UI library.',
                     title: 'Generic Form Engine',
                     visual: 'form-architecture',
                   },
@@ -4763,7 +4417,8 @@ export const docsPackages: DocsPackage[] = [
               {
                 featureCards: [
                   {
-                    description: 'React bindings provide the bridge between the FormStateHandler and the DOM, utilizing hooks and refs for high-performance uncontrolled inputs.',
+                    description:
+                      'React bindings provide the bridge between the FormStateHandler and the DOM, utilizing hooks and refs for high-performance uncontrolled inputs.',
                     title: 'React View Bindings',
                     visual: 'form-ref-bridge',
                   },
@@ -4791,7 +4446,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Getting Started',
             id: 'concepts',
-            intro: 'Status Quo Form separates the generic state engine from the React view bindings for maximum performance and portability.',
+            intro:
+              'Status Quo Form separates the generic state engine from the React view bindings for maximum performance and portability.',
             summary: 'Generic engine, optimized React bindings.',
             title: 'Concepts',
           },
@@ -4825,7 +4481,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Getting Started',
             id: 'framework-support',
-            intro: 'Model form state in the framework-agnostic root package, then opt into React bindings only at the view boundary.',
+            intro:
+              'Model form state in the framework-agnostic root package, then opt into React bindings only at the view boundary.',
             summary: 'Framework-neutral form model, optional React binding.',
             title: 'Framework Support',
           },
@@ -4860,7 +4517,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Getting Started',
             id: 'installation',
-            intro: 'Install the generic core first, then opt into the React subpath when the UI needs it.',
+            intro:
+              'Install the generic core first, then opt into the React subpath when the UI needs it.',
             summary: 'Small install surface, clear entry points.',
             title: 'Installation',
           },
@@ -4902,7 +4560,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Getting Started',
             id: 'quick-start',
-            intro: 'Start with one plain `FormStateHandler`, then bind it into React only where the UI needs it.',
+            intro:
+              'Start with one plain `FormStateHandler`, then bind it into React only where the UI needs it.',
             summary: 'One form handler, one provider, one clean flow.',
             title: 'Quick Start',
           },
@@ -4936,7 +4595,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Guides',
             id: 'feature-owned',
-            intro: 'When a form is part of a richer screen flow, keep the controller inside the feature handler and pass it down explicitly.',
+            intro:
+              'When a form is part of a richer screen flow, keep the controller inside the feature handler and pass it down explicitly.',
             summary: 'The feature owns the workflow, not the view.',
             title: 'Feature-Owned Forms',
           },
@@ -5019,7 +4679,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Guides',
             id: 'validators',
-            intro: 'Use one typed validator as the source of truth for field and submit checks, then layer server errors through explicit field updates.',
+            intro:
+              'Use one typed validator as the source of truth for field and submit checks, then layer server errors through explicit field updates.',
             summary: 'Predictable validation, from keypress to submit.',
             title: 'Validators',
           },
@@ -5061,7 +4722,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Guides',
             id: 'controlled-fields',
-            intro: 'Controlled components should be the explicit exception for widgets that need them, not the default for every field.',
+            intro:
+              'Controlled components should be the explicit exception for widgets that need them, not the default for every field.',
             summary: 'Stay uncontrolled by default. Control when required.',
             title: 'Controlled Fields',
           },
@@ -5095,7 +4757,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Guides',
             id: 'advanced-nested-fields',
-            intro: 'Use dot-path field names to model nested object forms without flattening your state shape.',
+            intro:
+              'Use dot-path field names to model nested object forms without flattening your state shape.',
             summary: 'Nested values, same API surface.',
             title: 'Advanced Nested Fields',
           },
@@ -5152,7 +4815,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'API',
             id: 'api',
-            intro: 'The package API is split by responsibility: generic form state at the root, React bindings under the subpath.',
+            intro:
+              'The package API is split by responsibility: generic form state at the root, React bindings under the subpath.',
             summary: 'Everything public, without hidden layers.',
             title: 'API',
           },
@@ -5186,7 +4850,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Examples',
             id: 'example-simple-form',
-            intro: 'Start with a complete local form before introducing feature-level orchestration.',
+            intro:
+              'Start with a complete local form before introducing feature-level orchestration.',
             summary: 'Working local form with validator and native fields.',
             title: 'Simple form',
           },
@@ -5214,7 +4879,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Examples',
             id: 'example-nested-feature-form',
-            intro: 'When form state is part of a larger feature, keep ownership in the feature handler.',
+            intro:
+              'When form state is part of a larger feature, keep ownership in the feature handler.',
             summary: 'Nested values with dot-path fields in a feature-owned form.',
             title: 'Nested feature form',
           },
@@ -5242,7 +4908,8 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Examples',
             id: 'example-feature-form-validation',
-            intro: 'Combine local validator rules with backend error mapping in one feature-owned submit flow.',
+            intro:
+              'Combine local validator rules with backend error mapping in one feature-owned submit flow.',
             summary: 'Feature submit lifecycle with client and server validation.',
             title: 'Feature form with validation',
           },
@@ -5251,6 +4918,397 @@ export const docsPackages: DocsPackage[] = [
       },
     ],
     title: 'Form',
+  },
+  {
+    accent: 'forest',
+    description:
+      'Activate interactive components in a static HTML environment using the Islands Architecture.',
+    githubPath: 'packages/partial-hydration',
+    id: 'partial-hydration',
+    npm: '@veams/partial-hydration',
+    sections: [
+      {
+        id: 'getting-started',
+        pages: [
+          {
+            blocks: [
+              {
+                bullets: [
+                  'Keep the initial page load fast by serving static HTML.',
+                  'Hydrate only the interactive "Islands" of your page.',
+                  'Choose when to hydrate: on init, dom-ready, or when in viewport.',
+                ],
+                id: 'islands-architecture',
+                paragraphs: [
+                  'Partial Hydration allows you to build high-performance web applications by combining the speed of static HTML with the interactivity of modern UI frameworks. Instead of hydrating the entire page, you only activate specific components based on user interaction or environment triggers.',
+                ],
+                title: 'Islands of Interactivity',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            heroBullets: [
+              'Zero-bundle impact for static regions.',
+              'No custom compiler or bundler lock-in required.',
+              'Flexible hydration triggers: viewport, ready, or immediate.',
+            ],
+            heroParagraphs: [
+              'VEAMS Partial Hydration provides the core infrastructure for activating components in a static HTML environment. It enables the Islands Architecture by serializing component props into the DOM during server-rendering and selectively hydrating them on the client. Unlike many modern meta-frameworks, it achieves this purely at runtime, meaning you do not need a custom compiler and are never locked into a specific bundler.',
+            ],
+            id: 'overview',
+            intro:
+              'Leverage the Islands Architecture to activate interactive UI components exactly when and where they are needed.',
+            summary: 'Selective hydration for peak performance.',
+            title: 'Overview',
+          },
+          {
+            blocks: [
+              {
+                featureCards: [
+                  {
+                    description:
+                      'Interactive islands are embedded in a static HTML frame and activated by specific triggers like viewport intersection.',
+                    title: 'Islands Architecture',
+                    visual: 'partial-hydration-architecture',
+                  },
+                ],
+                id: 'hydration-flow',
+                paragraphs: [
+                  'The hydration process follows a simple flow: components are rendered to static HTML on the server, their props are encoded into the DOM, and the client-side loader activates them based on the defined strategy.',
+                ],
+                title: 'Architecture',
+              },
+              {
+                bullets: [
+                  'Props Serialization: Metadata stays with the HTML.',
+                  'Lazy Activation: Download and run JS only when triggered.',
+                  'Stable Identity: useIsomorphicId ensures DOM consistency.',
+                ],
+                id: 'hydration-principles',
+                paragraphs: [
+                  'By following these principles, you ensure that your application remains fast, accessible, and easy to maintain as it grows in complexity.',
+                ],
+                title: 'Core Principles',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            id: 'concepts',
+            intro:
+              'Understand how selective component activation keeps your page fast while providing a rich user experience.',
+            summary: 'Hydrate what matters, when it matters.',
+            title: 'Concepts',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: `import { createHydration } from '@veams/partial-hydration';`,
+                    label: 'Framework-agnostic core',
+                    language: 'ts',
+                  },
+                  {
+                    code: `import { withHydration, useIsomorphicId } from '@veams/partial-hydration/react';`,
+                    label: 'Optional React bindings',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  'The root package (`@veams/partial-hydration`) is framework-agnostic and owns the core engine.',
+                  'React bindings live in a separate subpath (`@veams/partial-hydration/react`).',
+                  'The `render` function gives you full control over how any framework is initialized.',
+                ],
+                id: 'framework-support',
+                paragraphs: [
+                  'Partial Hydration is not tied to React. The core engine handles DOM scanning, event listeners, and data extraction independently. You can use it with Vue, Svelte, or even Vanilla JS by providing the appropriate `render` function.',
+                  'For React users, we provide dedicated bindings under the `/react` subpath to handle SSR metadata injection and stable ID generation.',
+                ],
+                title: 'Framework Support',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            id: 'framework-support',
+            intro:
+              'Use the framework-agnostic root for the client-side engine, then add React bindings only for SSR component preparation.',
+            summary: 'Framework-neutral core, optional React layer.',
+            title: 'Framework Support',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: partialHydrationInstall,
+                    label: 'Install',
+                    language: 'bash',
+                  },
+                ],
+                id: 'install',
+                paragraphs: [
+                  'Install the hydration package. It is framework-agnostic at its core, but provides optional React bindings for easier integration.',
+                ],
+                title: 'Install the package',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            id: 'installation',
+            intro: 'Add the package to your project and start defining your hydration strategies.',
+            summary: 'Small impact, huge performance wins.',
+            title: 'Installation',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: partialHydrationQuickStart,
+                    label: 'Client-side initialization',
+                    language: 'ts',
+                  },
+                ],
+                id: 'client-init',
+                paragraphs: [
+                  'To start the hydration process on the client, you create a hydration instance with a map of your components and call `init()`. The loader will then scan the DOM and activate components based on their trigger configuration.',
+                ],
+                title: 'Initialize on the client',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            id: 'quick-start',
+            intro:
+              'The quickest path to an interactive page is defining your component map and calling the hydration initializer.',
+            summary: 'From static HTML to interactive islands in seconds.',
+            title: 'Quick Start',
+          },
+        ],
+        title: 'Getting Started',
+      },
+      {
+        id: 'guides',
+        pages: [
+          {
+            blocks: [
+              {
+                featureCards: [
+                  {
+                    description:
+                      'Interactive islands are the primary target for hydration. They represent autonomous UI units that require JavaScript to function.',
+                    title: 'Interactive Islands',
+                    visual: 'status-quo-leaf',
+                  },
+                ],
+                id: 'strategies',
+                paragraphs: [
+                  'Choosing the right hydration strategy is crucial for balancing performance and interactivity. We recommend a "lazy-first" approach: only hydrate components when they are actually needed by the user.',
+                ],
+                title: 'Choosing a Trigger',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: partialHydrationCreateOptionsExample,
+                    label: 'Hydration Configuration',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  '**init**: Use for critical UI that must be interactive immediately (e.g., global navigation).',
+                  '**dom-ready**: Use for components that are visible above the fold but less critical than the main layout.',
+                  '**in-viewport**: The most efficient strategy. Activate components only when the user scrolls them into view.',
+                  '**fonts-ready**: Use for text-heavy interactive elements that rely on specific typography layout.',
+                ],
+                id: 'trigger-guide',
+                paragraphs: [
+                  'The `createHydration` options map component names to their activation rules. Each component in the map requires a `render` function, which provides full control over how the framework (like React or Vue) is initialized on the DOM element.',
+                  'For viewport-based hydration, you can provide an optional `config.rootMargin` to trigger activation slightly before the element enters the visible area, ensuring a seamless experience for the user.',
+                ],
+                title: 'Trigger Reference & Options',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'create-hydration',
+            intro:
+              'Orchestrate components and choose the most efficient activation trigger for each.',
+            summary: 'Orchestrate components with createHydration.',
+            title: 'createHydration & Strategies',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: partialHydrationLazyExample,
+                    label: 'Lazy loading example',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  'Use dynamic imports to load components only when needed.',
+                  'Return a Promise from the `render` function to await the module.',
+                  'Combine with `in-viewport` for maximum performance.',
+                ],
+                id: 'lazy-loading-guide',
+                paragraphs: [
+                  'To truly benefit from partial hydration, you should lazy load your component code. By passing a dynamic import (e.g., `() => import(...)`) as your Component definition and awaiting it in the `render` function, the browser only downloads the JavaScript when the component is actually activated.',
+                ],
+                title: 'Dynamic Imports',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'lazy-loading',
+            intro: 'Load component code only when the activation trigger fires.',
+            summary: 'Lazy loading in the component itself.',
+            title: 'Lazy Loading',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: partialHydrationHocConfigExample,
+                    label: 'withHydration options',
+                    language: 'tsx',
+                  },
+                ],
+                bullets: [
+                  'Pass `modifiers` to add CSS classes to the wrapper div.',
+                  'Pass `attributes` to add custom HTML attributes like `data-testid`.',
+                ],
+                id: 'hoc-options',
+                paragraphs: [
+                  'The `withHydration` HOC accepts an optional configuration object to customize the wrapper `div` it generates. This allows you to apply specific layout classes or accessibility attributes without wrapping the element an additional time.',
+                ],
+                title: 'Wrapper Configuration',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'with-hydration',
+            intro: 'Customize the HTML wrapper generated by the withHydration HOC.',
+            summary: 'withHydration options.',
+            title: 'withHydration Options',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: partialHydrationProviderExample,
+                    label: 'HydrationProvider usage',
+                    language: 'tsx',
+                  },
+                ],
+                bullets: [
+                  'Manages the `componentId` for the hydration unit.',
+                  'Provides a counter for `useIsomorphicId`.',
+                  'Automatically applied by `withHydration`.',
+                ],
+                id: 'provider-guide',
+                paragraphs: [
+                  'The `HydrationProvider` is a React context provider that supplies metadata to the hydrated component tree. While it is automatically included when using `withHydration`, you can also use it manually if you are building custom hydration wrappers or orchestrating complex isomorphic setups.',
+                ],
+                title: 'Context Provider',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'hydration-provider',
+            intro: 'Understand how the HydrationProvider supplies metadata to your components.',
+            summary: 'Hydration provider.',
+            title: 'Hydration Provider',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: partialHydrationApiExample,
+                    label: 'Public entry points',
+                    language: 'ts',
+                  },
+                ],
+                id: 'entry-points',
+                paragraphs: [
+                  'The package surface is focused on three main exports: the client-side hydration engine, the SSR metadata binder, and the isomorphic ID helper.',
+                ],
+                title: 'Entry points',
+              },
+              {
+                bullets: [
+                  '`createHydration(options)` returns an object with `init(context)` and `clearAllObservers()`.',
+                  '`options.components` maps names to `ComponentOption` objects.',
+                  '`init(context)` starts scanning the DOM for component wrappers.',
+                ],
+                id: 'create-hydration-api',
+                paragraphs: [
+                  'Use `createHydration` to define your client-side activation logic. It is framework-agnostic, meaning you define exactly how each component is rendered in the `render` callback.',
+                ],
+                title: 'createHydration',
+              },
+              {
+                bullets: [
+                  '`withHydration(Component, config?)` wraps a React component.',
+                  'Serializes props into the HTML during server rendering.',
+                  'Adds `data-component` and `data-internal-id` attributes to the wrapper.',
+                ],
+                id: 'with-hydration-api',
+                paragraphs: [
+                  'Use `withHydration` during SSR to ensure that the client-side loader has all the data it needs to activate the component without a full page re-render.',
+                ],
+                title: 'withHydration',
+              },
+              {
+                bullets: [
+                  'Generates a unique string ID based on the parent hydration unit.',
+                  'Stable across server and client renders.',
+                  'Required for accessible forms and aria labels in hydrated islands.',
+                ],
+                id: 'use-isomorphic-id-api',
+                paragraphs: [
+                  'Use `useIsomorphicId` inside your interactive components to maintain DOM consistency between the initial static HTML and the later hydrated state.',
+                ],
+                title: 'useIsomorphicId',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'api-reference',
+            intro:
+              'The package provides a minimal but powerful API for implementing the Islands Architecture in your project.',
+            summary: 'Core factory and bindings reference.',
+            title: 'API Reference',
+          },
+        ],
+        title: 'Guides',
+      },
+      {
+        id: 'examples',
+        pages: [
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: partialHydrationCompleteExample,
+                    label: 'Complete React Setup',
+                    language: 'ts',
+                  },
+                ],
+                id: 'complete-setup',
+                paragraphs: [
+                  'This example demonstrates a complete React setup. It mixes non-lazy components for critical UI (like Navigation) with lazy components that only load when they enter the viewport.',
+                ],
+                title: 'Mix Lazy and Non-Lazy Components',
+              },
+            ],
+            eyebrow: 'Examples',
+            id: 'example-complete-setup',
+            intro:
+              'See how to orchestrate a full page with both immediate and deferred hydration strategies.',
+            summary: 'Complete setup mixing lazy and non-lazy components.',
+            title: 'Complete Setup',
+          },
+        ],
+        title: 'Examples',
+      },
+    ],
+    title: 'Partial Hydration',
   },
 ];
 
