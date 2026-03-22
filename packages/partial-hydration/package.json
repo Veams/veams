@@ -1,6 +1,6 @@
 {
   "name": "@veams/partial-hydration",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "The hydration package contains the core functionality to make components interactive.",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -83,7 +83,7 @@
   "release-it": {
     "git": {
       "tagName": "${npm.name}@${version}",
-      "pushRepo": "git+https://github.com/Veams/veams.git",
+      "pushRepo": "origin",
       "commitMessage": "chore(partial-hydration): release ${npm.name}@${version}"
     },
     "github": {

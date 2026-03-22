@@ -96,7 +96,7 @@
   "release-it": {
     "git": {
       "tagName": "${npm.name}@${version}",
-      "pushRepo": "git+https://github.com/Veams/veams.git",
+      "pushRepo": "origin",
       "commitMessage": "chore(form): release ${npm.name}@${version}"
     },
     "github": {
