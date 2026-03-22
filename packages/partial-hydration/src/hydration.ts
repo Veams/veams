@@ -10,10 +10,10 @@ import { whenInViewport } from './utils/viewport.js';
  * Defines the configuration for a single component registration.
  */
 export type ComponentOption<C, P> = {
-  // The component constructor or function.
+  // The component constructor, function, or a dynamic import loader.
   Component: C;
-  // Function to perform the actual rendering/activation.
-  render: (Component: C, props: P, el: Element | HTMLElement, id: string) => void;
+  // Function to perform the actual rendering/activation. Can be async.
+  render: (Component: C, props: P, el: Element | HTMLElement, id: string) => void | Promise<void>;
 } & ComponentType;
 
 /**
@@ -239,7 +239,7 @@ function initComponents<C, P>(props: {
  * Performs the actual hydration of a single component.
  * Decodes props from the DOM and executes the render function.
  */
-function initComponent<C, P>(props: InitComponentProps<C, P>): void {
+async function initComponent<C, P>(props: InitComponentProps<C, P>): Promise<void> {
   const { element, cmpName, cmpConfig } = props;
   const id = element.getAttribute(idNamespace) || '';
   let parsedProps: P;
@@ -281,25 +281,29 @@ function initComponent<C, P>(props: InitComponentProps<C, P>): void {
     return;
   }
 
-  // Trigger the framework-specific render function.
-  cmpConfig.render(
-    cmpConfig.Component,
-    parsedProps as P,
-    element,
-    id
-  );
-  // Mark as initialized in the DOM.
-  element.dataset.initialized = 'true';
+  try {
+    // Trigger the framework-specific render function, awaiting it if it returns a Promise.
+    await cmpConfig.render(
+      cmpConfig.Component,
+      parsedProps as P,
+      element,
+      id
+    );
+    // Mark as initialized in the DOM.
+    element.dataset.initialized = 'true';
 
-  // Notify the system that a component has been hydrated.
-  window.dispatchEvent(
-    new CustomEvent('hydration:component:rendered', {
-      detail: {
-        id,
-        name: cmpName,
-      },
-    })
-  );
+    // Notify the system that a component has been hydrated.
+    window.dispatchEvent(
+      new CustomEvent('hydration:component:rendered', {
+        detail: {
+          id,
+          name: cmpName,
+        },
+      })
+    );
+  } catch (err) {
+    console.error(`Hydration failed for ${cmpName}:`, err);
+  }
 }
 
 /**
