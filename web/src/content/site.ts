@@ -4827,12 +4827,6 @@ export const docsPackages: DocsPackage[] = [
             summary: 'Nested values, same API surface.',
             title: 'Advanced Nested Fields',
           },
-        ],
-        title: 'Guides',
-      },
-      {
-        id: 'api',
-        pages: [
           {
             blocks: [
               {
@@ -4878,15 +4872,15 @@ export const docsPackages: DocsPackage[] = [
                 title: 'React API',
               },
             ],
-            eyebrow: 'API',
-            id: 'api',
+            eyebrow: 'Guides',
+            id: 'api-reference',
             intro:
               'The package API is split by responsibility: generic form state at the root, React bindings under the subpath.',
             summary: 'Everything public, without hidden layers.',
-            title: 'API',
+            title: 'API Reference',
           },
         ],
-        title: 'API',
+        title: 'Guides',
       },
       {
         id: 'examples',
