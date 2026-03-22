@@ -1,0 +1,87 @@
+{
+  "name": "@veams/css-animations",
+  "version": "0.1.1",
+  "description": "A collection of CSS animations for VEAMS.",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "style": "dist/index.css",
+  "sass": "src/index.scss",
+  "files": [
+    "src",
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "sass": "./src/index.scss",
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": "./dist/index.js",
+      "style": "./dist/index.css"
+    },
+    "./animations/*": {
+      "sass": "./src/animations/*.scss",
+      "style": "./dist/animations/*.css"
+    },
+    "./variables": {
+      "sass": "./src/_variables.scss"
+    },
+    "./mixins": {
+      "sass": "./src/_mixins.scss"
+    },
+    "./index.css": "./dist/index.css",
+    "./dist/*": "./dist/*"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "npm-run-all clean build:**",
+    "build:sass": "sass src:dist --no-source-map",
+    "build:ts": "tsc --project tsconfig.json",
+    "lint": "echo 'No lint step for CSS package'",
+    "test": "echo 'No test step for CSS package'",
+    "release": "npm run build && release-it"
+  },
+  "keywords": [
+    "CSS",
+    "Animations",
+    "SCSS"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "Sebastian Fitzner",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Veams/veams.git",
+    "directory": "packages/css-animations"
+  },
+  "bugs": {
+    "url": "https://github.com/Veams/veams/issues"
+  },
+  "release-it": {
+    "git": {
+      "tagName": "${name}@${version}",
+      "pushRepo": "git+https://github.com/Veams/veams.git",
+      "commitMessage": "chore(css-animations): release ${name}@${version}"
+    },
+    "github": {
+      "release": true,
+      "releaseName": "${name}@${version}"
+    },
+    "npm": {
+      "publish": true
+    }
+  },
+  "devDependencies": {
+    "npm-run-all": "4.1.5",
+    "release-it": "19.2.4",
+    "sass": "1.85.1",
+    "typescript": "5.9.3",
+    "tslib": "2.8.1"
+  }
+}

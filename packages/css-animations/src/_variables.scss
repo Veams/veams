@@ -1,0 +1,13 @@
+@mixin veams-root-vars {
+  --veams-transition-duration: 300ms;
+  --veams-transition-ease-method: ease-in-out;
+  --veams-animation-bg-color: rgba(0, 0, 0, 0.3);
+  --veams-animation-border: 2px solid rgba(0, 0, 0, 0.3);
+  --veams-animation-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+$transition-duration: var(--veams-transition-duration, 300ms) !default;
+$transition-ease-method: var(--veams-transition-ease-method, ease-in-out) !default;
+$animation-bg-color: var(--veams-animation-bg-color, rgba(0, 0, 0, 0.3)) !default;
+$animation-border: var(--veams-animation-border, 2px solid rgba(0, 0, 0, 0.3)) !default;
+$animation-shadow: var(--veams-animation-shadow, 0 0 0 2px rgba(0, 0, 0, 0.5)) !default;

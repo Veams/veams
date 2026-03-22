@@ -1,3 +1,5 @@
+@import "../../variables";
+@import "../../mixins";
 /* ---------------------------------------------------
 Scale and Fade
 --------------------------------------------------- */
@@ -17,7 +19,7 @@ Scale and Fade
 ///   }
 ///
 @mixin scale-down($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
-	animation: scaleDown $transition-duration $transition-ease-method both;
+	animation: scale-down $transition-duration $transition-ease-method both;
 }
 
 /// `Scale: Up`
@@ -35,7 +37,7 @@ Scale and Fade
 ///   }
 ///
 @mixin scale-up($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
-	animation: scaleUp $transition-duration $transition-ease-method both;
+	animation: scale-up $transition-duration $transition-ease-method both;
 }
 /// `Scale: Down Center`
 /// animates element scaling factor.
@@ -52,7 +54,7 @@ Scale and Fade
 ///   }
 ///
 @mixin scale-down-center($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
-	animation: scaleDownCenter $transition-duration $transition-ease-method both;
+	animation: scale-down-center $transition-duration $transition-ease-method both;
 }
 
 /// `Scale: Up Center`
@@ -70,14 +72,14 @@ Scale and Fade
 ///   }
 ///
 @mixin scale-up-center($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
-	animation: scaleUpCenter $transition-duration $transition-ease-method both;
+	animation: scale-up-center $transition-duration $transition-ease-method both;
 }
 
 /* ---------------------------------------------------
 KEYFRAMES: SCALE AND FADE
 --------------------------------------------------- */
 
-@include keyframes(scaleDown) {
+@include keyframes(scale-down) {
 	from {
 	}
 	to {
@@ -86,14 +88,14 @@ KEYFRAMES: SCALE AND FADE
 	}
 }
 
-@include keyframes(scaleUp) {
+@include keyframes(scale-up) {
 	from {
 		opacity: 0;
 		transform: scale(.8);
 	}
 }
 
-@include keyframes(scaleDownCenter) {
+@include keyframes(scale-down-center) {
 	from {
 	}
 	to {
@@ -101,9 +103,10 @@ KEYFRAMES: SCALE AND FADE
 	}
 }
 
-@include keyframes(scaleUpCenter) {
+@include keyframes(scale-up-center) {
 	from {
 		opacity: 0;
 		transform: scale(.7);
 	}
 }
+

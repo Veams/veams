@@ -1,0 +1,70 @@
+@import "../../variables";
+@import "../../mixins";
+@import "fb-setup";
+/* ---------------------------------------------------
+Multiple Border
+--------------------------------------------------- */
+@mixin fb-border-multiple($shadow: $animation-shadow, $transition-duration: $transition-duration, $transition-ease-method: forwards, $fbClass: false) {
+
+	&::after,
+	&::before {
+		box-shadow: $shadow;
+	}
+
+	@if $fbClass {
+		&.#{$fbClass} {
+			&::before {
+				animation: fb-border-multiple1 $transition-duration $transition-ease-method
+			}
+			&::after {
+				animation: fb-border-multiple2 $transition-duration $transition-ease-method
+			}
+		}
+	} @else {
+		&:hover {
+			&::before {
+				animation: fb-border-multiple1 $transition-duration $transition-ease-method
+			}
+			&::after {
+				animation: fb-border-multiple2 $transition-duration $transition-ease-method
+			}
+		}
+	}
+}
+
+/*
+Extend
+----------------------- */
+%fb-border-multiple {
+	@include fb-border-multiple();
+
+	&::before {
+		@include fb-setup-pseudo();
+	}
+}
+
+/*
+Multiple Border Animation
+----------------------------- */
+@include keyframes(fb-border-multiple1) {
+	0% {
+	opacity: 1;
+	transform: scale3d(0.5, 0.5, 1)
+}
+	100% {
+		opacity: 0;
+		transform: scale3d(1.1, 1.1, 1)
+	}
+}
+
+@include keyframes(fb-border-multiple2) {
+	0% {
+		opacity: 1;
+		transform: scale3d(0.5, 0.5, 1)
+	}
+	50%, 100% {
+		opacity: 0;
+		transform: scale3d(1.2, 1.2, 1)
+	}
+}
+

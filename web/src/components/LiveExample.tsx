@@ -13,7 +13,8 @@ import {
   useStateSingleton,
   useStateSubscription,
 } from '@veams/status-quo/react';
-import { useRef, type ReactNode } from 'react';
+import { ANIMATIONS } from '@veams/css-animations';
+import { useState, useRef, type ReactNode } from 'react';
 
 import { CodeBlock } from './CodeBlock';
 
@@ -667,11 +668,153 @@ function SelectorProfileExample() {
 
   return (
     <ExampleChrome eyebrow="Working Example" title="Selector optimization you can see">
-      <div className="example-counter-layout example-counter-layout-shared">
+      <div className="example-counter-layout example-two-column-layout">
         <SelectorIdentityCard handler={handler} />
         <SelectorDiagnosticsCard handler={handler} />
       </div>
       <SelectorControlsCard handler={handler} />
+    </ExampleChrome>
+  );
+}
+
+function CssAnimationsShowcase() {
+  const [activeAnimation, setActiveAnimation] = useState<string | null>(null);
+  const [isAnimating, setIsAnimated] = useState(false);
+
+  const triggerAnimation = (name: string) => {
+    setActiveAnimation(name);
+    setIsAnimated(false);
+    // Force reflow to restart animation
+    setTimeout(() => setIsAnimated(true), 10);
+  };
+
+  const renderButtons = (category: any) => {
+    if (!category) return null;
+    return Object.entries(category).map(([key, value]) => {
+      if (typeof value === 'string') {
+        return (
+          <ChipButton
+            active={activeAnimation === value}
+            key={key}
+            onClick={() => triggerAnimation(value)}
+          >
+            {key.toLowerCase().replace(/_/g, '-')}
+          </ChipButton>
+        );
+      }
+      return null;
+    });
+  };
+
+  return (
+    <ExampleChrome eyebrow="Interactive Guide" title="All available animations">
+      <div className="example-animation-showcase">
+        <div className="example-animation-grid">
+          <div className="example-animation-section">
+            <h5>Feedback Effects</h5>
+            <div className="example-animation-buttons">
+              {renderButtons(ANIMATIONS.FEEDBACK)}
+            </div>
+          </div>
+
+          <div className="example-animation-section">
+            <h5>In/Out: Carousel</h5>
+            <div className="example-animation-buttons">
+              {renderButtons(ANIMATIONS.IN_OUT.CAROUSEL)}
+            </div>
+          </div>
+
+          <div className="example-animation-section">
+            <h5>In/Out: Cube</h5>
+            <div className="example-animation-buttons">
+              {renderButtons(ANIMATIONS.IN_OUT.CUBE)}
+            </div>
+          </div>
+
+          <div className="example-animation-section">
+            <h5>In/Out: Flip</h5>
+            <div className="example-animation-buttons">
+              {renderButtons(ANIMATIONS.IN_OUT.FLIP)}
+            </div>
+          </div>
+
+          <div className="example-animation-section">
+            <h5>In/Out: Move</h5>
+            <div className="example-animation-buttons">
+              {renderButtons(ANIMATIONS.IN_OUT.MOVE)}
+            </div>
+          </div>
+
+          <div className="example-animation-section">
+            <h5>In/Out: Room</h5>
+            <div className="example-animation-buttons">
+              {renderButtons(ANIMATIONS.IN_OUT.ROOM)}
+            </div>
+          </div>
+
+          <div className="example-animation-section">
+            <h5>In/Out: Slides</h5>
+            <div className="example-animation-buttons">
+              {renderButtons(ANIMATIONS.IN_OUT.SLIDES)}
+            </div>
+          </div>
+
+          <div className="example-animation-section">
+            <h5>In/Out: Fold</h5>
+            <div className="example-animation-buttons">
+              {renderButtons(ANIMATIONS.IN_OUT.FOLD)}
+            </div>
+          </div>
+
+          <div className="example-animation-section">
+            <h5>In/Out: Unfold</h5>
+            <div className="example-animation-buttons">
+              {renderButtons(ANIMATIONS.IN_OUT.UNFOLD)}
+            </div>
+          </div>
+
+          <div className="example-animation-section">
+            <h5>In/Out: Scale</h5>
+            <div className="example-animation-buttons">
+              {renderButtons(ANIMATIONS.IN_OUT.SCALE)}
+            </div>
+          </div>
+
+          <div className="example-animation-section">
+            <h5>In/Out: Rotate & Scale</h5>
+            <div className="example-animation-buttons">
+              {renderButtons(ANIMATIONS.IN_OUT.ROTATE_AND_SCALE)}
+            </div>
+          </div>
+
+          <div className="example-animation-section">
+            <h5>In/Out: Push & Pull</h5>
+            <div className="example-animation-buttons">
+              {renderButtons(ANIMATIONS.IN_OUT.PUSH_PULL)}
+            </div>
+          </div>
+
+          <div className="example-animation-section">
+            <h5>In/Out: Other</h5>
+            <div className="example-animation-buttons">
+              {renderButtons(ANIMATIONS.IN_OUT.FALL)}
+              {renderButtons(ANIMATIONS.IN_OUT.NEWSPAPER)}
+              {renderButtons(ANIMATIONS.IN_OUT.SIDES)}
+            </div>
+          </div>
+        </div>
+
+        <div className="example-animation-preview">
+          <div
+            className={`example-animation-target${
+              isAnimating ? ` showcase-${activeAnimation} is-animated` : ''
+            }`}
+            onAnimationEnd={() => setIsAnimated(false)}
+          >
+            {activeAnimation || 'Select an animation'}
+          </div>
+        </div>
+      </div>
     </ExampleChrome>
   );
 }
@@ -694,6 +837,9 @@ export function LiveExample({ id, sourceExamples }: LiveExampleProps) {
       break;
     case 'status-quo-selector-profile':
       preview = <SelectorProfileExample />;
+      break;
+    case 'css-animations-showcase' as any:
+      preview = <CssAnimationsShowcase />;
       break;
   }
 

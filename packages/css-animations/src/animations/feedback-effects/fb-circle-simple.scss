@@ -1,7 +1,10 @@
+@import "../../variables";
+@import "../../mixins";
+@import "fb-setup";
 /* ---------------------------------------------------
 Simple Circle
 --------------------------------------------------- */
-@mixin fb-ani-circleSimple($bgColor: rgba(0, 0, 0, 0.3), $transition-duration: $transition-duration, $transition-ease-method: forwards, $fbClass: false) {
+@mixin fb-circle-simple($bgColor: $animation-bg-color, $transition-duration: $transition-duration, $transition-ease-method: forwards, $fbClass: false) {
 
 	&::after {
 		background: $bgColor;
@@ -10,13 +13,13 @@ Simple Circle
 	@if $fbClass {
 		&.#{$fbClass} {
 			&::after {
-				animation: fb-ani-circleSimple $transition-duration $transition-ease-method;
+				animation: fb-circle-simple $transition-duration $transition-ease-method;
 			}
 		}
 	} @else {
 		&:hover {
 			&::after {
-				animation: fb-ani-circleSimple $transition-duration $transition-ease-method;
+				animation: fb-circle-simple $transition-duration $transition-ease-method;
 			}
 		}
 	}
@@ -24,14 +27,14 @@ Simple Circle
 /*
 Extend
 ----------------------- */
-%fb-ani-circleSimple {
-	@include fb-ani-circleSimple();
+%fb-circle-simple {
+	@include fb-circle-simple();
 }
 
 /*
 Simple Circle Animation
 ----------------------------- */
-@include keyframes(fb-ani-circleSimple) {
+@include keyframes(fb-circle-simple) {
 	0% {
 		transform: scale3d(0.3, 0.3, 1);
 
@@ -44,3 +47,4 @@ Simple Circle Animation
 		transform: scale3d(1.2, 1.2, 1);
 	}
 }
+

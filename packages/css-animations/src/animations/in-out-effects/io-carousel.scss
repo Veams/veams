@@ -1,3 +1,5 @@
+@import "../../variables";
+@import "../../mixins";
 /* ---------------------------------------------------
 Carousel
 --------------------------------------------------- */
@@ -18,7 +20,7 @@ Carousel
 ///
 @mixin carousel-rotate-left-out($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 100% 50%;
-	animation: rotateCarouselLeftOut $transition-duration $transition-ease-method both;
+	animation: carousel-rotate-left-out $transition-duration $transition-ease-method both;
 }
 
 /// `Carousel: Rotate Left In Animation`
@@ -37,7 +39,7 @@ Carousel
 ///
 @mixin carousel-rotate-left-in($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 0 50%;
-	animation: rotateCarouselLeftIn $transition-duration $transition-ease-method both;
+	animation: carousel-rotate-left-in $transition-duration $transition-ease-method both;
 }
 
 /// `Carousel: Rotate Right Out Animation`
@@ -56,7 +58,7 @@ Carousel
 ///
 @mixin carousel-rotate-right-out($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 0 50%;
-	animation: rotateCarouselRightOut $transition-duration $transition-ease-method both;
+	animation: carousel-rotate-right-out $transition-duration $transition-ease-method both;
 }
 
 /// `Carousel: Rotate Right In Animation`
@@ -75,7 +77,7 @@ Carousel
 ///
 @mixin carousel-rotate-right-in($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 100% 50%;
-	animation: rotateCarouselRightIn $transition-duration $transition-ease-method both;
+	animation: carousel-rotate-right-in $transition-duration $transition-ease-method both;
 }
 
 /// `Carousel: Rotate Top Out Animation`
@@ -94,7 +96,7 @@ Carousel
 ///
 @mixin carousel-rotate-top-out($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 50% 100%;
-	animation: rotateCarouselTopOut $transition-duration $transition-ease-method both;
+	animation: carousel-rotate-top-out $transition-duration $transition-ease-method both;
 }
 
 /// `Carousel: Rotate Top In Animation`
@@ -113,7 +115,7 @@ Carousel
 ///
 @mixin carousel-rotate-top-in($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 50% 0%;
-	animation: rotateCarouselTopIn $transition-duration $transition-ease-method both;
+	animation: carousel-rotate-top-in $transition-duration $transition-ease-method both;
 }
 
 /// `Carousel: Rotate Bottom Out Animation`
@@ -132,7 +134,7 @@ Carousel
 ///
 @mixin carousel-rotate-bottom-out($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 50% 0;
-	animation: rotateCarouselBottomOut $transition-duration $transition-ease-method both
+	animation: carousel-rotate-bottom-out $transition-duration $transition-ease-method both
 }
 
 /// `Carousel: Rotate Bottom In Animation`
@@ -151,7 +153,7 @@ Carousel
 ///
 @mixin carousel-rotate-bottom-in($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 50% 100%;
-	animation: rotateCarouselBottomIn $transition-duration $transition-ease-method both;
+	animation: carousel-rotate-bottom-in $transition-duration $transition-ease-method both;
 }
 
 
@@ -159,7 +161,7 @@ Carousel
 KEYFRAMES: CAROUSEL
 --------------------------------------------------- */
 
-@include keyframes(rotateCarouselLeftOut) {
+@include keyframes(carousel-rotate-left-out) {
 	0% {
 	}
 	100% {
@@ -168,14 +170,14 @@ KEYFRAMES: CAROUSEL
 	}
 }
 
-@include keyframes(rotateCarouselLeftIn) {
+@include keyframes(carousel-rotate-left-in) {
 	0% {
 		transform: translateX(200%) scale(.4) rotateY(65deg);
 		opacity: .3;
 	}
 }
 
-@include keyframes(rotateCarouselRightOut) {
+@include keyframes(carousel-rotate-right-out) {
 	0% {
 	}
 	100% {
@@ -184,14 +186,14 @@ KEYFRAMES: CAROUSEL
 	}
 }
 
-@include keyframes(rotateCarouselRightIn) {
+@include keyframes(carousel-rotate-right-in) {
 	0% {
 		transform: translateX(-200%) scale(.4) rotateY(-65deg);
 		opacity: .3;
 	}
 }
 
-@include keyframes(rotateCarouselTopOut) {
+@include keyframes(carousel-rotate-top-out) {
 	0% {
 	}
 	100% {
@@ -200,14 +202,14 @@ KEYFRAMES: CAROUSEL
 	}
 }
 
-@include keyframes(rotateCarouselTopIn) {
+@include keyframes(carousel-rotate-top-in) {
 	0% {
 		transform: translateY(200%) scale(.4) rotateY(-65deg);
 		opacity: .3;
 	}
 }
 
-@include keyframes(rotateCarouselBottomOut) {
+@include keyframes(carousel-rotate-bottom-out) {
 	0% {
 	}
 	100% {
@@ -216,9 +218,10 @@ KEYFRAMES: CAROUSEL
 	}
 }
 
-@include keyframes(rotateCarouselBottomIn) {
+@include keyframes(carousel-rotate-bottom-in) {
 	0% {
 		opacity: .3;
 		transform: translateY(-200%) scale(.4) rotateX(65deg);
 	}
 }
+

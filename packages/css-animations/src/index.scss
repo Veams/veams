@@ -1,0 +1,28 @@
+@import "variables";
+@import "mixins";
+
+:root {
+  @include veams-root-vars;
+}
+
+@import "animations/feedback-effects/fb-setup";
+@import "animations/feedback-effects/fb-border-multiple";
+@import "animations/feedback-effects/fb-border-simple";
+@import "animations/feedback-effects/fb-circle-big";
+@import "animations/feedback-effects/fb-circle-delay";
+@import "animations/feedback-effects/fb-circle-revert";
+@import "animations/feedback-effects/fb-circle-shrink";
+@import "animations/feedback-effects/fb-circle-simple";
+@import "animations/in-out-effects/io-carousel";
+@import "animations/in-out-effects/io-cube";
+@import "animations/in-out-effects/io-fall";
+@import "animations/in-out-effects/io-flip";
+@import "animations/in-out-effects/io-fold-and-unfold";
+@import "animations/in-out-effects/io-move";
+@import "animations/in-out-effects/io-newspaper";
+@import "animations/in-out-effects/io-push-and-pull";
+@import "animations/in-out-effects/io-room-walls";
+@import "animations/in-out-effects/io-rotate-and-scale";
+@import "animations/in-out-effects/io-scale";
+@import "animations/in-out-effects/io-sides";
+@import "animations/in-out-effects/io-slides";

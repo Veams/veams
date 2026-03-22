@@ -1,3 +1,5 @@
+@import "../../variables";
+@import "../../mixins";
 
 /* ---------------------------------------------------
 Rotate First and Scale
@@ -18,7 +20,7 @@ Rotate First and Scale
 ///
 @mixin side-rotate-right-first($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 0% 50%;
-	animation: rotateRightSideFirst $transition-duration $transition-ease-method both;
+	animation: rotate-right-side-first $transition-duration $transition-ease-method both;
 }
 
 /// `Side: Rotate Left First Animation`
@@ -36,7 +38,7 @@ Rotate First and Scale
 ///
 @mixin side-rotate-left-first($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 100% 50%;
-	animation: rotateLeftSideFirst $transition-duration $transition-ease-method both;
+	animation: rotate-left-side-first $transition-duration $transition-ease-method both;
 }
 
 /// `Side: Rotate Top First Animation`
@@ -54,7 +56,7 @@ Rotate First and Scale
 ///
 @mixin side-rotate-top-first($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 50% 100%;
-	animation: rotateTopSideFirst $transition-duration $transition-ease-method both;
+	animation: rotate-top-side-first $transition-duration $transition-ease-method both;
 }
 
 /// `Side: Rotate Bottom First Animation`
@@ -72,13 +74,13 @@ Rotate First and Scale
 ///
 @mixin side-rotate-bottom-first($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 50% 0%;
-	animation: rotateBottomSideFirst $transition-duration $transition-ease-method both;
+	animation: rotate-bottom-side-first $transition-duration $transition-ease-method both;
 }
 
 /* ---------------------------------------------------
 KEYFRAMES: ROTATE SIDES AND SCALE
 --------------------------------------------------- */
-@include keyframes(rotateRightSideFirst) {
+@include keyframes(rotate-right-side-first) {
 	0% {
 	}
 	40% {
@@ -92,7 +94,7 @@ KEYFRAMES: ROTATE SIDES AND SCALE
 	}
 }
 
-@include keyframes(rotateLeftSideFirst) {
+@include keyframes(rotate-left-side-first) {
 	0% {
 	}
 	40% {
@@ -106,7 +108,7 @@ KEYFRAMES: ROTATE SIDES AND SCALE
 	}
 }
 
-@include keyframes(rotateTopSideFirst) {
+@include keyframes(rotate-top-side-first) {
 	0% {
 	}
 	40% {
@@ -120,7 +122,7 @@ KEYFRAMES: ROTATE SIDES AND SCALE
 	}
 }
 
-@include keyframes(rotateBottomSideFirst) {
+@include keyframes(rotate-bottom-side-first) {
 	0% {
 	}
 	40% {
@@ -133,3 +135,4 @@ KEYFRAMES: ROTATE SIDES AND SCALE
 		transform: scale(0.8) translateZ(-200px);
 	}
 }
+

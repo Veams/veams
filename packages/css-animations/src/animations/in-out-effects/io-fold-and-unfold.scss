@@ -1,3 +1,5 @@
+@import "../../variables";
+@import "../../mixins";
 /* ---------------------------------------------------
 Fold and Unfold
 --------------------------------------------------- */
@@ -22,7 +24,7 @@ Fold
 ///
 @mixin fold-left($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 100% 50%;
-	animation: rotateFoldLeft $transition-duration $transition-ease-method both;
+	animation: rotate-fold-left $transition-duration $transition-ease-method both;
 }
 
 /// `Fold: Right`
@@ -41,7 +43,7 @@ Fold
 ///
 @mixin fold-right($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 0% 50%;
-	animation: rotateFoldRight $transition-duration $transition-ease-method both;
+	animation: rotate-fold-right $transition-duration $transition-ease-method both;
 }
 
 /// `Fold: Top`
@@ -60,7 +62,7 @@ Fold
 ///
 @mixin fold-top($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 50% 100%;
-	animation: rotateFoldTop $transition-duration $transition-ease-method both;
+	animation: rotate-fold-top $transition-duration $transition-ease-method both;
 }
 
 /// `Fold: Bottom`
@@ -79,7 +81,7 @@ Fold
 ///
 @mixin fold-bottom($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 50% 0%;
-	animation: rotateFoldBottom $transition-duration $transition-ease-method both;
+	animation: rotate-fold-bottom $transition-duration $transition-ease-method both;
 }
 
 /*
@@ -102,7 +104,7 @@ Unfold
 ///
 @mixin unfold-left($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 100% 50%;
-	animation: rotateUnfoldLeft $transition-duration $transition-ease-method both;
+	animation: rotate-unfold-left $transition-duration $transition-ease-method both;
 }
 
 /// `Unfold: Right`
@@ -121,7 +123,7 @@ Unfold
 ///
 @mixin unfold-right($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 0% 50%;
-	animation: rotateUnfoldRight $transition-duration $transition-ease-method both;
+	animation: rotate-unfold-right $transition-duration $transition-ease-method both;
 }
 
 /// `Unfold: Top`
@@ -140,7 +142,7 @@ Unfold
 ///
 @mixin unfold-top($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 50% 100%;
-	animation: rotateUnfoldTop $transition-duration $transition-ease-method both;
+	animation: rotate-unfold-top $transition-duration $transition-ease-method both;
 }
 
 /// `Unfold: Bottom`
@@ -159,7 +161,7 @@ Unfold
 ///
 @mixin unfold-bottom($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 50% 0%;
-	animation: rotateUnfoldBottom $transition-duration $transition-ease-method both;
+	animation: rotate-unfold-bottom $transition-duration $transition-ease-method both;
 }
 
 /* ---------------------------------------------------
@@ -170,7 +172,7 @@ KEYFRAMES: FOLD AND UNFOLD
 Fold
 --------------------------------------------------- */
 
-@include keyframes(rotateFoldRight) {
+@include keyframes(rotate-fold-right) {
 	from {
 	}
 	to {
@@ -179,7 +181,7 @@ Fold
 	}
 }
 
-@include keyframes(rotateFoldLeft) {
+@include keyframes(rotate-fold-left) {
 	from {
 	}
 	to {
@@ -188,7 +190,7 @@ Fold
 	}
 }
 
-@include keyframes(rotateFoldTop) {
+@include keyframes(rotate-fold-top) {
 	from {
 	}
 	to {
@@ -197,7 +199,7 @@ Fold
 	}
 }
 
-@include keyframes(rotateFoldBottom) {
+@include keyframes(rotate-fold-bottom) {
 	from {
 	}
 	to {
@@ -210,30 +212,31 @@ Fold
 Unfold
 --------------------------------------------------- */
 
-@include keyframes(rotateUnfoldLeft) {
+@include keyframes(rotate-unfold-left) {
 	from {
 		transform: translateX(-100%) rotateY(-90deg);
 		opacity: 0;
 	}
 }
 
-@include keyframes(rotateUnfoldRight) {
+@include keyframes(rotate-unfold-right) {
 	from {
 		transform: translateX(100%) rotateY(90deg);
 		opacity: 0;
 	}
 }
 
-@include keyframes(rotateUnfoldTop) {
+@include keyframes(rotate-unfold-top) {
 	from {
 		transform: translateY(-100%) rotateX(90deg);
 		opacity: 0;
 	}
 }
 
-@include keyframes(rotateUnfoldBottom) {
+@include keyframes(rotate-unfold-bottom) {
 	from {
 		transform: translateY(100%) rotateX(-90deg);
 		opacity: 0;
 	}
 }
+

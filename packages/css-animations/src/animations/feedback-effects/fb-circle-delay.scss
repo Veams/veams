@@ -1,7 +1,10 @@
+@import "../../variables";
+@import "../../mixins";
+@import "fb-setup";
 /* ---------------------------------------------------
 Circle with Delay
 --------------------------------------------------- */
-@mixin fb-ani-circleDelay($bgColor: rgba(0, 0, 0, 0.4), $transition-duration: 1s, $transition-ease-method: ease-out forwards, $fbClass: false) {
+@mixin fb-circle-delay($bgColor: $animation-bg-color, $transition-duration: 1s, $transition-ease-method: ease-out forwards, $fbClass: false) {
 
 	&::after {
 		background: $bgColor;
@@ -10,13 +13,13 @@ Circle with Delay
 	@if $fbClass {
 		&.#{$fbClass} {
 			&::after {
-				animation: fb-ani-circleDelay $transition-duration $transition-ease-method;
+				animation: fb-circle-delay $transition-duration $transition-ease-method;
 			}
 		}
 	} @else {
 		&:hover {
 			&::after {
-				animation: fb-ani-circleDelay $transition-duration $transition-ease-method;
+				animation: fb-circle-delay $transition-duration $transition-ease-method;
 			}
 		}
 	}
@@ -25,14 +28,14 @@ Circle with Delay
 /*
 Extend
 ----------------------- */
-%fb-ani-circleDelay {
-	@include fb-ani-circleDelay();
+%fb-circle-delay {
+	@include fb-circle-delay();
 }
 
 /*
 Keyframes
 ----------------------- */
-@include keyframes(fb-ani-circleDelay){
+@include keyframes(fb-circle-delay){
 	0% {
 		transform: scale3d(0.5, 0.5, 1);
 		opacity: 1;
@@ -46,3 +49,4 @@ Keyframes
 		opacity: 0;
 	}
 }
+

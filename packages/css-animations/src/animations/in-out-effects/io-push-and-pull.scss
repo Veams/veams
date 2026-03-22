@@ -1,3 +1,5 @@
+@import "../../variables";
+@import "../../mixins";
 
 /* ---------------------------------------------------
 Push and Pull
@@ -23,7 +25,7 @@ Push
 ///
 @mixin push-left-rotate($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 0% 50%;
-	animation: rotatePushLeft $transition-duration $transition-ease-method both;
+	animation: rotate-push-left $transition-duration $transition-ease-method both;
 }
 
 /// `Push: To Right With Rotation`
@@ -42,7 +44,7 @@ Push
 ///
 @mixin  push-right-rotate($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 100% 50%;
-	animation: rotatePushRight $transition-duration $transition-ease-method both;
+	animation: rotate-push-right $transition-duration $transition-ease-method both;
 }
 
 /// `Push: To Top With Rotation`
@@ -61,7 +63,7 @@ Push
 ///
 @mixin push-top-rotate($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 50% 0%;
-	animation: rotatePushTop $transition-duration $transition-ease-method both;
+	animation: rotate-push-top $transition-duration $transition-ease-method both;
 }
 
 /// `Push: To Bottom With Rotation`
@@ -80,7 +82,7 @@ Push
 ///
 @mixin push-bottom-rotate($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 50% 100%;
-	animation: rotatePushBottom $transition-duration $transition-ease-method both;
+	animation: rotate-push-bottom $transition-duration $transition-ease-method both;
 }
 
 /*
@@ -103,7 +105,7 @@ Pull
 ///
 @mixin pull-left-rotate($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 0% 50%;
-	animation: rotatePullLeft $transition-duration $transition-ease-method both;
+	animation: rotate-pull-left $transition-duration $transition-ease-method both;
 }
 
 /// `Pull: From Right With Rotation`
@@ -122,7 +124,7 @@ Pull
 ///
 @mixin pull-right-rotate($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 100% 50%;
-	animation: rotatePullRight $transition-duration $transition-ease-method both;
+	animation: rotate-pull-right $transition-duration $transition-ease-method both;
 }
 
 /// `Pull: From Top With Rotation`
@@ -141,7 +143,7 @@ Pull
 ///
 @mixin pull-top-rotate($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 50% 0%;
-	animation: rotatePullTop $transition-duration $transition-ease-method both;
+	animation: rotate-pull-top $transition-duration $transition-ease-method both;
 }
 
 /// `Pull: From Bottom With Rotation`
@@ -160,7 +162,7 @@ Pull
 ///
 @mixin pull-bottom-rotate($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 50% 100%;
-	animation: rotatePullBottom $transition-duration $transition-ease-method both;
+	animation: rotate-pull-bottom $transition-duration $transition-ease-method both;
 }
 
 /* ---------------------------------------------------
@@ -171,7 +173,7 @@ KEYFRAMES: PUSH AND PULL
 Push
 --------------------------------------------------- */
 
-@include keyframes(rotatePushLeft) {
+@include keyframes(rotate-push-left) {
 	from {
 	}
 	to {
@@ -180,7 +182,7 @@ Push
 	}
 }
 
-@include keyframes(rotatePushRight) {
+@include keyframes(rotate-push-right) {
 	from {
 	}
 	to {
@@ -189,7 +191,7 @@ Push
 	}
 }
 
-@include keyframes(rotatePushTop) {
+@include keyframes(rotate-push-top) {
 	from {
 	}
 	to {
@@ -198,7 +200,7 @@ Push
 	}
 }
 
-@include keyframes(rotatePushBottom) {
+@include keyframes(rotate-push-bottom) {
 	from {
 	}
 	to {
@@ -211,30 +213,31 @@ Push
 Pull
 --------------------------------------------------- */
 
-@include keyframes(rotatePullRight) {
+@include keyframes(rotate-pull-right) {
 	from {
 		transform: rotateY(-90deg);
 		opacity: 0;
 	}
 }
 
-@include keyframes(rotatePullLeft) {
+@include keyframes(rotate-pull-left) {
 	from {
 		transform: rotateY(90deg);
 		opacity: 0;
 	}
 }
 
-@include keyframes(rotatePullTop) {
+@include keyframes(rotate-pull-top) {
 	from {
 		transform: rotateX(-90deg);
 		opacity: 0;
 	}
 }
 
-@include keyframes(rotatePullBottom) {
+@include keyframes(rotate-pull-bottom) {
 	from {
 		transform: rotateX(90deg);
 		opacity: 0;
 	}
 }
+

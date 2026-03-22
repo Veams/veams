@@ -7,6 +7,7 @@ export type CodeExample = {
 
 export type FeatureCard = {
   description: string;
+  link?: string;
   title: string;
   visual:
     | 'query-management'
@@ -26,6 +27,7 @@ export type FeatureCard = {
     | 'form-architecture'
     | 'form-ref-bridge'
     | 'partial-hydration-architecture'
+    | 'css-animations-architecture'
     | 'status-quo-leaf';
 };
 
@@ -2210,10 +2212,55 @@ import {
   useUncontrolledField,
 } from '@veams/form/react';`;
 
+const cssAnimationsInstall = `npm install @veams/css-animations`;
+
+const cssAnimationsScssUsage = `// Import the full bundle (variables, mixins, and all animations)
+@import "@veams/css-animations";
+
+// OR import specific pieces for a smaller footprint
+@import "@veams/css-animations/variables";
+@import "@veams/css-animations/mixins";
+@import "@veams/css-animations/animations/feedback-effects/fb-border-simple";
+
+.my-element {
+  // Use the setup mixin for feedback animations (creates pseudo-element)
+  @include fb-setup;
+  
+  // Apply the animation mixin
+  @include fb-border-simple;
+}`;
+
+const cssAnimationsCssUsage = `/* Import the full compiled bundle */
+@import "@veams/css-animations/index.css";
+
+/* OR import specific compiled animations */
+@import "@veams/css-animations/animations/feedback-effects/fb-border-simple.css";`;
+
+const cssAnimationsTsUsage = `import { ANIMATIONS } from '@veams/css-animations';
+
+// Use constants for type-safe class names or animation names
+function MyComponent({ isError }) {
+  return (
+    <div className={isError ? ANIMATIONS.FEEDBACK.BORDER_SIMPLE : ''}>
+      Content
+    </div>
+  );
+}`;
+
+const cssAnimationsVarsUsage = `:root {
+  /* Override default animation settings globally */
+  --veams-transition-duration: 400ms;
+  --veams-transition-ease-method: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Customize specific effect colors */
+  --veams-animation-bg-color: rgba(209, 45, 105, 0.2);
+  --veams-animation-border: 3px solid #d12d69;
+}`;
+
 export const docsPackages: DocsPackage[] = [
   {
     accent: 'teal',
-    description: 'High-performance state and hydration for modern frontends.',
+    description: 'Structure, state, and hydration for modern frontends.',
     id: 'ecosystem',
     sections: [
       {
@@ -2226,36 +2273,42 @@ export const docsPackages: DocsPackage[] = [
                   {
                     description:
                       'A structural CSS and HTML methodology to keep large codebases scalable and predictable.',
+                    link: '/packages/methodology/overview',
                     title: 'Methodology',
                     visual: 'methodology-layout',
                   },
                   {
                     description:
                       'Framework-agnostic state handlers with React hooks and explicit lifecycle management.',
+                    link: '/packages/status-quo/overview',
                     title: 'Status Quo',
                     visual: 'framework-core',
                   },
                   {
                     description:
                       'Stable query and mutation handles over TanStack Query, plus a centralized query manager.',
+                    link: '/packages/status-quo-query/overview',
                     title: 'Status Quo Query',
                     visual: 'query-facade',
                   },
                   {
                     description:
                       'Generic form state engine with optional React bindings for high-performance uncontrolled inputs.',
+                    link: '/packages/form/overview',
                     title: 'Form',
                     visual: 'form-architecture',
                   },
                   {
                     description:
-                      'A collection of CSS animations for VEAMS, available as SCSS, CSS, or TypeScript constants.',
+                      'A collection of high-performance CSS animations for modern web applications.',
+                    link: '/packages/css-animations/overview',
                     title: 'CSS Animations',
-                    visual: 'methodology-utilities',
+                    visual: 'css-animations-architecture',
                   },
                   {
                     description:
                       'Activate interactive components in a static HTML environment using the Islands Architecture.',
+                    link: '/packages/partial-hydration/overview',
                     title: 'Partial Hydration',
                     visual: 'partial-hydration-architecture',
                   },
@@ -5337,7 +5390,7 @@ export const docsPackages: DocsPackage[] = [
     title: 'Partial Hydration',
   },
   {
-    accent: 'violet',
+    accent: 'pink',
     description: 'A collection of CSS animations for VEAMS.',
     githubPath: 'packages/css-animations',
     id: 'css-animations',
@@ -5382,6 +5435,73 @@ export const docsPackages: DocsPackage[] = [
       {
         id: 'guides',
         pages: [
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: cssAnimationsScssUsage,
+                    label: 'SCSS usage',
+                    language: 'scss',
+                  },
+                ],
+                id: 'scss-usage',
+                paragraphs: [
+                  'For Sass users, the package provides a highly modular set of mixins. You can import the full bundle or just the specific variables, mixins, and animations you need to keep your CSS footprint small.',
+                  'When using feedback animations, remember to include `@include fb-setup;` on the target element to initialize the required pseudo-element styling.',
+                ],
+                title: 'SCSS Mixins',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: cssAnimationsCssUsage,
+                    label: 'CSS usage',
+                    language: 'css',
+                  },
+                ],
+                id: 'css-usage',
+                paragraphs: [
+                  'If you prefer plain CSS, the package ships with pre-compiled versions of every animation. These files include both the `@keyframes` definitions and a corresponding utility class (e.g., `.fb-border-simple`).',
+                ],
+                title: 'Pre-compiled CSS',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: cssAnimationsTsUsage,
+                    label: 'TypeScript usage',
+                    language: 'ts',
+                  },
+                ],
+                id: 'ts-usage',
+                paragraphs: [
+                  'To avoid typos and enable IDE autocompletion, the package exports an `ANIMATIONS` constant. This is particularly useful in component-based frameworks where you might want to toggle animation classes dynamically.',
+                ],
+                title: 'TypeScript Constants',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: cssAnimationsVarsUsage,
+                    label: 'CSS Variables',
+                    language: 'css',
+                  },
+                ],
+                id: 'customization',
+                paragraphs: [
+                  'All animations are driven by CSS Custom Properties. You can override these in your `:root` or at a scoped level to change timing, easing, and colors without re-compiling any Sass.',
+                ],
+                title: 'Customization',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'usage',
+            intro:
+              'Learn how to integrate animations via SCSS mixins, plain CSS, or TypeScript constants.',
+            summary: 'Mixins, CSS imports, and constants.',
+            title: 'Usage Guide',
+          },
           {
             blocks: [
               {

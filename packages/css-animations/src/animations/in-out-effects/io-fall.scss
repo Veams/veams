@@ -1,3 +1,5 @@
+@import "../../variables";
+@import "../../mixins";
 
 /// `Rotation and Falling`
 /// rotates an element and adds a falling animation.
@@ -15,13 +17,13 @@
 ///
 @mixin rotate-fall($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 0 0;
-	animation: rotateFall $transition-duration ease-in both;
+	animation: fall-rotate $transition-duration ease-in both;
 }
 
 /* ---------------------------------------------------
 KEYFRAMES: FALL
 --------------------------------------------------- */
-@include keyframes(rotateFall) {
+@include keyframes(fall-rotate) {
 	0% {
 		transform: rotateZ(0deg);
 	}
@@ -39,3 +41,4 @@ KEYFRAMES: FALL
 		transform: translateY(100%) rotateZ(17deg);
 	}
 }
+

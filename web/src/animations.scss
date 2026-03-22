@@ -1,0 +1,192 @@
+@import "@veams/css-animations/variables";
+@import "@veams/css-animations/mixins";
+
+:root {
+  @include veams-root-vars;
+}
+
+// Import all animations
+@import "@veams/css-animations/animations/feedback-effects/fb-setup";
+@import "@veams/css-animations/animations/feedback-effects/fb-border-multiple";
+@import "@veams/css-animations/animations/feedback-effects/fb-border-simple";
+@import "@veams/css-animations/animations/feedback-effects/fb-circle-big";
+@import "@veams/css-animations/animations/feedback-effects/fb-circle-delay";
+@import "@veams/css-animations/animations/feedback-effects/fb-circle-revert";
+@import "@veams/css-animations/animations/feedback-effects/fb-circle-shrink";
+@import "@veams/css-animations/animations/feedback-effects/fb-circle-simple";
+@import "@veams/css-animations/animations/in-out-effects/io-carousel";
+@import "@veams/css-animations/animations/in-out-effects/io-cube";
+@import "@veams/css-animations/animations/in-out-effects/io-fall";
+@import "@veams/css-animations/animations/in-out-effects/io-flip";
+@import "@veams/css-animations/animations/in-out-effects/io-fold-and-unfold";
+@import "@veams/css-animations/animations/in-out-effects/io-move";
+@import "@veams/css-animations/animations/in-out-effects/io-newspaper";
+@import "@veams/css-animations/animations/in-out-effects/io-push-and-pull";
+@import "@veams/css-animations/animations/in-out-effects/io-room-walls";
+@import "@veams/css-animations/animations/in-out-effects/io-rotate-and-scale";
+@import "@veams/css-animations/animations/in-out-effects/io-scale";
+@import "@veams/css-animations/animations/in-out-effects/io-sides";
+@import "@veams/css-animations/animations/in-out-effects/io-slides";
+
+// Generate classes for showcase
+.showcase-fb-border-multiple { @include fb-setup(12rem, 0); @include fb-border-multiple($fbClass: 'is-animated'); }
+.showcase-fb-border-simple { @include fb-setup(12rem, 0); @include fb-border-simple($fbClass: 'is-animated'); }
+.showcase-fb-circle-big { @include fb-setup(12rem, 0); @include fb-circle-big($fbClass: 'is-animated'); }
+.showcase-fb-circle-delay { @include fb-setup(12rem, 0); @include fb-circle-delay($fbClass: 'is-animated'); }
+.showcase-fb-circle-revert { @include fb-setup(12rem, 0); @include fb-circle-revert($fbClass: 'is-animated'); }
+.showcase-fb-circle-shrink { @include fb-setup(12rem, 0); @include fb-circle-shrink($fbClass: 'is-animated'); }
+.showcase-fb-circle-simple { @include fb-setup(12rem, 0); @include fb-circle-simple($fbClass: 'is-animated'); }
+
+.showcase-carousel-rotate-bottom-in { @include carousel-rotate-bottom-in; }
+.showcase-carousel-rotate-bottom-out { @include carousel-rotate-bottom-out; }
+.showcase-carousel-rotate-left-in { @include carousel-rotate-left-in; }
+.showcase-carousel-rotate-left-out { @include carousel-rotate-left-out; }
+.showcase-carousel-rotate-right-in { @include carousel-rotate-right-in; }
+.showcase-carousel-rotate-right-out { @include carousel-rotate-right-out; }
+.showcase-carousel-rotate-top-in { @include carousel-rotate-top-in; }
+.showcase-carousel-rotate-top-out { @include carousel-rotate-top-out; }
+
+.showcase-cube-rotate-bottom-in { @include cube-rotate-bottom-in; }
+.showcase-cube-rotate-bottom-out { @include cube-rotate-bottom-out; }
+.showcase-cube-rotate-left-in { @include cube-rotate-left-in; }
+.showcase-cube-rotate-left-out { @include cube-rotate-left-out; }
+.showcase-cube-rotate-right-in { @include cube-rotate-right-in; }
+.showcase-cube-rotate-right-out { @include cube-rotate-right-out; }
+.showcase-cube-rotate-top-in { @include cube-rotate-top-in; }
+.showcase-cube-rotate-top-out { @include cube-rotate-top-out; }
+
+.showcase-flip-bottom-in { @include flip-bottom-in; }
+.showcase-flip-bottom-out { @include flip-bottom-out; }
+.showcase-flip-left-in { @include flip-left-in; }
+.showcase-flip-left-out { @include flip-left-out; }
+.showcase-flip-right-in { @include flip-right-in; }
+.showcase-flip-right-out { @include flip-right-out; }
+.showcase-flip-top-in { @include flip-top-in; }
+.showcase-flip-top-out { @include flip-top-out; }
+
+.showcase-move-from-bottom { @include move-from-bottom; }
+.showcase-move-from-bottom-fade { @include move-from-bottom-fade; }
+.showcase-move-from-left { @include move-from-left; }
+.showcase-move-from-left-fade { @include move-from-left-fade; }
+.showcase-move-from-right { @include move-from-right; }
+.showcase-move-from-right-fade { @include move-from-right-fade; }
+.showcase-move-from-top { @include move-from-top; }
+.showcase-move-from-top-fade { @include move-from-top-fade; }
+.showcase-move-to-bottom { @include move-to-bottom; }
+.showcase-move-to-bottom-fade { @include move-to-bottom-fade; }
+.showcase-move-to-left { @include move-to-left; }
+.showcase-move-to-left-fade { @include move-to-left-fade; }
+.showcase-move-to-right { @include move-to-right; }
+.showcase-move-to-right-fade { @include move-to-right-fade; }
+.showcase-move-to-top { @include move-to-top; }
+.showcase-move-to-top-fade { @include move-to-top-fade; }
+
+.showcase-newspaper-rotate-in { @include newspaper-in; }
+.showcase-newspaper-rotate-out { @include newspaper-out; }
+
+.showcase-pull-bottom-rotate { @include pull-bottom-rotate; }
+.showcase-pull-left-rotate { @include pull-left-rotate; }
+.showcase-pull-right-rotate { @include pull-right-rotate; }
+.showcase-pull-top-rotate { @include pull-top-rotate; }
+.showcase-push-bottom-rotate { @include push-bottom-rotate; }
+.showcase-push-left-rotate { @include push-left-rotate; }
+.showcase-push-right-rotate { @include push-right-rotate; }
+.showcase-push-top-rotate { @include push-top-rotate; }
+
+.showcase-room-rotate-bottom-in { @include room-rotate-bottom-in; }
+.showcase-room-rotate-bottom-out { @include room-rotate-bottom-out; }
+.showcase-room-rotate-left-in { @include room-rotate-left-in; }
+.showcase-room-rotate-left-out { @include room-rotate-left-out; }
+.showcase-room-rotate-right-in { @include room-rotate-right-in; }
+.showcase-room-rotate-right-out { @include room-rotate-right-out; }
+.showcase-room-rotate-top-in { @include room-rotate-top-in; }
+.showcase-room-rotate-top-out { @include room-rotate-top-out; }
+
+.showcase-scale-down { @include scale-down; }
+.showcase-scale-down-center { @include scale-down-center; }
+.showcase-scale-up { @include scale-up; }
+.showcase-scale-up-center { @include scale-up-center; }
+
+.showcase-sides-rotate-in { @include sides-rotate-in; }
+.showcase-sides-rotate-out { @include sides-rotate-out; }
+
+.showcase-slide-rotate-in { @include slide-rotate-in; }
+.showcase-slide-rotate-out { @include slide-rotate-out; }
+
+.showcase-fold-bottom { @include fold-bottom; }
+.showcase-fold-left { @include fold-left; }
+.showcase-fold-right { @include fold-right; }
+.showcase-fold-top { @include fold-top; }
+.showcase-unfold-bottom { @include unfold-bottom; }
+.showcase-unfold-left { @include unfold-left; }
+.showcase-unfold-right { @include unfold-right; }
+.showcase-unfold-top { @include unfold-top; }
+
+.showcase-fade { @include fade-it; }
+.showcase-fall-rotate { @include rotate-fall; }
+
+.showcase-side-rotate-bottom-first { @include side-rotate-bottom-first; }
+.showcase-side-rotate-left-first { @include side-rotate-left-first; }
+.showcase-side-rotate-right-first { @include side-rotate-right-first; }
+.showcase-side-rotate-top-first { @include side-rotate-top-first; }
+
+/* Animation Showcase */
+.example-animation-showcase {
+  display: grid;
+  grid-template-columns: 1fr 30rem;
+  gap: 2rem;
+  align-items: start;
+}
+
+.example-animation-grid {
+  display: grid;
+  gap: 2rem;
+}
+
+.example-animation-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.example-animation-section h5 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1.8rem;
+  color: var(--accent);
+}
+
+.example-animation-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.example-animation-preview {
+  position: sticky;
+  top: 10rem;
+  display: grid;
+  place-items: center;
+  min-height: 30rem;
+  background: var(--page-soft);
+  border: 1px solid var(--border);
+  perspective: 1000px;
+}
+
+.example-animation-target {
+  width: 12rem;
+  height: 12rem;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 500;
+  text-align: center;
+  padding: 1rem;
+  position: relative;
+}
+
+.example-animation-target.is-animated {
+  animation-duration: 0.6s;
+  animation-fill-mode: both;
+}

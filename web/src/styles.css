@@ -26,6 +26,9 @@
   --accent-violet: #7a52e0;
   --accent-violet-soft: #efe8ff;
   --accent-violet-ghost: rgba(122, 82, 224, 0.18);
+  --accent-pink: #d12d69;
+  --accent-pink-soft: #fceaf1;
+  --accent-pink-ghost: rgba(209, 45, 105, 0.18);
   --font-body: 'Roboto', Helvetica, Arial, sans-serif;
   --font-heading: 'Fraunces', Georgia, serif;
   --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
@@ -106,6 +109,12 @@ button {
   --accent: var(--accent-forest);
   --accent-soft: var(--accent-forest-soft);
   --accent-ghost: var(--accent-forest-ghost);
+}
+
+.accent-pink {
+  --accent: var(--accent-pink);
+  --accent-soft: var(--accent-pink-soft);
+  --accent-ghost: var(--accent-pink-ghost);
 }
 
 .topbar {
@@ -232,7 +241,7 @@ button {
   gap: 2rem;
   width: min(34rem, calc(100vw - 2rem));
   height: 100vh;
-  padding: 8rem 2rem 3rem;
+  padding: 4rem 2rem 3rem;
   background: var(--page-soft);
   box-shadow: -6px 0 40px rgba(0, 0, 0, 0.28);
   visibility: hidden;
@@ -1162,6 +1171,23 @@ button {
   border: 1px solid rgba(190, 192, 181, 0.74);
   background: #ffffff;
   box-shadow: 0 16px 32px rgba(35, 36, 31, 0.08);
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.concept-card.is-link {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.concept-card.is-link:hover,
+.concept-card.is-link:focus-visible {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+  box-shadow: 0 20px 40px rgba(35, 36, 31, 0.12);
+  outline: none;
 }
 
 .concept-card-visual {
@@ -1541,3 +1567,4 @@ button {
     flex-wrap: wrap;
   }
 }
+

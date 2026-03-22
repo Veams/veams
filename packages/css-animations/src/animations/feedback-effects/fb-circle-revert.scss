@@ -1,0 +1,46 @@
+@import "../../variables";
+@import "../../mixins";
+@import "fb-setup";
+/* ---------------------------------------------------
+Circle Revert
+--------------------------------------------------- */
+@mixin fb-circle-revert($bgColor: $animation-bg-color, $transition-duration: $transition-duration, $transition-ease-method: ease-out forwards, $fbClass: false) {
+
+	&::after {
+		background: $bgColor;
+	}
+
+	@if $fbClass {
+		&.#{$fbClass} {
+			&::after {
+				animation: fb-circle-revert $transition-duration $transition-ease-method;
+			}
+		}
+	} @else {
+		&:hover {
+			&::after {
+				animation: fb-circle-revert $transition-duration $transition-ease-method;
+			}
+		}
+	}
+}
+
+/*
+Extend
+----------------------- */
+%fb-circle-revert {
+	@include fb-circle-revert();
+}
+
+/*
+Circle Revert Animation
+----------------------------- */
+@include keyframes(fb-circle-revert) {
+	0% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+

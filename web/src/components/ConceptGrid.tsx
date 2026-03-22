@@ -1,3 +1,4 @@
+import { NavLink } from 'react-router-dom';
 import type { FeatureCard } from '../content/site';
 
 type ConceptGridProps = {
@@ -1023,6 +1024,65 @@ function ConceptIllustration({ visual }: Pick<FeatureCard, 'visual'>) {
           </text>
         </svg>
       );
+    case 'css-animations-architecture':
+      return (
+        <svg aria-hidden="true" className="concept-illustration" viewBox="0 0 320 180">
+          {/* Animated path representing a wave/flow */}
+          <path
+            d="M40 90 Q80 40 120 90 T200 90 T280 90"
+            fill="none"
+            stroke="var(--accent-pink)"
+            strokeDasharray="8 4"
+            strokeWidth="3"
+          />
+          {/* Moving particles/dots along the path */}
+          <circle cx="80" cy="65" fill="var(--accent-pink)" r="6" />
+          <circle cx="160" cy="90" fill="var(--accent-pink-soft)" r="8" stroke="var(--accent-pink)" strokeWidth="1" />
+          <circle cx="240" cy="115" fill="var(--accent-pink)" r="6" />
+
+          {/* Core frame */}
+          <rect
+            fill="rgba(30, 37, 49, 0.96)"
+            height="100"
+            rx="12"
+            stroke="var(--visual-blue)"
+            strokeWidth="2"
+            width="140"
+            x="90"
+            y="40"
+          />
+          <text
+            fill="var(--accent-pink)"
+            fontFamily="var(--font-mono)"
+            fontSize="10"
+            textAnchor="middle"
+            x="160"
+            y="95"
+          >
+            ANIMATIONS
+          </text>
+
+          {/* Decorative floating elements */}
+          <rect
+            fill="var(--visual-orange)"
+            height="20"
+            rx="4"
+            transform="rotate(15 250 50)"
+            width="20"
+            x="240"
+            y="40"
+          />
+          <rect
+            fill="var(--visual-blue-soft)"
+            height="15"
+            rx="2"
+            transform="rotate(-20 50 130)"
+            width="15"
+            x="40"
+            y="120"
+          />
+        </svg>
+      );
     case 'status-quo-leaf':
       return (
         <svg aria-hidden="true" className="concept-illustration" viewBox="0 0 320 125">
@@ -1067,17 +1127,33 @@ function ConceptIllustration({ visual }: Pick<FeatureCard, 'visual'>) {
 export function ConceptGrid({ items }: ConceptGridProps) {
   return (
     <div className="concept-grid">
-      {items.map((item) => (
-        <article className="concept-card" key={item.title}>
-          <div className="concept-card-visual">
-            <ConceptIllustration visual={item.visual} />
-          </div>
-          <div className="concept-card-body">
-            <h4>{item.title}</h4>
-            <p>{item.description}</p>
-          </div>
-        </article>
-      ))}
+      {items.map((item) => {
+        const content = (
+          <>
+            <div className="concept-card-visual">
+              <ConceptIllustration visual={item.visual} />
+            </div>
+            <div className="concept-card-body">
+              <h4>{item.title}</h4>
+              <p>{item.description}</p>
+            </div>
+          </>
+        );
+
+        if (item.link) {
+          return (
+            <NavLink className="concept-card is-link" key={item.title} to={item.link}>
+              {content}
+            </NavLink>
+          );
+        }
+
+        return (
+          <article className="concept-card" key={item.title}>
+            {content}
+          </article>
+        );
+      })}
     </div>
   );
 }

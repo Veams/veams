@@ -1,3 +1,5 @@
+@import "../../variables";
+@import "../../mixins";
 /* ---------------------------------------------------
 Slides
 --------------------------------------------------- */
@@ -17,7 +19,7 @@ Slides
 ///   }
 ///
 @mixin slide-rotate-out($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
-	animation: rotateSlideOut $transition-duration $transition-ease-method both;
+	animation: slide-rotate-out $transition-duration $transition-ease-method both;
 }
 
 /// `Slide: In`
@@ -35,14 +37,14 @@ Slides
 ///   }
 ///
 @mixin slide-rotate-in($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
-	animation: rotateSlideIn $transition-duration $transition-ease-method both;
+	animation: slide-rotate-in $transition-duration $transition-ease-method both;
 }
 
 /* ---------------------------------------------------
 KEYFRAMES: SLIDES
 --------------------------------------------------- */
 
-@include keyframes(rotateSlideOut) {
+@include keyframes(slide-rotate-out) {
 	0% {
 	}
 	25% {
@@ -59,7 +61,7 @@ KEYFRAMES: SLIDES
 	}
 }
 
-@include keyframes(rotateSlideIn) {
+@include keyframes(slide-rotate-in) {
 	0%, 25% {
 		transform: translateZ(-500px) translateX(200%);
 		opacity: .5;
@@ -73,3 +75,4 @@ KEYFRAMES: SLIDES
 		opacity: 1;
 	}
 }
+

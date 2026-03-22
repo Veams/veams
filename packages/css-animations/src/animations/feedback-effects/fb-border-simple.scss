@@ -1,7 +1,10 @@
+@import "../../variables";
+@import "../../mixins";
+@import "fb-setup";
 /* ---------------------------------------------------
 Simple Border
 --------------------------------------------------- */
-@mixin fb-ani-borderSimple($border: 2px solid rgba(0, 0, 0, 0.3), $transition-duration: $transition-duration, $transition-ease-method: ease-out forwards, $fbClass: false) {
+@mixin fb-border-simple($border: $animation-border, $transition-duration: $transition-duration, $transition-ease-method: ease-out forwards, $fbClass: false) {
 
 	&::after {
 		border: $border;
@@ -10,13 +13,13 @@ Simple Border
 	@if $fbClass {
 		&.#{$fbClass} {
 			&::after {
-				animation: fb-ani-borderSimple $transition-duration $transition-ease-method
+				animation: fb-border-simple $transition-duration $transition-ease-method
 			}
 		}
 	} @else {
 		&:hover {
 			&::after {
-				animation: fb-ani-borderSimple $transition-duration $transition-ease-method
+				animation: fb-border-simple $transition-duration $transition-ease-method
 			}
 		}
 	}
@@ -25,14 +28,14 @@ Simple Border
 /*
 Extend
 ----------------------- */
-%fb-ani-borderSimple {
-	@include fb-ani-borderSimple();
+%fb-border-simple {
+	@include fb-border-simple();
 }
 
 /*
 Simple Border Animation
 ----------------------------- */
-@include keyframes(fb-ani-borderSimple) {
+@include keyframes(fb-border-simple) {
 	0% {
 		opacity: 1;
 		transform: scale3d(0.5, 0.5, 1)
@@ -42,3 +45,4 @@ Simple Border Animation
 		transform: scale3d(1.2, 1.2, 1)
 	}
 }
+

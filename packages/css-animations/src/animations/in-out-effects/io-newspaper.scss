@@ -1,3 +1,5 @@
+@import "../../variables";
+@import "../../mixins";
 /* ---------------------------------------------------
 Rotate Newspaper
 --------------------------------------------------- */
@@ -18,7 +20,7 @@ Rotate Newspaper
 ///
 @mixin newspaper-out($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 50% 50%;
-	animation: rotateOutNewspaper $transition-duration ease-in both;
+	animation: newspaper-rotate-out $transition-duration ease-in both;
 }
 
 /// `Newspaper: Rotate In`
@@ -37,13 +39,13 @@ Rotate Newspaper
 ///
 @mixin newspaper-in($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
 	transform-origin: 50% 50%;
-	animation: rotateInNewspaper $transition-duration ease-out both;
+	animation: newspaper-rotate-in $transition-duration ease-out both;
 }
 
 /* ---------------------------------------------------
 KEYFRAMES: NEWSPAPER
 --------------------------------------------------- */
-@include keyframes(rotateOutNewspaper) {
+@include keyframes(newspaper-rotate-out) {
 	from {
 	}
 	to {
@@ -52,9 +54,10 @@ KEYFRAMES: NEWSPAPER
 	}
 }
 
-@include keyframes(rotateInNewspaper) {
+@include keyframes(newspaper-rotate-in) {
 	from {
 		opacity: 0;
 		transform: translateZ(-3000px) rotateZ(-360deg);
 	}
 }
+
