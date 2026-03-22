@@ -926,65 +926,100 @@ function ConceptIllustration({ visual }: Pick<FeatureCard, 'visual'>) {
       );
     case 'partial-hydration-architecture':
       return (
-        <svg aria-hidden="true" className="concept-illustration" viewBox="0 0 320 125">
-          {/* Static HTML frame */}
+        <svg aria-hidden="true" className="concept-illustration" viewBox="0 0 320 180">
+          {/* Static HTML frame (Browser Window) */}
+          <rect
+            fill="none"
+            height="140"
+            rx="6"
+            stroke="var(--visual-slate)"
+            strokeWidth="1.5"
+            width="260"
+            x="30"
+            y="20"
+          />
+          {/* Browser Top Bar */}
+          <rect fill="rgba(139, 151, 172, 0.15)" height="14" rx="4" width="260" x="30" y="20" />
+          <circle cx="42" cy="27" fill="var(--visual-slate)" r="2" />
+          <circle cx="50" cy="27" fill="var(--visual-slate)" r="2" />
+          <circle cx="58" cy="27" fill="var(--visual-slate)" r="2" />
+
+          {/* Static Header */}
           <rect
             fill="rgba(30, 37, 49, 0.96)"
-            height="100"
-            rx="4"
+            height="16"
+            rx="2"
             stroke="var(--visual-slate)"
             strokeDasharray="2 2"
             strokeWidth="1"
-            width="280"
-            x="20"
-            y="15"
-          />
-          <text fill="var(--visual-slate)" fontFamily="var(--font-mono)" fontSize="8" x="30" y="30">
-            STATIC HTML
-          </text>
-
-          {/* Island 1: Immediate */}
-          <rect
-            fill="rgba(70, 119, 216, 0.2)"
-            height="30"
-            rx="4"
-            stroke="var(--accent-ocean)"
-            strokeWidth="2"
-            width="80"
+            width="240"
             x="40"
-            y="45"
+            y="42"
           />
-          <text fill="var(--accent-ocean)" fontFamily="var(--font-mono)" fontSize="7" x="45" y="63">
-            Island (init)
+          <text fill="var(--visual-slate)" fontFamily="var(--font-mono)" fontSize="6" x="45" y="52">
+            Static Header
           </text>
 
-          {/* Island 2: Viewport */}
+          {/* Static Sidebar */}
           <rect
-            fill="rgba(217, 106, 43, 0.2)"
-            height="30"
-            rx="4"
-            stroke="var(--accent-ember)"
-            strokeWidth="2"
-            width="100"
-            x="160"
-            y="75"
+            fill="rgba(30, 37, 49, 0.96)"
+            height="85"
+            rx="2"
+            stroke="var(--visual-slate)"
+            strokeDasharray="2 2"
+            strokeWidth="1"
+            width="50"
+            x="40"
+            y="65"
           />
-          <text fill="var(--accent-ember)" fontFamily="var(--font-mono)" fontSize="7" x="165" y="93">
-            Island (viewport)
+          <text fill="var(--visual-slate)" fontFamily="var(--font-mono)" fontSize="5" x="45" y="75">
+            Static Nav
           </text>
 
-          {/* Trigger connection */}
-          <path
-            d="M130 90 H155"
-            fill="none"
-            stroke="var(--visual-white)"
-            strokeDasharray="3 3"
-            strokeLinecap="round"
-            strokeWidth="1"
+          {/* Main Content Area */}
+          <rect
+            fill="rgba(30, 37, 49, 0.4)"
+            height="85"
+            rx="2"
+            stroke="none"
+            width="182"
+            x="98"
+            y="65"
           />
-          <circle cx="125" cy="90" fill="var(--visual-orange)" r="3" />
-          <text fill="var(--visual-white)" fontFamily="var(--font-body)" fontSize="6" x="135" y="85" textAnchor="middle">
-            scroll
+
+          {/* Island 1: Navigation/Filter */}
+          <rect
+            fill="rgba(45, 138, 68, 0.15)"
+            height="20"
+            rx="4"
+            stroke="var(--accent-forest)"
+            strokeWidth="1.5"
+            width="170"
+            x="104"
+            y="70"
+          />
+          <text fill="var(--accent-forest)" fontFamily="var(--font-mono)" fontSize="6" x="110" y="82">
+            ISLAND (Interactive Filter)
+          </text>
+
+          {/* Static Paragraphs */}
+          <rect fill="var(--visual-slate)" height="3" rx="1.5" width="150" x="104" y="98" />
+          <rect fill="var(--visual-slate)" height="3" rx="1.5" width="130" x="104" y="105" />
+          <rect fill="var(--visual-slate)" height="3" rx="1.5" width="160" x="104" y="112" />
+
+          {/* Island 2: Heavy Chart */}
+          <rect
+            fill="rgba(45, 138, 68, 0.15)"
+            height="22"
+            rx="4"
+            stroke="var(--accent-forest)"
+            strokeWidth="1.5"
+            width="170"
+            x="104"
+            y="122"
+          />
+          <text fill="var(--accent-forest)" fontFamily="var(--font-mono)" fontSize="6" x="110" y="135">
+            ISLAND (Lazy Chart)
           </text>
         </svg>
       );
