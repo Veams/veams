@@ -2322,7 +2322,7 @@ export const docsPackages: DocsPackage[] = [
             ],
             id: 'landing',
             intro: '',
-            summary: 'Clean Architecture for Ambitious Web Interfaces',
+            summary: 'The Architectural Blueprint for Modern Frontends.',
             title: 'Ecosystem Overview',
           },
         ],
