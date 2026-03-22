@@ -308,7 +308,7 @@ function DocsPage() {
             className={`sidebar-card section-nav${isSectionNavOpen ? ' is-open' : ''}`}
             id="section-navigation"
           >
-            <p className="eyebrow">Documentation</p>
+            {packageDoc.id !== 'ecosystem' ? <p className="eyebrow">Documentation</p> : null}
             {packageDoc.sections.map((section, index) => (
               <Fragment key={section.id}>
                 {index > 0 && <div className="sidebar-divider" />}

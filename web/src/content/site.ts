@@ -2197,7 +2197,7 @@ import {
 export const docsPackages: DocsPackage[] = [
   {
     accent: 'teal',
-    description: 'Welcome to the VEAMS Ecosystem. High-performance state and hydration for modern frontends.',
+    description: 'High-performance state and hydration for modern frontends.',
     id: 'ecosystem',
     sections: [
       {
