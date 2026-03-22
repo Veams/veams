@@ -4990,8 +4990,9 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'hydration-flow',
                 paragraphs: [
-                  'The hydration process relies on two key HTML elements generated on the server: a hidden script tag containing the serialized props, and a wrapper div identifying the component and linking to the props via an internal ID.',
+                  'The hydration process relies on two key HTML elements generated on the server: a hidden script tag containing the serialized props, and a wrapper div identifying the component.',
                   'When the client-side loader encounters this structure and the activation trigger fires, it extracts the props, parses the JSON, and hands control over to the defined render function.',
+                  'Note: The `data-internal-ref` and `data-internal-id` attributes are a fallback solution we support to re-connect the data script with the component if the DOM is structurally manipulated before hydration. In standard setups where the script tag stays directly adjacent to the wrapper, these attributes are actually not necessary.',
                 ],
                 title: 'DOM Architecture',
               },
