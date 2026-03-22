@@ -1474,7 +1474,11 @@ const partialHydrationInstall = `npm install @veams/partial-hydration`;
 
 const partialHydrationQuickStart = `import { createHydration } from '@veams/partial-hydration';
 import { createRoot } from 'react-dom/client';
-import Navigation from './components/Navigation';
+
+// A simple React component
+function Navigation({ title }: { title: string }) {
+  return <nav><h1>{title}</h1></nav>;
+}
 
 const hydration = createHydration({
   components: {
@@ -2191,6 +2195,71 @@ import {
 } from '@veams/form/react';`;
 
 export const docsPackages: DocsPackage[] = [
+  {
+    accent: 'ocean',
+    description: 'Welcome to the VEAMS Ecosystem. High-performance state and hydration for modern frontends.',
+    id: 'ecosystem',
+    sections: [
+      {
+        id: 'overview',
+        pages: [
+          {
+            blocks: [
+              {
+                featureCards: [
+                  {
+                    description: 'A structural CSS and HTML methodology to keep large codebases scalable and predictable.',
+                    title: 'Methodology',
+                    visual: 'methodology-layout',
+                  },
+                  {
+                    description: 'Framework-agnostic state handlers with React hooks and explicit lifecycle management.',
+                    title: 'Status Quo',
+                    visual: 'framework-core',
+                  },
+                  {
+                    description: 'Stable query and mutation handles over TanStack Query, plus a centralized query manager.',
+                    title: 'Status Quo Query',
+                    visual: 'query-facade',
+                  },
+                  {
+                    description: 'Generic form state engine with optional React bindings for high-performance uncontrolled inputs.',
+                    title: 'Form',
+                    visual: 'form-architecture',
+                  },
+                  {
+                    description: 'Activate interactive components in a static HTML environment using the Islands Architecture.',
+                    title: 'Partial Hydration',
+                    visual: 'partial-hydration-architecture',
+                  },
+                ],
+                id: 'packages',
+                paragraphs: [
+                  'VEAMS provides a suite of modular, framework-agnostic packages designed to keep your frontend architecture clean, scalable, and highly performant. From structural methodologies to advanced state management and partial hydration, each tool is built to solve complex problems without coupling your business logic to a specific UI framework.',
+                ],
+                title: 'The Packages',
+              },
+            ],
+            eyebrow: 'Welcome',
+            heroBullets: [
+              'Framework-agnostic core logic.',
+              'Optional, high-performance React bindings.',
+              'Designed for scalability and maintainability.',
+            ],
+            heroParagraphs: [
+              'The VEAMS ecosystem helps you build frontends that scale. By enforcing strict boundaries between your business logic, state management, and view layer, VEAMS ensures your codebase remains predictable and adaptable over time.',
+            ],
+            id: 'landing',
+            intro: 'Explore the individual packages to learn how they can improve your architecture.',
+            summary: 'Structure, State, and Hydration.',
+            title: 'Ecosystem Overview',
+          },
+        ],
+        title: 'Overview',
+      },
+    ],
+    title: 'Ecosystem',
+  },
   {
     accent: 'forest',
     description: 'Activate interactive components in a static HTML environment using the Islands Architecture.',
@@ -5186,7 +5255,7 @@ export const docsPackages: DocsPackage[] = [
 ];
 
 export const defaultPackage =
-  docsPackages.find((entry) => entry.id === 'methodology') ?? docsPackages[0];
+  docsPackages.find((entry) => entry.id === 'ecosystem') ?? docsPackages[0];
 export const defaultPage = defaultPackage.sections[0].pages[0];
 export const defaultPath = `/packages/${defaultPackage.id}/${defaultPage.id}`;
 
