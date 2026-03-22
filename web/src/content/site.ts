@@ -55,6 +55,7 @@ export type ContentBlock = {
 export type PackagePage = {
   blocks: ContentBlock[];
   eyebrow: string;
+  featureCards?: FeatureCard[];
   heroBullets?: string[];
   heroImage?: string;
   heroParagraphs?: string[];
@@ -2270,58 +2271,52 @@ export const docsPackages: DocsPackage[] = [
         id: 'overview',
         pages: [
           {
-            blocks: [
+            blocks: [],
+            eyebrow: 'Welcome',
+            featureCards: [
               {
-                featureCards: [
-                  {
-                    description:
-                      'A structural CSS and HTML methodology to keep large codebases scalable and predictable.',
-                    link: '/packages/methodology/overview',
-                    title: 'Methodology',
-                    visual: 'methodology-layout',
-                  },
-                  {
-                    description:
-                      'Framework-agnostic state handlers with React hooks and explicit lifecycle management.',
-                    link: '/packages/status-quo/overview',
-                    title: 'Status Quo',
-                    visual: 'framework-core',
-                  },
-                  {
-                    description:
-                      'Stable query and mutation handles over TanStack Query, plus a centralized query manager.',
-                    link: '/packages/status-quo-query/overview',
-                    title: 'Status Quo Query',
-                    visual: 'query-facade',
-                  },
-                  {
-                    description:
-                      'Generic form state engine with optional React bindings for high-performance uncontrolled inputs.',
-                    link: '/packages/form/overview',
-                    title: 'Form',
-                    visual: 'form-architecture',
-                  },
-                  {
-                    description:
-                      'A collection of high-performance CSS animations for modern web applications.',
-                    link: '/packages/css-animations/overview',
-                    title: 'CSS Animations',
-                    visual: 'css-animations-architecture',
-                  },
-                  {
-                    description:
-                      'Activate interactive components in a static HTML environment using the Islands Architecture.',
-                    link: '/packages/partial-hydration/overview',
-                    title: 'Partial Hydration',
-                    visual: 'partial-hydration-architecture',
-                  },
-                ],
-                id: 'packages',
-                paragraphs: [],
-                title: '',
+                description:
+                  'A structural CSS and HTML methodology to keep large codebases scalable and predictable.',
+                link: '/packages/methodology/overview',
+                title: 'Methodology',
+                visual: 'methodology-layout',
+              },
+              {
+                description:
+                  'Framework-agnostic state handlers with React hooks and explicit lifecycle management.',
+                link: '/packages/status-quo/overview',
+                title: 'Status Quo',
+                visual: 'framework-core',
+              },
+              {
+                description:
+                  'Stable query and mutation handles over TanStack Query, plus a centralized query manager.',
+                link: '/packages/status-quo-query/overview',
+                title: 'Status Quo Query',
+                visual: 'query-facade',
+              },
+              {
+                description:
+                  'Generic form state engine with optional React bindings for high-performance uncontrolled inputs.',
+                link: '/packages/form/overview',
+                title: 'Form',
+                visual: 'form-architecture',
+              },
+              {
+                description:
+                  'A collection of high-performance CSS animations for modern web applications.',
+                link: '/packages/css-animations/overview',
+                title: 'CSS Animations',
+                visual: 'css-animations-architecture',
+              },
+              {
+                description:
+                  'Activate interactive components in a static HTML environment using the Islands Architecture.',
+                link: '/packages/partial-hydration/overview',
+                title: 'Partial Hydration',
+                visual: 'partial-hydration-architecture',
               },
             ],
-            eyebrow: 'Welcome',
             heroBullets: [
               'Framework-agnostic core logic.',
               'Optional, high-performance React bindings.',
@@ -2331,8 +2326,7 @@ export const docsPackages: DocsPackage[] = [
               'VEAMS provides a suite of modular, framework-agnostic packages designed to keep your frontend architecture clean, scalable, and highly performant. From structural methodologies to advanced state management and partial hydration, each tool is built to solve complex problems without coupling your business logic to a specific UI framework.',
             ],
             id: 'landing',
-            intro:
-              'VEAMS provides a suite of modular, framework-agnostic packages designed to keep your frontend architecture clean, scalable, and highly performant.',
+            intro: '',
             summary: 'Structure, State, and Hydration.',
             title: 'Ecosystem Overview',
           },
@@ -5532,7 +5526,7 @@ export const docsPackages: DocsPackage[] = [
 export const defaultPackage =
   docsPackages.find((entry) => entry.id === 'ecosystem') ?? docsPackages[0];
 export const defaultPage = defaultPackage.sections[0].pages[0];
-export const defaultPath = `/packages/${defaultPackage.id}/${defaultPage.id}`;
+export const defaultPath = '/';
 
 export function getFirstPage(packageDoc: DocsPackage): PackagePage {
   return packageDoc.sections[0].pages[0];

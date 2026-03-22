@@ -61,7 +61,7 @@ function PackageRedirect() {
   const packageDoc = getPackageDocs(packageId);
 
   if (!packageDoc) {
-    return <Navigate replace to={defaultPath} />;
+    return <Navigate replace to="/" />;
   }
 
   return <Navigate replace to={getPackagePath(packageDoc.id, getFirstPage(packageDoc).id)} />;
@@ -136,8 +136,8 @@ function NpmIcon() {
 function DocsPage() {
   const location = useLocation();
   const { packageId, pageId } = useParams();
-  const packageDoc = getPackageDocs(packageId);
-  const page = packageDoc ? getPageDocs(packageDoc, pageId) : undefined;
+  const packageDoc = packageId ? getPackageDocs(packageId) : defaultPackage;
+  const page = packageDoc ? (pageId ? getPageDocs(packageDoc, pageId) : defaultPage) : undefined;
   const [isPackageNavOpen, setIsPackageNavOpen] = useState(false);
   const [isSectionNavOpen, setIsSectionNavOpen] = useState(false);
   const documentTitle =
@@ -173,12 +173,8 @@ function DocsPage() {
     };
   }, [isPackageNavOpen]);
 
-  if (!packageDoc) {
-    return <Navigate replace to={defaultPath} />;
-  }
-
-  if (!page) {
-    return <Navigate replace to={getPackagePath(packageDoc.id, getFirstPage(packageDoc).id)} />;
+  if (!packageDoc || !page) {
+    return <Navigate replace to="/" />;
   }
 
   const heroEyebrow = `${page.eyebrow} · ${page.title}`;
@@ -218,7 +214,7 @@ function DocsPage() {
     <div className={`site-shell accent-${packageDoc.accent}`}>
       <header className="topbar">
         <div className="topbar-layout">
-          <NavLink aria-label="VEAMS Documentation" className="topbar-brand" to={defaultPath}>
+          <NavLink aria-label="VEAMS Documentation" className="topbar-brand" to="/">
             <VeamsLogo />
             <span aria-hidden="true" className="brand-separator">
               |
@@ -358,6 +354,7 @@ function DocsPage() {
                     ))}
                   </ul>
                 ) : null}
+                {page.featureCards ? <ConceptGrid items={page.featureCards} /> : null}
               </div>
             </div>
             {heroLinks.length ? (
@@ -482,10 +479,10 @@ export function App() {
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <ScrollManager />
       <Routes>
-        <Route element={<Navigate replace to={defaultPath} />} path="/" />
+        <Route element={<DocsPage />} path="/" />
         <Route element={<PackageRedirect />} path="/packages/:packageId" />
         <Route element={<DocsPage />} path="/packages/:packageId/:pageId" />
-        <Route element={<Navigate replace to={defaultPath} />} path="*" />
+        <Route element={<Navigate replace to="/" />} path="*" />
       </Routes>
     </BrowserRouter>
   );
