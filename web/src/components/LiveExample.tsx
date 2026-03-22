@@ -13,7 +13,7 @@ import {
   useStateSingleton,
   useStateSubscription,
 } from '@veams/status-quo/react';
-import { ANIMATIONS } from '@veams/css-animations';
+import { ANIMATIONS, type AnimationName } from '@veams/css-animations';
 import { useState, useRef, type ReactNode } from 'react';
 
 import { CodeBlock } from './CodeBlock';
@@ -678,10 +678,10 @@ function SelectorProfileExample() {
 }
 
 function CssAnimationsShowcase() {
-  const [activeAnimation, setActiveAnimation] = useState<string | null>(null);
+  const [activeAnimation, setActiveAnimation] = useState<AnimationName | null>(null);
   const [isAnimating, setIsAnimated] = useState(false);
 
-  const triggerAnimation = (name: string) => {
+  const triggerAnimation = (name: AnimationName) => {
     setActiveAnimation(name);
     setIsAnimated(false);
     // Force reflow to restart animation
@@ -696,7 +696,7 @@ function CssAnimationsShowcase() {
           <ChipButton
             active={activeAnimation === value}
             key={key}
-            onClick={() => triggerAnimation(value)}
+            onClick={() => triggerAnimation(value as AnimationName)}
           >
             {key.toLowerCase().replace(/_/g, '-')}
           </ChipButton>
@@ -705,6 +705,18 @@ function CssAnimationsShowcase() {
       return null;
     });
   };
+
+  const selectedImportExample = activeAnimation
+    ? {
+        code: `@import "@veams/css-animations/animations/${resolveAnimationImportPath(activeAnimation)}";`,
+        description:
+          activeAnimation.startsWith('fb-')
+            ? 'Feedback effects also need `@include fb-setup;` on the animated element.'
+            : 'Import only this animation when you want the smallest possible SCSS footprint.',
+        label: 'SCSS import',
+        language: 'scss' as const,
+      }
+    : null;
 
   return (
     <ExampleChrome eyebrow="Interactive Guide" title="All available animations">
@@ -804,19 +816,88 @@ function CssAnimationsShowcase() {
           </div>
         </div>
 
-        <div className="example-animation-preview">
-          <div
-            className={`example-animation-target${
-              isAnimating ? ` showcase-${activeAnimation} is-animated` : ''
-            }`}
-            onAnimationEnd={() => setIsAnimated(false)}
-          >
-            {activeAnimation || 'Select an animation'}
+        <div className="example-animation-preview-stack">
+          <div className="example-animation-preview">
+            <div
+              className={`example-animation-target${
+                isAnimating ? ` showcase-${activeAnimation} is-animated` : ''
+              }`}
+              onAnimationEnd={() => setIsAnimated(false)}
+            >
+              {activeAnimation || 'Select an animation'}
+            </div>
           </div>
+          {selectedImportExample ? (
+            <CodeBlock example={selectedImportExample} />
+          ) : (
+            <p className="example-animation-import-hint">
+              Select an animation to reveal the exact import path.
+            </p>
+          )}
         </div>
       </div>
     </ExampleChrome>
   );
+}
+
+function resolveAnimationImportPath(name: AnimationName): string {
+  if (name.startsWith('fb-')) {
+    return `feedback-effects/${name}`;
+  }
+
+  if (name.startsWith('carousel-')) {
+    return 'in-out-effects/io-carousel';
+  }
+
+  if (name.startsWith('cube-')) {
+    return 'in-out-effects/io-cube';
+  }
+
+  if (name.startsWith('fall-')) {
+    return 'in-out-effects/io-fall';
+  }
+
+  if (name.startsWith('flip-')) {
+    return 'in-out-effects/io-flip';
+  }
+
+  if (name === 'fade' || name.startsWith('move-')) {
+    return 'in-out-effects/io-move';
+  }
+
+  if (name.startsWith('newspaper-')) {
+    return 'in-out-effects/io-newspaper';
+  }
+
+  if (name.startsWith('push-') || name.startsWith('pull-')) {
+    return 'in-out-effects/io-push-and-pull';
+  }
+
+  if (name.startsWith('room-')) {
+    return 'in-out-effects/io-room-walls';
+  }
+
+  if (name.startsWith('sides-')) {
+    return 'in-out-effects/io-sides';
+  }
+
+  if (name.startsWith('slide-')) {
+    return 'in-out-effects/io-slides';
+  }
+
+  if (name.startsWith('fold-') || name.startsWith('unfold-')) {
+    return 'in-out-effects/io-fold-and-unfold';
+  }
+
+  if (name.startsWith('side-rotate-')) {
+    return 'in-out-effects/io-rotate-and-scale';
+  }
+
+  if (name.startsWith('scale-')) {
+    return 'in-out-effects/io-scale';
+  }
+
+  return 'in-out-effects/io-move';
 }
 
 export function LiveExample({ id, sourceExamples }: LiveExampleProps) {
