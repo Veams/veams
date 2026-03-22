@@ -2317,10 +2317,8 @@ export const docsPackages: DocsPackage[] = [
                   },
                 ],
                 id: 'packages',
-                paragraphs: [
-                  'VEAMS provides a suite of modular, framework-agnostic packages designed to keep your frontend architecture clean, scalable, and highly performant. From structural methodologies to advanced state management and partial hydration, each tool is built to solve complex problems without coupling your business logic to a specific UI framework.',
-                ],
-                title: 'The Packages',
+                paragraphs: [],
+                title: '',
               },
             ],
             eyebrow: 'Welcome',
@@ -2330,11 +2328,11 @@ export const docsPackages: DocsPackage[] = [
               'Designed for scalability and maintainability.',
             ],
             heroParagraphs: [
-              'The VEAMS ecosystem helps you build frontends that scale. By enforcing strict boundaries between your business logic, state management, and view layer, VEAMS ensures your codebase remains predictable and adaptable over time.',
+              'VEAMS provides a suite of modular, framework-agnostic packages designed to keep your frontend architecture clean, scalable, and highly performant. From structural methodologies to advanced state management and partial hydration, each tool is built to solve complex problems without coupling your business logic to a specific UI framework.',
             ],
             id: 'landing',
             intro:
-              'Explore the individual packages to learn how they can improve your architecture.',
+              'VEAMS provides a suite of modular, framework-agnostic packages designed to keep your frontend architecture clean, scalable, and highly performant.',
             summary: 'Structure, State, and Hydration.',
             title: 'Ecosystem Overview',
           },
