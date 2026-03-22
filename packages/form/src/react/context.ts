@@ -1,10 +1,17 @@
+/**
+ * React context for providing the form controller to the component tree.
+ */
 import { createContext } from 'react';
 
 import { FormStateHandler } from '../form.state.js';
 
-// The React layer always works with a generic object-like value shape.
-// Concrete generic types are recovered by useFormController<T>().
+/**
+ * Generic type for field values used within the React context layer.
+ */
 export type AnyFieldValues = Record<string, unknown>;
 
-// Context carries one resolved FormStateHandler instance per provider tree.
+/**
+ * React Context object that holds the FormStateHandler instance.
+ * Defaults to null if no Provider is found in the tree.
+ */
 export const FormContext = createContext<FormStateHandler<AnyFieldValues> | null>(null);

@@ -1,3 +1,8 @@
+/**
+ * Type-check playground for FormStateHandler.
+ * This file is used to verify the correctness of nested value and field path typing.
+ * It does not contain any runtime logic used by the package.
+ */
 import { FormStateHandler } from './form.state.js';
 
 interface LoginCredentials {

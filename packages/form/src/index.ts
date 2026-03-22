@@ -1,3 +1,8 @@
+/**
+ * Main entry point for the form package.
+ * Exports core form state management logic and types.
+ */
+
 export {
   FormStateHandler,
   type FormActions,
