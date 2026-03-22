@@ -1,4 +1,5 @@
 import islandArchitectureImg from '../assets/island-architecture.jpg';
+import statusQuoImg from '../assets/status-quo.jpg';
 
 export type CodeExample = {
   code: string;
@@ -2837,6 +2838,7 @@ export const docsPackages: DocsPackage[] = [
               'Small handler objects with explicit lifecycle.',
               'Snapshot subscriptions instead of framework-specific store APIs.',
             ],
+            heroImage: statusQuoImg,
             heroParagraphs: [
               'Status Quo treats state handlers as small, composable objects with explicit lifecycle and a tiny interface. The native handler has zero dependencies, making it the perfect starting point. When you need more, easily swap the engine under the hood: RxJS for observable streams or Preact Signals for ultra-light reactive state.',
             ],
