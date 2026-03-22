@@ -1474,15 +1474,24 @@ const partialHydrationInstall = `npm install @veams/partial-hydration`;
 
 const partialHydrationQuickStart = `import { createHydration } from '@veams/partial-hydration';
 import { createRoot } from 'react-dom/client';
+import Navigation from './components/Navigation';
 
 const hydration = createHydration({
   components: {
+    // Non-lazy: Initialize critical UI immediately
+    Navigation: {
+      Component: Navigation,
+      on: 'init',
+      render: (Component, props, el) => {
+        const root = createRoot(el);
+        root.render(<Component {...props} />);
+      }
+    },
+    // Lazy: Load non-critical UI only when it enters the viewport
     MyLazyComponent: {
-      // Use dynamic import for lazy loading.
       Component: () => import('./MyLazyComponent'),
       on: 'in-viewport',
       render: async (Loader, props, el) => {
-        // Await the dynamic import to get the actual component.
         const mod = await Loader();
         const Component = mod.default;
         
@@ -1493,6 +1502,7 @@ const hydration = createHydration({
   }
 });
 
+// Start scanning the DOM for these components
 hydration.init(document);`;
 
 const partialHydrationLazyExample = `const hydration = createHydration({
