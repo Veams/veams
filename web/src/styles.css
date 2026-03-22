@@ -23,6 +23,9 @@
   --accent-forest: #2d8a44;
   --accent-forest-soft: #eaf5ee;
   --accent-forest-ghost: rgba(45, 138, 68, 0.18);
+  --accent-pink: #d12d69;
+  --accent-pink-soft: #fbeaf1;
+  --accent-pink-ghost: rgba(209, 45, 105, 0.18);
   --accent-violet: #7a52e0;
   --accent-violet-soft: #efe8ff;
   --accent-violet-ghost: rgba(122, 82, 224, 0.18);
@@ -109,6 +112,12 @@ button {
   --accent: var(--accent-forest);
   --accent-soft: var(--accent-forest-soft);
   --accent-ghost: var(--accent-forest-ghost);
+}
+
+.accent-pink {
+  --accent: var(--accent-pink);
+  --accent-soft: var(--accent-pink-soft);
+  --accent-ghost: var(--accent-pink-ghost);
 }
 
 .accent-pink {
