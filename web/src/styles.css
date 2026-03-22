@@ -559,6 +559,21 @@ button {
   line-height: 1.2;
 }
 
+.hero-image {
+  margin-top: 2.4rem;
+  margin-bottom: 2.4rem;
+  overflow: hidden;
+  border-radius: 1.2rem;
+  border: 1px solid var(--border);
+  background: var(--visual-panel);
+}
+
+.hero-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .hero-body {
   display: grid;
   gap: 1.4rem;

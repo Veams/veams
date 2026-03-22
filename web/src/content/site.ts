@@ -1,3 +1,5 @@
+import islandArchitectureImg from '../assets/island-architecture.jpg';
+
 export type CodeExample = {
   code: string;
   description?: string;
@@ -54,6 +56,7 @@ export type PackagePage = {
   blocks: ContentBlock[];
   eyebrow: string;
   heroBullets?: string[];
+  heroImage?: string;
   heroParagraphs?: string[];
   id: string;
   intro: string;
@@ -5029,6 +5032,7 @@ export const docsPackages: DocsPackage[] = [
               'No custom compiler or bundler lock-in required.',
               'Flexible hydration triggers: viewport, ready, or immediate.',
             ],
+            heroImage: islandArchitectureImg,
             heroParagraphs: [
               'VEAMS Partial Hydration provides the core infrastructure for activating components in a static HTML environment. It enables the Islands Architecture by serializing component props into the DOM during server-rendering and selectively hydrating them on the client. Unlike many modern meta-frameworks, it achieves this purely at runtime, meaning you do not need a custom compiler and are never locked into a specific bundler.',
             ],

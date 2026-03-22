@@ -342,6 +342,11 @@ function DocsPage() {
             <div className="hero-copy">
               <p className="eyebrow">{heroEyebrow}</p>
               <h2>{renderInlineText(page.summary)}</h2>
+              {page.heroImage ? (
+                <div className="hero-image">
+                  <img alt={page.title} src={page.heroImage} />
+                </div>
+              ) : null}
               <div className="hero-body">
                 {heroParagraphs.map((paragraph) => (
                   <p key={paragraph}>{renderInlineText(paragraph)}</p>
