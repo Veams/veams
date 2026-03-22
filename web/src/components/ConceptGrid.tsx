@@ -924,6 +924,106 @@ function ConceptIllustration({ visual }: Pick<FeatureCard, 'visual'>) {
           </text>
         </svg>
       );
+    case 'partial-hydration-architecture':
+      return (
+        <svg aria-hidden="true" className="concept-illustration" viewBox="0 0 320 125">
+          {/* Static HTML frame */}
+          <rect
+            fill="rgba(30, 37, 49, 0.96)"
+            height="100"
+            rx="4"
+            stroke="var(--visual-slate)"
+            strokeDasharray="2 2"
+            strokeWidth="1"
+            width="280"
+            x="20"
+            y="15"
+          />
+          <text fill="var(--visual-slate)" fontFamily="var(--font-mono)" fontSize="8" x="30" y="30">
+            STATIC HTML
+          </text>
+
+          {/* Island 1: Immediate */}
+          <rect
+            fill="rgba(70, 119, 216, 0.2)"
+            height="30"
+            rx="4"
+            stroke="var(--accent-ocean)"
+            strokeWidth="2"
+            width="80"
+            x="40"
+            y="45"
+          />
+          <text fill="var(--accent-ocean)" fontFamily="var(--font-mono)" fontSize="7" x="45" y="63">
+            Island (init)
+          </text>
+
+          {/* Island 2: Viewport */}
+          <rect
+            fill="rgba(217, 106, 43, 0.2)"
+            height="30"
+            rx="4"
+            stroke="var(--accent-ember)"
+            strokeWidth="2"
+            width="100"
+            x="160"
+            y="75"
+          />
+          <text fill="var(--accent-ember)" fontFamily="var(--font-mono)" fontSize="7" x="165" y="93">
+            Island (viewport)
+          </text>
+
+          {/* Trigger connection */}
+          <path
+            d="M130 90 H155"
+            fill="none"
+            stroke="var(--visual-white)"
+            strokeDasharray="3 3"
+            strokeLinecap="round"
+            strokeWidth="1"
+          />
+          <circle cx="125" cy="90" fill="var(--visual-orange)" r="3" />
+          <text fill="var(--visual-white)" fontFamily="var(--font-body)" fontSize="6" x="135" y="85" textAnchor="middle">
+            scroll
+          </text>
+        </svg>
+      );
+    case 'status-quo-leaf':
+      return (
+        <svg aria-hidden="true" className="concept-illustration" viewBox="0 0 320 125">
+          <rect
+            fill="rgba(30, 37, 49, 0.96)"
+            height="100"
+            rx="4"
+            stroke="var(--visual-slate)"
+            strokeDasharray="2 2"
+            strokeWidth="1"
+            width="280"
+            x="20"
+            y="15"
+          />
+          <rect
+            fill="rgba(31, 139, 143, 0.15)"
+            height="60"
+            rx="30"
+            stroke="var(--accent-teal)"
+            strokeWidth="2"
+            width="60"
+            x="130"
+            y="35"
+          />
+          <text fill="var(--accent-teal)" fontFamily="var(--font-mono)" fontSize="10" x="135" y="70" textAnchor="middle" transform="rotate(-90 135,70) translate(-30, 0)">
+            ISLAND
+          </text>
+          <circle cx="160" cy="65" fill="var(--visual-orange)" r="10" />
+          <path
+            d="M160 65 L180 45 M160 65 L180 85 M160 65 L140 45 M160 65 L140 85"
+            fill="none"
+            stroke="var(--visual-white)"
+            strokeWidth="1.5"
+          />
+        </svg>
+      );
     default:
       return null;
   }

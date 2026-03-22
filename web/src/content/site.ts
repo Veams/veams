@@ -24,7 +24,9 @@ export type FeatureCard = {
     | 'query-architecture'
     | 'query-facade'
     | 'form-architecture'
-    | 'form-ref-bridge';
+    | 'form-ref-bridge'
+    | 'partial-hydration-architecture'
+    | 'status-quo-leaf';
 };
 
 export type LiveExampleId =
@@ -1468,6 +1470,74 @@ const formFrameworkReactImports = `import {
   useUncontrolledField,
 } from '@veams/form/react';`;
 
+const partialHydrationInstall = `npm install @veams/partial-hydration`;
+
+const partialHydrationQuickStart = `import { createHydration } from '@veams/partial-hydration';
+import { render } from 'react-dom';
+
+const hydration = createHydration({
+  components: {
+    MyComponent: {
+      Component: MyLazyComponent,
+      on: 'in-viewport',
+      render: (Component, props, el) => render(<Component {...props} />, el)
+    }
+  }
+});
+
+hydration.init(document);`;
+
+const partialHydrationHocExample = `import { withHydration } from '@veams/partial-hydration/react';
+
+// Wrap your component to enable partial hydration metadata.
+// This will serialize props into the HTML during SSR.
+export const MyHydratedComponent = withHydration(MyComponent);
+MyHydratedComponent.displayName = 'MyComponent';`;
+
+const partialHydrationIsomorphicIdExample = `import { useIsomorphicId } from '@veams/partial-hydration/react';
+
+function MyField() {
+  // Generates an ID that is stable across server and client.
+  const id = useIsomorphicId();
+  
+  return (
+    <>
+      <label htmlFor={id}>Email</label>
+      <input id={id} type="email" />
+    </>
+  );
+}`;
+
+const partialHydrationApiExample = `import { createHydration } from '@veams/partial-hydration';
+import {
+  withHydration,
+  useIsomorphicId
+} from '@veams/partial-hydration/react';`;
+
+const partialHydrationCreateOptionsExample = `const hydration = createHydration({
+  components: {
+    // Key must match the 'data-component' attribute in the DOM.
+    'SearchFilter': {
+      // The actual component instance or factory.
+      Component: SearchFilter,
+      
+      // Activation strategy: 'init', 'dom-ready', 'fonts-ready', 'in-viewport'.
+      on: 'in-viewport',
+      
+      // Optional: configuration for the 'in-viewport' IntersectionObserver.
+      config: {
+        rootMargin: '200px'
+      },
+      
+      // Render function: called with Component, parsed Props, and the DOM Element.
+      render: (Component, props, el, id) => {
+        const root = createRoot(el);
+        root.render(<Component {...props} />);
+      }
+    }
+  }
+});`;
+
 const formFeatureOwnedExample = `import { NativeStateHandler } from '@veams/status-quo';
 import { useStateFactory } from '@veams/status-quo/react';
 import { FormStateHandler } from '@veams/form';
@@ -1998,6 +2068,281 @@ import {
 } from '@veams/form/react';`;
 
 export const docsPackages: DocsPackage[] = [
+  {
+    accent: 'forest',
+    description: 'Activate interactive components in a static HTML environment using the Islands Architecture.',
+    githubPath: 'packages/partial-hydration',
+    id: 'partial-hydration',
+    npm: '@veams/partial-hydration',
+    sections: [
+      {
+        id: 'getting-started',
+        pages: [
+          {
+            blocks: [
+              {
+                bullets: [
+                  'Keep the initial page load fast by serving static HTML.',
+                  'Hydrate only the interactive "Islands" of your page.',
+                  'Choose when to hydrate: on init, dom-ready, or when in viewport.',
+                ],
+                id: 'islands-architecture',
+                paragraphs: [
+                  'Partial Hydration allows you to build high-performance web applications by combining the speed of static HTML with the interactivity of modern UI frameworks. Instead of hydrating the entire page, you only activate specific components based on user interaction or environment triggers.',
+                ],
+                title: 'Islands of Interactivity',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            heroBullets: [
+              'Zero-bundle impact for static regions.',
+              'Flexible hydration triggers: viewport, ready, or immediate.',
+              'Isomorphic IDs for stable server-to-client transitions.',
+            ],
+            heroParagraphs: [
+              'VEAMS Partial Hydration provides the core infrastructure for activating components in a static HTML environment. It enables the Islands Architecture by serializing component props into the DOM during server-rendering and selectively hydrating them on the client.',
+            ],
+            id: 'overview',
+            intro: 'Leverage the Islands Architecture to activate interactive UI components exactly when and where they are needed.',
+            summary: 'Selective hydration for peak performance.',
+            title: 'Overview',
+          },
+          {
+            blocks: [
+              {
+                featureCards: [
+                  {
+                    description: 'Interactive islands are embedded in a static HTML frame and activated by specific triggers like viewport intersection.',
+                    title: 'Islands Architecture',
+                    visual: 'partial-hydration-architecture',
+                  },
+                ],
+                id: 'hydration-flow',
+                paragraphs: [
+                  'The hydration process follows a simple flow: components are rendered to static HTML on the server, their props are encoded into the DOM, and the client-side loader activates them based on the defined strategy.',
+                ],
+                title: 'Architecture',
+              },
+              {
+                bullets: [
+                  'Props Serialization: Metadata stays with the HTML.',
+                  'Lazy Activation: Download and run JS only when triggered.',
+                  'Stable Identity: useIsomorphicId ensures DOM consistency.',
+                ],
+                id: 'hydration-principles',
+                paragraphs: [
+                  'By following these principles, you ensure that your application remains fast, accessible, and easy to maintain as it grows in complexity.',
+                ],
+                title: 'Core Principles',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            id: 'concepts',
+            intro: 'Understand how selective component activation keeps your page fast while providing a rich user experience.',
+            summary: 'Hydrate what matters, when it matters.',
+            title: 'Concepts',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: `import { createHydration } from '@veams/partial-hydration';`,
+                    label: 'Framework-agnostic core',
+                    language: 'ts',
+                  },
+                  {
+                    code: `import { withHydration, useIsomorphicId } from '@veams/partial-hydration/react';`,
+                    label: 'Optional React bindings',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  'The root package (`@veams/partial-hydration`) is framework-agnostic and owns the core engine.',
+                  'React bindings live in a separate subpath (`@veams/partial-hydration/react`).',
+                  'The `render` function gives you full control over how any framework is initialized.',
+                ],
+                id: 'framework-support',
+                paragraphs: [
+                  'Partial Hydration is not tied to React. The core engine handles DOM scanning, event listeners, and data extraction independently. You can use it with Vue, Svelte, or even Vanilla JS by providing the appropriate `render` function.',
+                  'For React users, we provide dedicated bindings under the `/react` subpath to handle SSR metadata injection and stable ID generation.',
+                ],
+                title: 'Framework Support',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            id: 'framework-support',
+            intro: 'Use the framework-agnostic root for the client-side engine, then add React bindings only for SSR component preparation.',
+            summary: 'Framework-neutral core, optional React layer.',
+            title: 'Framework Support',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: partialHydrationInstall,
+                    label: 'Install',
+                    language: 'bash',
+                  },
+                ],
+                id: 'install',
+                paragraphs: [
+                  'Install the hydration package. It is framework-agnostic at its core, but provides optional React bindings for easier integration.',
+                ],
+                title: 'Install the package',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            id: 'installation',
+            intro: 'Add the package to your project and start defining your hydration strategies.',
+            summary: 'Small impact, huge performance wins.',
+            title: 'Installation',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: partialHydrationQuickStart,
+                    label: 'Client-side initialization',
+                    language: 'ts',
+                  },
+                ],
+                id: 'client-init',
+                paragraphs: [
+                  'To start the hydration process on the client, you create a hydration instance with a map of your components and call `init()`. The loader will then scan the DOM and activate components based on their trigger configuration.',
+                ],
+                title: 'Initialize on the client',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            id: 'quick-start',
+            intro: 'The quickest path to an interactive page is defining your component map and calling the hydration initializer.',
+            summary: 'From static HTML to interactive islands in seconds.',
+            title: 'Quick Start',
+          },
+        ],
+        title: 'Getting Started',
+      },
+      {
+        id: 'guides',
+        pages: [
+          {
+            blocks: [
+              {
+                featureCards: [
+                  {
+                    description: 'Interactive islands are the primary target for hydration. They represent autonomous UI units that require JavaScript to function.',
+                    title: 'Interactive Islands',
+                    visual: 'status-quo-leaf',
+                  },
+                ],
+                id: 'strategies',
+                paragraphs: [
+                  'Choosing the right hydration strategy is crucial for balancing performance and interactivity. We recommend a "lazy-first" approach: only hydrate components when they are actually needed by the user.',
+                ],
+                title: 'Choosing a Trigger',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: partialHydrationCreateOptionsExample,
+                    label: 'Hydration Configuration',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  '**init**: Use for critical UI that must be interactive immediately (e.g., global navigation).',
+                  '**dom-ready**: Use for components that are visible above the fold but less critical than the main layout.',
+                  '**in-viewport**: The most efficient strategy. Activate components only when the user scrolls them into view.',
+                  '**fonts-ready**: Use for text-heavy interactive elements that rely on specific typography layout.',
+                ],
+                id: 'trigger-guide',
+                paragraphs: [
+                  'The `createHydration` options map component names to their activation rules. Each component in the map requires a `render` function, which provides full control over how the framework (like React or Vue) is initialized on the DOM element.',
+                  'For viewport-based hydration, you can provide an optional `config.rootMargin` to trigger activation slightly before the element enters the visible area, ensuring a seamless experience for the user.',
+                ],
+                title: 'Trigger Reference & Options',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'hydration-strategies',
+            intro: 'Optimize your application by choosing the most efficient activation trigger for each component.',
+            summary: 'Strategies for efficient component activation.',
+            title: 'Hydration Strategies',
+          },
+        ],
+        title: 'Guides',
+      },
+      {
+        id: 'api',
+        pages: [
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: partialHydrationApiExample,
+                    label: 'Public entry points',
+                    language: 'ts',
+                  },
+                ],
+                id: 'entry-points',
+                paragraphs: [
+                  'The package surface is focused on three main exports: the client-side orchestrator, the SSR metadata binder, and the isomorphic ID helper.',
+                ],
+                title: 'Entry points',
+              },
+              {
+                bullets: [
+                  '`createHydration(options)` returns an object with `init(context)` and `clearAllObservers()`.',
+                  '`options.components` maps names to `ComponentOption` objects.',
+                  '`init(context)` starts scanning the DOM for component wrappers.',
+                ],
+                id: 'create-hydration',
+                paragraphs: [
+                  'Use `createHydration` to define your client-side activation logic. It is framework-agnostic, meaning you define exactly how each component is rendered in the `render` callback.',
+                ],
+                title: 'createHydration',
+              },
+              {
+                bullets: [
+                  '`withHydration(Component, config?)` wraps a React component.',
+                  'Serializes props into the HTML during server rendering.',
+                  'Adds `data-component` and `data-internal-id` attributes to the wrapper.',
+                ],
+                id: 'with-hydration',
+                paragraphs: [
+                  'Use `withHydration` during SSR to ensure that the client-side loader has all the data it needs to activate the component without a full page re-render.',
+                ],
+                title: 'withHydration',
+              },
+              {
+                bullets: [
+                  'Generates a unique string ID based on the parent hydration unit.',
+                  'Stable across server and client renders.',
+                  'Required for accessible forms and aria labels in hydrated islands.',
+                ],
+                id: 'use-isomorphic-id',
+                paragraphs: [
+                  'Use `useIsomorphicId` inside your interactive components to maintain DOM consistency between the initial static HTML and the later hydrated state.',
+                ],
+                title: 'useIsomorphicId',
+              },
+            ],
+            eyebrow: 'API',
+            id: 'api',
+            intro: 'The package provides a minimal but powerful API for implementing the Islands Architecture in your project.',
+            summary: 'Core factory and bindings reference.',
+            title: 'API',
+          },
+        ],
+        title: 'API',
+      },
+    ],
+    title: 'Partial Hydration',
+  },
   {
     accent: 'teal',
     description: 'Structure and scale without the noise.',
@@ -3744,7 +4089,7 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   'Use the **Handle** when you are acting on one specific data source (e.g., refetching a single profile).',
                   'Use the **Manager** for cross-cutting concerns (e.g., invalidating all user-related data).',
-                  'The Handle is for UI observation and local action; the Manager is for orchestration and manual cache control.',
+                  'The Handle is for UI observation and local action; the Manager is for orchestration and manual state control.',
                 ],
                 codeExamples: [
                   {
