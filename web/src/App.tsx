@@ -11,6 +11,7 @@ import {
 
 import { CodeBlock } from './components/CodeBlock';
 import {
+  defaultPackage,
   defaultPath,
   docsPackages,
   getFirstPage,
@@ -164,7 +165,7 @@ function DocsPage() {
   const location = useLocation();
   const { packageId, pageId } = useParams();
   const packageDoc = packageId ? getPackageDocs(packageId) : defaultPackage;
-  const page = packageDoc ? (pageId ? getPageDocs(packageDoc, pageId) : defaultPage) : undefined;
+  const page = packageDoc ? (pageId ? getPageDocs(packageDoc, pageId) : getFirstPage(packageDoc)) : undefined;
   const [isPackageNavOpen, setIsPackageNavOpen] = useState(false);
   const [isSectionNavOpen, setIsSectionNavOpen] = useState(false);
   const documentTitle =
