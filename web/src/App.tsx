@@ -151,7 +151,10 @@ function Footer() {
   return (
     <footer className="site-footer">
       <p>
-        Made with <HeartIcon /> by Sebastian Fitzner
+        Made with <HeartIcon /> by{' '}
+        <a href="https://github.com/Sebastian-Fitzner" rel="noopener noreferrer" target="_blank">
+          Sebastian Fitzner
+        </a>
       </p>
     </footer>
   );

@@ -3407,12 +3407,6 @@ export const docsPackages: DocsPackage[] = [
             summary: 'Inspect transitions with Redux DevTools.',
             title: 'Devtools',
           },
-        ],
-        title: 'Guides',
-      },
-      {
-        id: 'api',
-        pages: [
           {
             blocks: [
               {
@@ -3700,15 +3694,15 @@ export const docsPackages: DocsPackage[] = [
                 title: 'Types',
               },
             ],
-            eyebrow: 'API',
-            id: 'api',
+            eyebrow: 'Guides',
+            id: 'api-reference',
             intro:
               'Start at the root for framework-agnostic pieces, then import the React integration from `@veams/status-quo/react` when you are wiring handlers into React.',
             summary: 'The full surface, minus the noise.',
-            title: 'API',
+            title: 'API Reference',
           },
         ],
-        title: 'API',
+        title: 'Guides',
       },
       {
         id: 'examples',
@@ -4202,12 +4196,6 @@ export const docsPackages: DocsPackage[] = [
             summary: 'Stay small. Escape when you must.',
             title: 'Escape Hatches',
           },
-        ],
-        title: 'Guides',
-      },
-      {
-        id: 'api',
-        pages: [
           {
             blocks: [
               {
