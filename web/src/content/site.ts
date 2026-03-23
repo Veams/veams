@@ -3594,10 +3594,57 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  'Call this as early as possible in your application entry point.',
-                  'Sets package-wide defaults that apply to every handler instance.',
-                  '`devTools.enabled` turns Redux DevTools on by default for all handlers.',
-                  '`distinct.enabled` toggles default distinct update behavior.',
+                  '`BaseStateHandler` is the abstract root class for all handler implementations.',
+                  'Public instance methods are `getInitialState()`, `getState()`, `getSnapshot()`, `setState(newState, actionName?)`, and `destroy()`.',
+                  'Use it as the contract reference when building your own handler class on top of the Status Quo lifecycle and subscription model.',
+                ],
+                id: 'base-state-handler',
+                paragraphs: [
+                  'This class is the conceptual center of the package. Most application code will not instantiate it directly, but the rest of the public surface builds on its state, action, and subscription contract.',
+                ],
+                title: 'BaseStateHandler',
+              },
+              {
+                bullets: [
+                  '`makeStateSingleton(factory, options?)` promotes a handler factory into shared state.',
+                  '`factory` creates the handler instance. `options?.destroyOnNoConsumers` controls whether the instance is destroyed when the last subscriber leaves.',
+                  'Returns a `StateSingleton` definition that `useStateSingleton()` can subscribe to.',
+                ],
+                id: 'make-state-singleton',
+                paragraphs: [
+                  'Use this helper when state should outlive a single component mount and be shared across multiple consumers.',
+                ],
+                title: 'makeStateSingleton',
+              },
+              {
+                bullets: [
+                  '`NativeStateHandler` is constructed with `{ initialState, options? }`.',
+                  '`initialState` seeds the handler value. `options?.devTools`, `options?.distinct`, and `options?.useDistinctUntilChanged` control runtime behavior.',
+                  'Use it as the default concrete base when plain JavaScript state is enough and you do not need RxJS or Signals helpers.',
+                ],
+                id: 'native-state-handler',
+                paragraphs: [
+                  'This is the zero-dependency concrete handler base. It keeps the external API the same as the other engines while staying as small as possible.',
+                ],
+                title: 'NativeStateHandler',
+              },
+              {
+                bullets: [
+                  '`ObservableStateHandler` is constructed with `{ initialState, options? }`.',
+                  'Alongside the shared handler API, it adds `getObservable(options?)` and `getObservableItem(key)` for RxJS-oriented integrations.',
+                  'Use it when state composition naturally benefits from observables, operators, and stream-based transforms.',
+                ],
+                id: 'observable-state-handler',
+                paragraphs: [
+                  'This is the RxJS-backed concrete base. The app-facing handler contract stays stable while the underlying reactive engine becomes observable-driven.',
+                ],
+                title: 'ObservableStateHandler',
+              },
+              {
+                bullets: [
+                  '`setupStatusQuo(config?)` should be called once near app startup.',
+                  '`config?.devTools` sets global Redux DevTools defaults. `config?.distinct` sets package-wide distinct-update defaults.',
+                  'Local handler options still win when a specific instance needs different behavior.',
                 ],
                 codeExamples: [
                   {
@@ -3610,252 +3657,141 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'setup-status-quo',
                 paragraphs: [
-                  'Use `setupStatusQuo(config?)` when you want package-wide defaults for how handlers behave. This should be called once, as early as possible during app startup. The most important global knobs are distinct-update behavior and whether handlers should connect to Redux DevTools by default. Local handler options can still override those defaults.',
+                  'This is the package-wide runtime setup function. It keeps app-level defaults explicit instead of hiding them behind individual handler constructors.',
                 ],
                 title: 'setupStatusQuo',
               },
               {
                 bullets: [
-                  'Creates one handler instance per component mount.',
-                  'Accepts a factory and optional factory params.',
-                  'Use it when you want full control over lifecycle and composition.',
-                ],
-                codeExamples: [
-                  {
-                    code: statusQuoHookUseStateHandlerExample,
-                    label: 'Simple example',
-                    language: 'tsx',
-                  },
-                ],
-                id: 'use-state-handler',
-                paragraphs: [
-                  'Use `useStateHandler(factory, params?)` as the low-level hook for local handler creation. It gives you the handler instance itself, which makes it the right starting point when you want to compose state access and action access separately.',
-                ],
-                title: 'useStateHandler',
-              },
-              {
-                bullets: [
-                  'Shares one handler instance with a subtree through React context.',
-                  'Keeps creation ownership in the parent component.',
-                  'Works well when state readers and action-only bricks should stay split.',
-                ],
-                codeExamples: [
-                  {
-                    code: statusQuoHookStateProviderExample,
-                    label: 'Simple example',
-                    language: 'tsx',
-                  },
-                ],
-                id: 'state-provider',
-                paragraphs: [
-                  'Use `StateProvider` when a parent already owns a handler instance and descendant components should consume that same instance without prop drilling. It is the scoped-sharing option between a local handler and a singleton.',
-                ],
-                title: 'StateProvider',
-              },
-              {
-                bullets: [
-                  'Reads the shared handler instance from the nearest `StateProvider`.',
-                  'Useful when a descendant needs the raw handler for manual composition.',
-                  'Throws when used outside a matching provider scope.',
-                ],
-                codeExamples: [
-                  {
-                    code: statusQuoHookUseProvidedStateHandlerExample,
-                    label: 'Simple example',
-                    language: 'tsx',
-                  },
-                ],
-                id: 'use-provided-state-handler',
-                paragraphs: [
-                  'Use `useProvidedStateHandler()` when provider scope is already set up and a child component needs direct access to the shared handler instance. This is the low-level entry point for provider-based composition.',
-                ],
-                title: 'useProvidedStateHandler',
-              },
-              {
-                bullets: [
-                  'Returns handler actions without subscribing to state.',
-                  'Useful for action-only components or event wiring.',
-                  'Pair it with `useStateHandler` when you want manual composition.',
-                ],
-                codeExamples: [
-                  {
-                    code: statusQuoHookUseStateActionsExample,
-                    label: 'Simple example',
-                    language: 'tsx',
-                  },
-                ],
-                id: 'use-state-actions',
-                paragraphs: [
-                  'Use `useStateActions(handler)` when a component needs to trigger behavior but does not need to rerender from state changes. It keeps action access explicit and avoids unnecessary subscriptions.',
-                ],
-                title: 'useStateActions',
-              },
-              {
-                bullets: [
-                  'Returns actions from the nearest `StateProvider` without subscribing to state.',
-                  'Strong fit for toolbar, button row, or command-only bricks.',
-                  'Lets action access stay separate from rendering concerns.',
-                ],
-                codeExamples: [
-                  {
-                    code: statusQuoHookUseProvidedStateActionsExample,
-                    label: 'Simple example',
-                    language: 'tsx',
-                  },
-                ],
-                id: 'use-provided-state-actions',
-                paragraphs: [
-                  'Use `useProvidedStateActions()` when a child component only needs to trigger behavior from the shared scoped handler. This is the clean way to keep action-only UI out of rerender fanout.',
-                ],
-                title: 'useProvidedStateActions',
-              },
-              {
-                bullets: [
-                  'Subscribes to full state or a selected slice.',
-                  'Works with either a handler instance or a singleton.',
-                  'Accepts an optional equality function for stable selector results.',
-                ],
-                codeExamples: [
-                  {
-                    code: statusQuoHookUseStateSubscriptionExample,
-                    label: 'Simple example',
-                    language: 'tsx',
-                  },
-                ],
-                id: 'use-state-subscription',
-                paragraphs: [
-                  'Use `useStateSubscription(source, selector?, isEqual?)` when you want the rendering surface itself: selected state plus actions. This is the main hook for controlling what a component actually listens to.',
-                ],
-                title: 'useStateSubscription',
-              },
-              {
-                bullets: [
-                  'Subscribes to the nearest `StateProvider` instead of accepting a source argument.',
-                  'Supports full snapshots, selectors, and custom equality just like `useStateSubscription`.',
-                  'Best when the instance is already shared through provider scope.',
-                ],
-                codeExamples: [
-                  {
-                    code: statusQuoHookUseProvidedStateSubscriptionExample,
-                    label: 'Simple example',
-                    language: 'tsx',
-                  },
-                ],
-                id: 'use-provided-state-subscription',
-                paragraphs: [
-                  'Use `useProvidedStateSubscription(selector?, isEqual?)` when the handler instance already comes from `StateProvider` and the component only needs to declare what slice it should listen to.',
-                ],
-                title: 'useProvidedStateSubscription',
-              },
-              {
-                bullets: [
-                  'Combines handler creation and subscription.',
-                  'Best for local component state with one obvious consumer.',
-                  'The shortest path from factory to rendered state.',
-                ],
-                codeExamples: [
-                  {
-                    code: statusQuoHookUseStateFactoryExample,
-                    label: 'Simple example',
-                    language: 'tsx',
-                  },
-                ],
-                id: 'use-state-factory',
-                paragraphs: [
-                  'Use `useStateFactory(factory, selector?, isEqual?, params?)` when you want the convenience path. It is the fastest way to create a local handler and subscribe to it in one step.',
-                ],
-                title: 'useStateFactory',
-              },
-              {
-                bullets: [
-                  'Subscribes to a shared singleton instance.',
-                  'Lets multiple consumers read the same handler state.',
-                  'Lifecycle behavior comes from the singleton definition itself.',
-                ],
-                codeExamples: [
-                  {
-                    code: statusQuoHookUseStateSingletonExample,
-                    label: 'Simple example',
-                    language: 'tsx',
-                  },
-                ],
-                id: 'use-state-singleton',
-                paragraphs: [
-                  'Use `useStateSingleton(singleton, selector?, isEqual?)` when state should outlive a single component tree or when multiple consumers should observe the same handler instance.',
-                ],
-                title: 'useStateSingleton',
-              },
-              {
-                bullets: [
-                  'Defines the shared lifecycle and subscription contract.',
-                  'Provides the base behavior other handlers build on.',
-                  'Useful as the conceptual root of the package surface.',
-                ],
-                id: 'base-state-handler',
-                paragraphs: [
-                  'Use `BaseStateHandler` as the shared foundation when you are reasoning about the handler contract itself. Most app code will extend one of the concrete handler implementations rather than extending the base class directly.',
-                ],
-                title: 'BaseStateHandler',
-              },
-              {
-                bullets: [
-                  'Zero-dependency native handler implementation.',
-                  'Plain JS based and perfect for simple state management.',
-                  'Keeps the same external contract as the other handlers.',
-                ],
-                id: 'native-state-handler',
-                paragraphs: [
-                  'Use `NativeStateHandler` as your default starting point. It has zero external dependencies and provides a clean, predictable state model using plain JavaScript. Scale up to other handlers only when your composition needs it.',
-                ],
-                title: 'NativeStateHandler',
-              },
-              {
-                bullets: [
-                  'RxJS-backed handler implementation.',
-                  'Strong fit for stream composition and operator-heavy state flows.',
-                  'Keeps the same external contract as the Signals version.',
-                ],
-                id: 'observable-state-handler',
-                paragraphs: [
-                  'Use `ObservableStateHandler` when your state composition naturally benefits from observables, subscriptions, and stream operators. The UI-facing API stays the same; only the internal reactive engine changes.',
-                ],
-                title: 'ObservableStateHandler',
-              },
-              {
-                bullets: [
-                  'Signals-backed handler implementation.',
-                  'Strong fit for lightweight value-style derivation.',
-                  'Matches the same outer API as the RxJS version.',
+                  '`SignalStateHandler` is constructed with `{ initialState, options? }`.',
+                  'Alongside the shared handler API, it adds `getSignal()` for direct signal consumption.',
+                  'Use it when you want a lightweight reactive engine with signal-style reads and updates.',
                 ],
                 id: 'signal-state-handler',
                 paragraphs: [
-                  'Use `SignalStateHandler` when you want a compact reactive engine with direct derivation and minimal runtime overhead. It is the lighter-weight option when stream composition is not the main need.',
+                  'This is the Signals-backed concrete base. It keeps the outer API aligned with the other handler implementations while exposing signal access for reactive integrations.',
                 ],
                 title: 'SignalStateHandler',
               },
               {
                 bullets: [
-                  'Promotes a handler factory into shared state.',
-                  'Supports lifecycle control through `destroyOnNoConsumers`.',
-                  'Returns a singleton definition that hooks can subscribe to.',
+                  '`StateProvider({ instance, children })` takes one existing handler instance and a subtree.',
+                  '`instance` is the handler to share. `children` is the provider scope that should read from it.',
+                  'Use it when the parent owns handler creation and descendants should consume that same instance without prop drilling.',
                 ],
-                id: 'make-state-singleton',
+                id: 'state-provider',
                 paragraphs: [
-                  'Use `makeStateSingleton(factory, options?)` when state should be shared across consumers instead of created per mount. This is the boundary where local handler patterns become app-level shared state.',
+                  'This is the scoped-sharing surface in the React layer. It keeps creation ownership and consumption scope explicit.',
                 ],
-                title: 'makeStateSingleton',
+                title: 'StateProvider',
               },
               {
                 bullets: [
-                  '`StateSingleton` and `StateSingletonOptions` describe the singleton helper surface.',
-                  '`StateSubscriptionHandler` describes the subscribable handler contract used by the hooks.',
-                  'These types exist to keep app-level abstractions on the public API boundary.',
+                  '`StateSingleton`, `StateSingletonOptions`, and `StateSubscriptionHandler` are the main exported API types.',
+                  '`StateSingletonOptions` describes singleton lifecycle behavior such as `destroyOnNoConsumers`.',
+                  'Use these types when you are wrapping Status Quo in your own abstractions and want to stay on the public contract boundary.',
                 ],
                 id: 'types',
                 paragraphs: [
-                  'Use the exported types when you are wrapping Status Quo in your own abstractions and want to stay on supported public contracts rather than reaching into internals.',
+                  'The type exports exist so application-level abstractions can depend on supported public interfaces rather than reaching into internal files.',
                 ],
                 title: 'Types',
+              },
+              {
+                bullets: [
+                  '`useProvidedStateActions()` takes no parameters.',
+                  'Returns the action object from the nearest `StateProvider` without subscribing to state updates.',
+                  'Use it for command-only UI such as buttons, toolbars, or menu actions.',
+                ],
+                id: 'use-provided-state-actions',
+                paragraphs: [
+                  'This is the action-only provider hook. It keeps action access separate from render subscriptions.',
+                ],
+                title: 'useProvidedStateActions',
+              },
+              {
+                bullets: [
+                  '`useProvidedStateHandler()` takes no parameters.',
+                  'Returns the raw handler instance from the nearest `StateProvider`.',
+                  'Use it when a child component needs low-level manual composition against the shared handler.',
+                ],
+                id: 'use-provided-state-handler',
+                paragraphs: [
+                  'This is the lowest-level provider hook in the React surface and the right tool when higher-level convenience hooks are too opinionated.',
+                ],
+                title: 'useProvidedStateHandler',
+              },
+              {
+                bullets: [
+                  '`useProvidedStateSubscription(selector?, isEqual?)` subscribes to the nearest `StateProvider`.',
+                  '`selector?` narrows the subscribed slice. `isEqual?` customizes change detection for selected values.',
+                  'Returns `[selectedState, actions]` and is the provider-scoped counterpart to `useStateSubscription()`.',
+                ],
+                id: 'use-provided-state-subscription',
+                paragraphs: [
+                  'Use this hook when provider scope already owns the instance and the component only needs to declare what slice should drive rerenders.',
+                ],
+                title: 'useProvidedStateSubscription',
+              },
+              {
+                bullets: [
+                  '`useStateActions(handler)` takes one handler instance or compatible subscribable handler surface.',
+                  'Returns the action object without subscribing to state changes.',
+                  'Use it when a component should trigger behavior but should not rerender from state updates.',
+                ],
+                id: 'use-state-actions',
+                paragraphs: [
+                  'This hook is the action-only counterpart to the state subscription hooks and keeps write access explicit.',
+                ],
+                title: 'useStateActions',
+              },
+              {
+                bullets: [
+                  '`useStateFactory(factory, selector?, isEqual?, params?)` combines creation and subscription.',
+                  '`factory` creates the handler. `selector?` narrows the subscribed slice. `isEqual?` customizes equality. `params?` are forwarded to the factory.',
+                  'Returns `[selectedState, actions]` and is the shortest path from handler factory to rendered state.',
+                ],
+                id: 'use-state-factory',
+                paragraphs: [
+                  'Use this hook when one component both owns the handler lifecycle and consumes its state directly.',
+                ],
+                title: 'useStateFactory',
+              },
+              {
+                bullets: [
+                  '`useStateHandler(factory, params?)` creates one handler instance per component mount.',
+                  '`factory` builds the handler. `params?` is the optional tuple forwarded to that factory.',
+                  'Returns the raw handler instance so you can compose state reads and action reads manually.',
+                ],
+                id: 'use-state-handler',
+                paragraphs: [
+                  'This is the lowest-level local React hook and the right starting point when you want full control over handler lifecycle and composition.',
+                ],
+                title: 'useStateHandler',
+              },
+              {
+                bullets: [
+                  '`useStateSingleton(singleton, selector?, isEqual?)` subscribes to a shared singleton definition.',
+                  '`singleton` is the object returned by `makeStateSingleton()`. `selector?` narrows the subscribed slice. `isEqual?` customizes equality.',
+                  'Returns `[selectedState, actions]` while keeping creation and lifecycle ownership on the singleton definition itself.',
+                ],
+                id: 'use-state-singleton',
+                paragraphs: [
+                  'Use this hook when shared state should outlive one component tree or be consumed by multiple unrelated branches.',
+                ],
+                title: 'useStateSingleton',
+              },
+              {
+                bullets: [
+                  '`useStateSubscription(source, selector?, isEqual?)` subscribes to a handler instance or singleton.',
+                  '`source` is the handler or singleton to read from. `selector?` narrows the subscribed slice. `isEqual?` customizes equality.',
+                  'Returns `[selectedState, actions]` and is the main React rendering surface for Status Quo state.',
+                ],
+                id: 'use-state-subscription',
+                paragraphs: [
+                  'Use this hook when the component should rerender from state and you want the selection boundary to stay explicit.',
+                ],
+                title: 'useStateSubscription',
               },
             ],
             eyebrow: 'Guides',
@@ -4378,112 +4314,123 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  'Binds one TanStack `QueryClient` to the query factory.',
-                  'Returns `createQuery` for building query handles.',
-                  'Use it when you want only the query surface without the full query manager.',
-                ],
-                id: 'setup-query',
-                paragraphs: [
-                  'Use `setupQuery(queryClient)` when you want a focused query-only entry point. It keeps the dependency on one `QueryClient` explicit and gives you a factory for creating query handles.',
-                ],
-                title: 'setupQuery',
-              },
-              {
-                bullets: [
-                  'Creates one query handle for one key and one query function.',
-                  'The returned handle exposes `getSnapshot`, `subscribe`, `refetch`, `invalidate`, and `unsafe_getResult`.',
-                  '`QueryInvalidateOptions` controls exact-key invalidation behavior.',
-                ],
-                id: 'create-query',
-                paragraphs: [
-                  'Use `createQuery(queryKey, queryFn, options?)` when you want one focused query handle with passive snapshot state and explicit commands. It is the main object most application code should work with after setup.',
-                ],
-                title: 'createQuery',
-              },
-              {
-                bullets: [
-                  'Includes `data`, `error`, `status`, `fetchStatus`, and the common boolean flags.',
-                  'Represents passive query state only.',
-                  'Designed to be read, not used as a command object.',
-                ],
-                id: 'query-snapshot',
-                paragraphs: [
-                  'Use `QueryServiceSnapshot` when you want the current state of a query handle in a small predictable shape. It is the stable surface for rendering and derived state checks.',
-                ],
-                title: 'QueryServiceSnapshot',
-              },
-              {
-                bullets: [
-                  'Binds one TanStack `QueryClient` to the mutation factory.',
-                  'Returns `createMutation` for building mutation handles.',
-                  'Use it when your integration only needs mutation behavior.',
-                ],
-                id: 'setup-mutation',
-                paragraphs: [
-                  'Use `setupMutation(queryClient)` when you want a focused mutation-only entry point. It mirrors the query setup shape so the package stays consistent across both handle types.',
-                ],
-                title: 'setupMutation',
-              },
-              {
-                bullets: [
-                  'Creates one mutation handle around one mutation function.',
-                  'The returned handle exposes `getSnapshot`, `subscribe`, `mutate`, `reset`, and `unsafe_getResult`.',
-                  'Best fit when application code should trigger one concrete mutation workflow.',
+                  '`createMutation(mutationFn, options?)` accepts one TanStack-compatible mutation function and optional observer options.',
+                  '`mutationFn(variables)` performs the async write. `options?` configures retry and lifecycle callbacks.',
+                  'Returns a mutation handle with `getSnapshot()`, `subscribe(listener)`, `mutate(variables, mutateOptions?)`, `reset()`, and `unsafe_getResult()`.',
                 ],
                 id: 'create-mutation',
                 paragraphs: [
-                  'Use `createMutation(mutationFn, options?)` when you want one explicit mutation handle with clear commands and passive state. It is the mutation-side equivalent of `createQuery`.',
+                  'Use `createMutation` for one explicit write workflow. The function signature is small on purpose: one mutation function in, one imperative mutation handle out.',
                 ],
                 title: 'createMutation',
               },
               {
                 bullets: [
-                  'Includes `data`, `error`, `status`, `variables`, and the common mutation flags.',
-                  'Represents passive mutation state only.',
-                  'Useful for rendering mutation progress and results without leaking commands into state reads.',
+                  '`createQuery(queryKey, queryFn, options?)` accepts one TanStack query key, one query function, and optional observer options.',
+                  '`queryKey` identifies the cache slot. `queryFn` performs the async read. `options?` configures stale time, retries, refetch behavior, and related observer settings.',
+                  'Returns a query handle with `getSnapshot()`, `subscribe(listener)`, `refetch(options?)`, `invalidate(options?)`, and `unsafe_getResult()`.',
+                ],
+                id: 'create-query',
+                paragraphs: [
+                  'Use `createQuery` for one focused read workflow. It is the main per-query reference object most application code should work with after setup.',
+                ],
+                title: 'createQuery',
+              },
+              {
+                bullets: [
+                  '`isQueryLoading(query)` accepts a reduced meta state with `status` and `fetchStatus`.',
+                  'Returns `true` only for the initial loading case: `status === "pending"` and `fetchStatus === "fetching"`.',
+                  'Use it after `toQueryMetaState(snapshot)` when the UI only needs a simple loading answer.',
+                ],
+                id: 'is-query-loading',
+                paragraphs: [
+                  'This helper exists to keep the common loading check small and repeatable instead of spreading status comparisons across components.',
+                ],
+                title: 'isQueryLoading',
+              },
+              {
+                bullets: [
+                  '`MutationServiceSnapshot` is the passive state shape returned by `getSnapshot()` and `subscribe(listener)` on a mutation handle.',
+                  'Fields include `data`, `error`, `status`, `variables`, `isError`, `isIdle`, `isPending`, and `isSuccess`.',
+                  'It is state-only by design. Commands stay on the mutation handle, not on the snapshot.',
                 ],
                 id: 'mutation-snapshot',
                 paragraphs: [
-                  'Use `MutationServiceSnapshot` when the UI needs the current mutation state in a small readable shape. It is the surface for pending, success, error, and variables state.',
+                  'Use `MutationServiceSnapshot` as the read model for rendering mutation state without leaking imperative commands into view code.',
                 ],
                 title: 'MutationServiceSnapshot',
               },
               {
                 bullets: [
-                  'Returns `QueryManager` around one `QueryClient`.',
-                  'Combines `createQuery` and `createMutation` with broader management operations.',
-                  'Acts as the shared management instance for one app runtime boundary.',
-                  'Best fit when one integration owns management across queries and mutations.',
-                ],
-                id: 'setup-manager',
-                paragraphs: [
-                  'Use `setupQueryManager(queryClient)` when you want one top-level facade for the whole service layer. The returned manager instance is a thin wrapper over your `QueryClient`: it creates query and mutation handles and centralizes cross-query management commands in one place.',
-                ],
-                title: 'setupQueryManager',
-              },
-              {
-                bullets: [
-                  'Exposes `invalidateQueries`, `refetchQueries`, `cancelQueries`, `removeQueries`, `resetQueries`, `getQueryData`, and `setQueryData`.',
-                  'Also exposes `createQuery` and `createMutation` so setup stays centralized.',
-                  '`unsafe_getClient()` is the explicit escape hatch back to the raw TanStack client.',
+                  '`QueryManager` groups the broad management API around one `QueryClient`.',
+                  'Factory methods are `createMutation(mutationFn, options?)` and `createQuery(queryKey, queryFn, options?)`.',
+                  'Management methods are `cancelQueries(filters?, options?)`, `getQueryData(queryKey)`, `invalidateQueries(filters?, options?)`, `refetchQueries(filters?, options?)`, `removeQueries(filters?)`, `resetQueries(filters?, options?)`, `setQueryData(queryKey, updater)`, and `unsafe_getClient()`.',
                 ],
                 id: 'query-manager',
                 paragraphs: [
-                  'Use `QueryManager` when the operation crosses query boundaries or when you need direct state reads and writes. This is where management belongs, not on individual snapshots.',
+                  'Use `QueryManager` when an operation crosses handle boundaries or when integration code needs one centralized surface for creation and cache management.',
                 ],
                 title: 'QueryManager',
               },
               {
                 bullets: [
-                  '`toQueryMetaState(snapshot)` reduces a query snapshot to `status` and `fetchStatus`.',
-                  '`isQueryLoading(metaState)` answers the common loading check on that reduced state.',
-                  'These helpers are small on purpose and stay close to the query snapshot model.',
+                  '`QueryServiceSnapshot` is the passive state shape returned by `getSnapshot()` and `subscribe(listener)` on a query handle.',
+                  'Fields include `data`, `error`, `status`, `fetchStatus`, `isError`, `isFetching`, `isPending`, and `isSuccess`.',
+                  'It is designed for reads and derived state only. Commands stay on the query handle.',
                 ],
-                id: 'helpers',
+                id: 'query-snapshot',
                 paragraphs: [
-                  'Use the helper functions when you want lightweight derived query state without repeatedly checking the full snapshot shape in application code.',
+                  'Use `QueryServiceSnapshot` as the rendering surface when the UI needs current query state in a stable, framework-neutral shape.',
                 ],
-                title: 'Helpers',
+                title: 'QueryServiceSnapshot',
+              },
+              {
+                bullets: [
+                  '`setupMutation(queryClient)` binds one TanStack `QueryClient` to the mutation factory.',
+                  'The only parameter is the `queryClient` instance that should own cache coordination and observer lifecycle.',
+                  'Returns the `createMutation` factory for focused mutation-only integrations.',
+                ],
+                id: 'setup-mutation',
+                paragraphs: [
+                  'Use `setupMutation` when your integration only needs mutation handles and not the broader query manager facade.',
+                ],
+                title: 'setupMutation',
+              },
+              {
+                bullets: [
+                  '`setupQuery(queryClient)` binds one TanStack `QueryClient` to the query factory.',
+                  'The only parameter is the `queryClient` instance that should own cache coordination and observer lifecycle.',
+                  'Returns the `createQuery` factory for focused query-only integrations.',
+                ],
+                id: 'setup-query',
+                paragraphs: [
+                  'Use `setupQuery` when you only need per-query handles and want the dependency on one `QueryClient` to stay explicit.',
+                ],
+                title: 'setupQuery',
+              },
+              {
+                bullets: [
+                  '`setupQueryManager(queryClient)` binds one TanStack `QueryClient` to the full facade.',
+                  'The only parameter is the `queryClient` instance that should back both factories and manager operations.',
+                  'Returns a `QueryManager` with both factories and cross-query management methods on one object.',
+                ],
+                id: 'setup-manager',
+                paragraphs: [
+                  'Use `setupQueryManager` when one runtime boundary should own query creation, mutation creation, and cache-level management from the same entry point.',
+                ],
+                title: 'setupQueryManager',
+              },
+              {
+                bullets: [
+                  '`toQueryMetaState(snapshot)` accepts any object with `status` and `fetchStatus`, typically a `QueryServiceSnapshot`.',
+                  'Returns a smaller `QueryMetaState` object containing only those two fields.',
+                  'Use it to keep UI helpers and selectors focused on the minimal query state they actually need.',
+                ],
+                id: 'to-query-meta-state',
+                paragraphs: [
+                  'This helper narrows the full query snapshot to the smallest state surface needed for meta checks such as loading or idle state.',
+                ],
+                title: 'toQueryMetaState',
               },
             ],
             eyebrow: 'API',
@@ -4491,7 +4438,7 @@ export const docsPackages: DocsPackage[] = [
             intro:
               'The public surface is split into query handles, mutation handles, and one query manager for broader management.',
             summary: 'Everything you can call, in one place.',
-            title: 'API',
+            title: 'API Reference',
           },
         ],
         title: 'API',
@@ -4728,10 +4675,17 @@ export const docsPackages: DocsPackage[] = [
           {
             blocks: [
               {
+                paragraphs: [
+                  'Use the root package for the generic event bus, `@veams/vent/react` for the React provider and hooks, and `@veams/vent/plugin` only when your runtime already revolves around Veams globals.',
+                ],
+                id: 'entry-points',
+                title: 'Entry points',
+              },
+              {
                 bullets: [
-                  'Creates one event handler instance.',
-                  'Supports typed topics and typed payloads.',
-                  'Returns the `publish`, `subscribe`, and `unsubscribe` surface plus aliases.',
+                  '`createEventHandling()` takes no runtime parameters.',
+                  'Its generic parameters let you type topics, payloads, and callback scope when you need stricter contracts.',
+                  'Returns one `EventHandler` instance with `publish`, `subscribe`, `unsubscribe`, and their aliases.',
                 ],
                 id: 'create-event-handling',
                 paragraphs: [
@@ -4741,28 +4695,16 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  '`publish(topic, data?, scope?)` emits an event.',
+                  '`publish(topic, data?, scope?)` emits one event for one topic. `data?` is the payload and `scope?` becomes the callback `this` context.',
                   '`subscribe(topic, callback)` registers one callback for one or multiple space-separated topics.',
-                  '`unsubscribe(topic, callback, completely?)` removes callback registrations from one or multiple topics.',
-                  'Aliases are `trigger`, `on`, and `off`.',
+                  '`unsubscribe(topic, callback, completely?)` removes callback registrations. Set `completely` to `true` when you also want empty topic buckets removed immediately.',
+                  'Aliases are `trigger` for `publish`, `on` for `subscribe`, and `off` for `unsubscribe`.',
                 ],
                 id: 'event-handler',
                 paragraphs: [
                   'The `EventHandler` API stays intentionally small. It only deals with event publishing and subscription lifecycle. There is no state snapshot layer in this package.',
                 ],
                 title: 'EventHandler',
-              },
-              {
-                bullets: [
-                  '`VentProvider` shares one event bus through React context.',
-                  '`useVent()` reads the current bus instance.',
-                  '`useVentSubscribe(topic, callback)` subscribes in an effect and cleans up automatically.',
-                ],
-                id: 'react-api',
-                paragraphs: [
-                  'The React subpath is intentionally narrow. It exists to host one shared bus and make subscription cleanup automatic inside components. It does not add selectors, state caching, or a second abstraction on top of the event model.',
-                ],
-                title: 'React API',
               },
               {
                 codeExamples: [
@@ -4773,15 +4715,51 @@ export const docsPackages: DocsPackage[] = [
                   },
                 ],
                 bullets: [
-                  'Import from `@veams/vent/plugin`.',
-                  'Attaches `Veams.Vent` and merges additional topics into `Veams.EVENTS`.',
-                  'Keeps plugin-specific behavior out of the root package surface.',
+                  'Import the default plugin export from `@veams/vent/plugin` and call `initialize(veams, options?)`.',
+                  '`veams` is the host object to enrich. `options?.furtherEvents` lets you merge additional event names into `Veams.EVENTS`.',
+                  'The plugin attaches `Veams.Vent` and keeps this global integration out of the generic root API.',
                 ],
                 id: 'plugin-api',
                 paragraphs: [
                   'Use the plugin entry when your runtime already revolves around Veams and you want the bus attached there. The plugin remains a separate concern so the root package stays generic.',
                 ],
-                title: 'Plugin API',
+                title: 'VentPlugin.initialize',
+              },
+              {
+                bullets: [
+                  '`VentProvider({ children, instance })` takes one existing bus instance and exposes it through React context.',
+                  '`children` is the subtree that should share the bus. `instance` is the `EventHandler` to provide.',
+                  'Use it when multiple components in one subtree should publish and subscribe against the same bus instance.',
+                ],
+                id: 'vent-provider',
+                paragraphs: [
+                  'The React subpath stays narrow on purpose. `VentProvider` only shares an existing bus; it does not add selectors, caching, or another abstraction on top.',
+                ],
+                title: 'VentProvider',
+              },
+              {
+                bullets: [
+                  '`useVent()` takes no parameters.',
+                  'Returns the current `EventHandler` from the nearest `VentProvider`.',
+                  'Throws when used outside provider scope so missing bus ownership fails loudly.',
+                ],
+                id: 'use-vent',
+                paragraphs: [
+                  'Use `useVent()` when a component needs direct access to the provided bus instance for manual publish or subscribe composition.',
+                ],
+                title: 'useVent',
+              },
+              {
+                bullets: [
+                  '`useVentSubscribe(topic, callback)` subscribes inside an effect and cleans up automatically.',
+                  '`topic` can be one topic or a space-separated topic string. `callback` receives the typed payload and preserves the event scope binding.',
+                  'Use it when a component should react to bus events without manually wiring subscription lifecycle.',
+                ],
+                id: 'use-vent-subscribe',
+                paragraphs: [
+                  'This hook is the convenience path for React subscribers. It keeps effect cleanup consistent while leaving the event model itself unchanged.',
+                ],
+                title: 'useVentSubscribe',
               },
             ],
             eyebrow: 'API',
@@ -4789,7 +4767,7 @@ export const docsPackages: DocsPackage[] = [
             intro:
               'The public surface is split into one generic event bus, one narrow React entry, and one separate plugin entry.',
             summary: 'Everything the package exposes, without extra layers.',
-            title: 'API',
+            title: 'API Reference',
           },
         ],
         title: 'API',
@@ -5278,31 +5256,87 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  '`FormStateHandler<T>` owns `values`, `errors`, `touched`, `isSubmitting`, and `isValid`.',
-                  'Nested fields are addressed with dot-path names such as `profile.email`.',
-                  '`validateForm()`, `touchAllFields()`, `resetForm()`, and the field setters are the main imperative API.',
-                  '`ValidatorFn<T>` returns a partial error map keyed by form field name.',
-                  '`@veams/form/validators/zod` exposes `toZodValidator(schema)` as an optional adapter without adding a package peer dependency.',
+                  '`Controller({ name, render })` bridges controlled inputs through a render prop.',
+                  '`name` is the dot-path field name. `render` receives `{ field, fieldState }` so controlled widgets can bind `value`, `onChange`, and `onBlur` explicitly.',
+                  'Use it for third-party inputs that require controlled props. Native fields should usually stay on `useUncontrolledField()`.',
                 ],
-                id: 'core-api',
+                id: 'controller-api',
                 paragraphs: [
-                  'The root API is the generic form model. It is suitable both for direct imperative usage and as a dependency owned by a broader Status Quo feature handler.',
+                  'This is the narrow controlled-component bridge. It exists so controlled widgets stay explicit instead of turning the whole form API into a controlled model.',
                 ],
-                title: 'Generic form state API',
+                title: 'Controller',
               },
               {
                 bullets: [
-                  '`FormProvider` creates one local controller unless you pass `formHandlerInstance`.',
-                  'When `formHandlerInstance` is provided, keep `initialValues` and `validator` on that handler instead of the provider.',
-                  '`useUncontrolledField()` registers native inputs, selects, radios, checkboxes, and textareas.',
-                  '`useFieldMeta()` exposes per-field error and touched state.',
-                  '`Controller` bridges controlled component libraries through a render prop.',
+                  '`FormProvider(props)` has two valid shapes.',
+                  'Local mode takes `{ children, initialValues, onSubmit, validator?, ...formProps }`. External mode takes `{ children, formHandlerInstance, onSubmit, ...formProps }`.',
+                  '`onSubmit(values, form)` receives the validated values and the resolved `FormStateHandler`. The provider calls `validateForm()` and `touchAllFields()` before invoking it.',
                 ],
-                id: 'react-api',
+                id: 'form-provider-api',
                 paragraphs: [
-                  'The React API is only about binding the existing controller shape into components. The goal is to keep form behavior in the handler while the view stays thin.',
+                  'Use `FormProvider` to own or bridge one controller instance into a React subtree. The API stays explicit about whether React owns the controller lifecycle or just hosts it.',
                 ],
-                title: 'React API',
+                title: 'FormProvider',
+              },
+              {
+                bullets: [
+                  '`new FormStateHandler(config)` takes `{ initialValues, validator?, options? }`.',
+                  '`initialValues` seeds `values`. `validator?` returns the typed error map. `options?.devTools` configures the underlying Status Quo devtools integration.',
+                  'Main methods are `resetForm(values?)`, `setFieldError(name, errorMessage?)`, `setFieldTouched(name, isTouched?)`, `setFieldValue(name, value)`, `setSubmitting(isSubmitting)`, `touchAllFields()`, and `validateForm()`.',
+                ],
+                id: 'form-state-handler-api',
+                paragraphs: [
+                  'This is the generic root controller. It owns `values`, `errors`, `touched`, `isSubmitting`, and `isValid`, and it remains usable outside React.',
+                ],
+                title: 'FormStateHandler',
+              },
+              {
+                bullets: [
+                  '`toZodValidator(schema)` takes one schema-like object with `safeParse(values)` and `error.issues`.',
+                  'Returns a `ValidatorFn<TValues>` that maps schema issues into the standard field-error object shape.',
+                  'Use it when a feature already owns a Zod schema and you want the form API to stay on the normal validator contract.',
+                ],
+                id: 'to-zod-validator-api',
+                paragraphs: [
+                  'The adapter keeps schema integration narrow. The rest of the form API continues to work with plain validator functions and typed field-error maps.',
+                ],
+                title: 'toZodValidator',
+              },
+              {
+                bullets: [
+                  '`useFieldMeta(name)` takes one field name or dot-path.',
+                  'Returns `{ error, touched }` for that field only.',
+                  'Use it when a component only needs validation metadata and should not subscribe to the full form snapshot.',
+                ],
+                id: 'use-field-meta-api',
+                paragraphs: [
+                  'This hook is the smallest read surface in the React layer. It keeps metadata subscriptions narrow and easy to reason about.',
+                ],
+                title: 'useFieldMeta',
+              },
+              {
+                bullets: [
+                  '`useFormController()` takes no parameters.',
+                  'Returns the current `FormStateHandler` from the nearest `FormProvider`.',
+                  'Throws outside provider scope so missing form ownership fails loudly.',
+                ],
+                id: 'use-form-controller-api',
+                paragraphs: [
+                  'Use this hook when a component needs direct access to the controller itself rather than one of the higher-level field hooks.',
+                ],
+                title: 'useFormController',
+              },
+              {
+                bullets: [
+                  '`useUncontrolledField(name, options?)` takes one field name or dot-path plus optional field configuration.',
+                  '`options?` varies by element type and covers cases such as checkboxes, radios, selects, default values, and value extraction.',
+                  'Returns the registration props and `meta` needed to bind native inputs without making every keystroke controlled React state.',
+                ],
+                id: 'use-uncontrolled-field-api',
+                paragraphs: [
+                  'This is the default field hook for native inputs. It keeps the DOM in charge of the live value while the form controller owns validation, touched state, and submit state.',
+                ],
+                title: 'useUncontrolledField',
               },
             ],
             eyebrow: 'Guides',
@@ -5732,9 +5766,9 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  '`createHydration(options)` returns an object with `init(context)` and `clearAllObservers()`.',
-                  '`options.components` maps names to `ComponentOption` objects.',
-                  '`init(context)` starts scanning the DOM for component wrappers.',
+                  '`createHydration(options)` takes one `HydrationOptions` object.',
+                  '`options.components` maps each `data-component` value to `{ Component, on, render, config? }`.',
+                  'Returns a controller with `init(context)` and `clearAllObservers()`. `init(context)` accepts `document` or a specific `HTMLElement`.',
                 ],
                 id: 'create-hydration-api',
                 paragraphs: [
@@ -5744,9 +5778,33 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  '`withHydration(Component, config?)` wraps a React component.',
-                  'Serializes props into the HTML during server rendering.',
-                  'Adds `data-component={Component.displayName}` and `data-internal-id` attributes to the wrapper.',
+                  '`HydrationProvider({ componentId, children })` takes one hydration unit id and a subtree.',
+                  '`componentId` seeds the stable id namespace used by `useIsomorphicId()` inside that subtree.',
+                  'Use it directly when you need a custom wrapper shape instead of the default `withHydration()` markup helper.',
+                ],
+                id: 'hydration-provider-api',
+                paragraphs: [
+                  'This provider is the metadata bridge between server markup and client hydration. Most React setups get it automatically through `withHydration()`.',
+                ],
+                title: 'HydrationProvider',
+              },
+              {
+                bullets: [
+                  '`useIsomorphicId()` takes no parameters.',
+                  'Returns a stable string id derived from the current hydration unit and an internal counter.',
+                  'Use it for `id`, `htmlFor`, and aria relationships that must match between server HTML and the hydrated client tree.',
+                ],
+                id: 'use-isomorphic-id-api',
+                paragraphs: [
+                  'This hook keeps accessibility ids deterministic across the server-rendered and hydrated passes.',
+                ],
+                title: 'useIsomorphicId',
+              },
+              {
+                bullets: [
+                  '`withHydration(Component, config?)` takes the React component to wrap and an optional wrapper config.',
+                  '`config?.modifiers` adds wrapper classes. `config?.attributes` adds extra HTML attributes to the generated wrapper element.',
+                  'Returns a wrapped React component that serializes props and emits the matching `data-component={Component.displayName}` markup during SSR.',
                 ],
                 id: 'with-hydration-api',
                 paragraphs: [
@@ -5756,15 +5814,15 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  'Generates a unique string ID based on the parent hydration unit.',
-                  'Stable across server and client renders.',
-                  'Required for accessible forms and aria labels in hydrated islands.',
+                  '`withHydrationProvider(props, Component)` takes provider props plus the component to wrap.',
+                  '`props.componentId` defines the hydration unit id that should be exposed to the subtree.',
+                  'Returns a component already wrapped in `HydrationProvider`, which is useful for custom SSR pipelines and advanced composition.',
                 ],
-                id: 'use-isomorphic-id-api',
+                id: 'with-hydration-provider-api',
                 paragraphs: [
-                  'Use `useIsomorphicId` inside your interactive components to maintain DOM consistency between the initial static HTML and the later hydrated state.',
+                  'This helper is the low-level provider HOC. It is most useful when the hydration metadata already exists and you only need to reapply it around a component boundary.',
                 ],
-                title: 'useIsomorphicId',
+                title: 'withHydrationProvider',
               },
             ],
             eyebrow: 'Guides',
@@ -5944,6 +6002,73 @@ export const docsPackages: DocsPackage[] = [
           {
             blocks: [
               {
+                paragraphs: [
+                  'This package does not expose runtime functions. The public API is a small set of constants, types, and stylesheet entry points.',
+                ],
+                id: 'entry-points',
+                title: 'Entry points',
+              },
+              {
+                bullets: [
+                  '`ANIMATIONS` is the runtime constant export from the root package.',
+                  'It groups animation class names under `IN_OUT` and `FEEDBACK`, with nested categories such as `CAROUSEL`, `MOVE`, and `SCALE`.',
+                  'Use it when components should reference animation class names without hard-coded strings.',
+                ],
+                id: 'animations-constant',
+                paragraphs: [
+                  'This is the main JavaScript-facing API surface. It gives you a typed object tree for class names instead of requiring string literals throughout the app.',
+                ],
+                title: 'ANIMATIONS',
+              },
+              {
+                bullets: [
+                  '`AnimationName` is the exported union type of all values inside `ANIMATIONS`.',
+                  'Use it when props, helpers, or configuration objects should only accept valid animation class names.',
+                  'It stays in sync with the constant tree because the type is derived from `ANIMATIONS`.',
+                ],
+                id: 'animation-name-type',
+                paragraphs: [
+                  'This is the type-safe counterpart to the `ANIMATIONS` constant and the main TypeScript reference surface of the package.',
+                ],
+                title: 'AnimationName',
+              },
+              {
+                bullets: [
+                  'Import `@veams/css-animations/animations/*` when you want one specific animation stylesheet instead of the whole bundle.',
+                  'The package exports Sass subpaths for source-level composition and CSS subpaths for built styles.',
+                  'Use these subpaths when bundle size or stylesheet ownership matters more than one-shot convenience.',
+                ],
+                id: 'animations-subpath',
+                paragraphs: [
+                  'The wildcard animation subpath is the granular import surface of the package. It exists so teams can compose only the animations they actually ship.',
+                ],
+                title: 'animations/*',
+              },
+              {
+                bullets: [
+                  'Import `@veams/css-animations/index.css` when you want the compiled bundle directly.',
+                  'This is the quickest path for non-Sass setups or prototypes that just need the shipped CSS classes and keyframes.',
+                  'Use it when you do not need Sass composition or per-animation imports.',
+                ],
+                id: 'index-css-entry',
+                paragraphs: [
+                  'The compiled CSS entry is the plain-CSS distribution surface of the package.',
+                ],
+                title: 'index.css',
+              },
+              {
+                bullets: [
+                  'Import `@veams/css-animations/mixins` when Sass files should consume the package mixins directly.',
+                  'This is the entry point for shared animation mixins such as the feedback setup helpers.',
+                  'Use it when a project wants to compose package behavior into its own Sass architecture instead of only consuming compiled CSS.',
+                ],
+                id: 'mixins-entry',
+                paragraphs: [
+                  'The mixins entry is the composition-oriented Sass surface of the package.',
+                ],
+                title: 'mixins',
+              },
+              {
                 codeExamples: [
                   {
                     code: cssAnimationsVarsUsage,
@@ -5951,17 +6076,23 @@ export const docsPackages: DocsPackage[] = [
                     language: 'css',
                   },
                 ],
-                id: 'customization',
-                paragraphs: [
-                  'All animations are driven by CSS Custom Properties. You can override these in your `:root` or at a scoped level to change timing, easing, and colors without re-compiling any Sass.',
+                bullets: [
+                  'Import `@veams/css-animations/variables` when Sass files need the package variable definitions.',
+                  'The runtime CSS also respects the exposed custom properties, so values can be overridden in `:root` or a local scope.',
+                  'Use this entry when a team wants theming or timing overrides without forking the animation source.',
                 ],
-                title: 'Customization',
+                id: 'variables-entry',
+                paragraphs: [
+                  'The variables entry is the customization surface of the package. It is how you change timing, easing, or colors while staying on the supported public API.',
+                ],
+                title: 'variables',
               },
             ],
             eyebrow: 'Guides',
             id: 'api-reference',
-            intro: 'All animations are driven by customizable CSS Custom Properties.',
-            summary: 'Core variables and customization reference.',
+            intro:
+              'Use the root export for constants and types, then pick the stylesheet entry point that matches your build pipeline.',
+            summary: 'Constants, types, and style entry points.',
             title: 'API Reference',
           },
         ],
