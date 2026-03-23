@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   BrowserRouter,
   NavLink,
@@ -12,7 +12,6 @@ import {
 import { CodeBlock } from './components/CodeBlock';
 import {
   defaultPackage,
-  defaultPath,
   docsPackages,
   getFirstPage,
   getPackageDocs,
@@ -45,6 +44,14 @@ function renderInlineText(text: string): ReactNode {
 
     return <Fragment key={`${segment}-${index + 1}`}>{segment}</Fragment>;
   });
+}
+
+function getPackageNavStyle(accent: string): CSSProperties {
+  return {
+    '--package-accent': `var(--accent-${accent})`,
+    '--package-accent-soft': `var(--accent-${accent}-soft)`,
+    '--package-accent-ghost': `var(--accent-${accent}-ghost)`,
+  } as CSSProperties;
 }
 
 function ScrollManager() {
@@ -304,6 +311,7 @@ function DocsPage() {
               key={entry.id}
               className={({ isActive }) => `package-drawer-link${isActive ? ' is-active' : ''}`}
               onClick={() => setIsPackageNavOpen(false)}
+              style={getPackageNavStyle(entry.accent)}
               to={getPackagePath(entry.id, getFirstPage(entry).id)}
             >
               <span>{entry.title}</span>

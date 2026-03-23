@@ -28,6 +28,7 @@ export type FeatureCard = {
     | 'query-facade'
     | 'form-architecture'
     | 'form-ref-bridge'
+    | 'vent-card-publish'
     | 'partial-hydration-architecture'
     | 'css-animations-architecture'
     | 'status-quo-leaf';
@@ -39,6 +40,7 @@ export type LiveExampleId =
   | 'status-quo-composition-checklist'
   | 'status-quo-provider-wizard'
   | 'status-quo-selector-profile'
+  | 'vent-release-bus'
   | 'css-animations-showcase';
 
 export type ContentBlock = {
@@ -631,7 +633,7 @@ const statusQuoSelectorSingletonExample = `const [count] = useStateSingleton(
   (state) => state.count
 );`;
 
-const statusQuoNativeHandlerExample = `import { NativeStateHandler } from '@veams/status-quo';
+const _statusQuoNativeHandlerExample = `import { NativeStateHandler } from '@veams/status-quo';
 
 type CounterState = { count: number };
 type CounterActions = { increase: () => void };
@@ -1144,6 +1146,148 @@ const statusQuoQueryApiImports = `import {
   toQueryMetaState,
 } from '@veams/status-quo-query';`;
 
+const ventInstall = `npm install @veams/vent`;
+
+const ventQuickStart = `import createVent from '@veams/vent';
+
+type Events = 'release:queued' | 'release:clear';
+
+type ReleaseMessage = {
+  channel: 'docs' | 'ops' | 'ui';
+  text: string;
+};
+
+const vent = createVent<Events, ReleaseMessage>();
+
+vent.subscribe('release:queued', (payload) => {
+  console.log('queued for', payload.channel, payload.text);
+});
+
+vent.publish('release:queued', {
+  channel: 'docs',
+  text: 'Ship the package page before form.',
+});`;
+
+const ventReactImports = `import createVent from '@veams/vent';
+import {
+  VentProvider,
+  useVent,
+  useVentSubscribe,
+} from '@veams/vent/react';`;
+
+const ventReactQuickStart = `import createVent from '@veams/vent';
+import { VentProvider, useVent, useVentSubscribe } from '@veams/vent/react';
+
+type Events = 'release:queued' | 'release:clear';
+type ReleaseMessage = {
+  channel: 'docs' | 'ops' | 'ui';
+  text: string;
+};
+
+const vent = createVent<Events, ReleaseMessage>();
+
+function Composer() {
+  const eventBus = useVent<Events, ReleaseMessage>();
+
+  return (
+    <button
+      onClick={() =>
+        eventBus.publish('release:queued', {
+          channel: 'docs',
+          text: 'Ship the package page before form.',
+        })
+      }
+      type="button"
+    >
+      Publish
+    </button>
+  );
+}
+
+function Feed() {
+  useVentSubscribe<Events, ReleaseMessage>('release:queued', (payload) => {
+    console.log(payload.text);
+  });
+
+  return null;
+}
+
+function App() {
+  return (
+    <VentProvider instance={vent}>
+      <Composer />
+      <Feed />
+    </VentProvider>
+  );
+}`;
+
+const ventPluginSetup = `import Veams from '@veams/core';
+import VentPlugin from '@veams/vent/plugin';
+
+Veams.onInitialize(() => {
+  Veams.use(VentPlugin, {
+    furtherEvents: {
+      'release:queued': 'release:queued',
+      'release:clear': 'release:clear',
+    },
+  });
+});`;
+
+const ventExampleSetup = `import createVent from '@veams/vent';
+import { VentProvider } from '@veams/vent/react';
+
+type EventTopic = 'release:queued' | 'release:clear';
+type ReleaseMessage = {
+  channel: 'docs' | 'ops' | 'ui';
+  text: string;
+};
+
+const vent = createVent<EventTopic, ReleaseMessage>();
+
+function App() {
+  return <VentProvider instance={vent}>{/* children */}</VentProvider>;
+}`;
+
+const ventExampleSubscribers = `import { useVent, useVentSubscribe } from '@veams/vent/react';
+
+function Composer() {
+  const vent = useVent<'release:queued' | 'release:clear', ReleaseMessage>();
+
+  return (
+    <button
+      onClick={() =>
+        vent.publish('release:queued', {
+          channel: 'ops',
+          text: 'Queue the rollout.',
+        })
+      }
+      type="button"
+    >
+      Publish event
+    </button>
+  );
+}
+
+function Metrics() {
+  useVentSubscribe<'release:queued' | 'release:clear', ReleaseMessage>(
+    'release:queued',
+    (payload) => {
+      console.log('metrics update', payload.channel);
+    }
+  );
+
+  return null;
+}`;
+
+const ventOverviewCards: FeatureCard[] = [
+  {
+    description:
+      'One card can publish a typed event, another card can react to it independently. Vent keeps that collaboration explicit without turning the event flow into shared state ownership.',
+    title: 'Publish here, react there',
+    visual: 'vent-card-publish',
+  },
+];
+
 const statusQuoPhilosophyCards: FeatureCard[] = [
   {
     description:
@@ -1550,7 +1694,7 @@ const partialHydrationLazyExample = `const hydration = createHydration({
   }
 });`;
 
-const partialHydrationHocExample = `import { withHydration } from '@veams/partial-hydration/react';
+const _partialHydrationHocExample = `import { withHydration } from '@veams/partial-hydration/react';
 
 // Wrap your component to enable partial hydration metadata.
 // This will serialize props into the HTML during SSR.
@@ -1641,7 +1785,7 @@ const hydration = createHydration({
 // Start the hydration engine
 hydration.init(document);`;
 
-const partialHydrationIsomorphicIdExample = `import { useIsomorphicId } from '@veams/partial-hydration/react';
+const _partialHydrationIsomorphicIdExample = `import { useIsomorphicId } from '@veams/partial-hydration/react';
 
 function MyField() {
   // Generates an ID that is stable across server and client.
@@ -2216,7 +2360,7 @@ import {
   useUncontrolledField,
 } from '@veams/form/react';`;
 
-const cssAnimationsInstall = `npm install @veams/css-animations`;
+const _cssAnimationsInstall = `npm install @veams/css-animations`;
 
 const cssAnimationsScssUsage = `// Import the full bundle (variables, mixins, and all animations)
 @import "@veams/css-animations";
@@ -2297,6 +2441,13 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 description:
+                  'A typed publish/subscribe bus with optional React bindings for provider-scoped subscriptions.',
+                link: '/packages/vent/overview',
+                title: 'Vent',
+                visual: 'vent-card-publish',
+              },
+              {
+                description:
                   'Generic form state engine with optional React bindings for high-performance uncontrolled inputs.',
                 link: '/packages/form/overview',
                 title: 'Form',
@@ -2332,7 +2483,7 @@ export const docsPackages: DocsPackage[] = [
     title: 'Ecosystem',
   },
   {
-    accent: 'teal',
+    accent: 'graphite',
     description: 'Structure and scale without the noise.',
     id: 'methodology',
     sections: [
@@ -4389,6 +4540,287 @@ export const docsPackages: DocsPackage[] = [
     title: 'Status Quo Query',
   },
   {
+    accent: 'ochre',
+    description:
+      'Typed publish/subscribe events with a narrow React provider layer for UI-scoped subscriptions.',
+    githubPath: 'packages/vent',
+    id: 'vent',
+    npm: '@veams/vent',
+    sections: [
+      {
+        id: 'getting-started',
+        pages: [
+          {
+            blocks: [
+              {
+                featureCards: ventOverviewCards,
+                id: 'overview-shape',
+                paragraphs: [
+                  'Vent is the smallest coordination layer in the VEAMS ecosystem: publish an event, let interested consumers react, and keep ownership local instead of building another shared mutable state surface.',
+                ],
+                title: 'Keep event boundaries explicit',
+              },
+              {
+                bullets: [
+                  'Use the root package for the event bus itself.',
+                  'Use `@veams/vent/react` only when React should manage subscription lifecycle.',
+                ],
+                id: 'entries',
+                paragraphs: [
+                  'The package surface stays intentionally narrow. Most consumers only need the root bus and, in React applications, the provider-based subscription layer.',
+                ],
+                title: 'Three small entry points',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            heroBullets: [
+              'Typed topics and payloads over a tiny publish/subscribe core.',
+              'Optional React bindings for provider-scoped subscriptions.',
+              'A simple event boundary when a store would be heavier than the problem.',
+            ],
+            heroParagraphs: [
+              'Vent gives you a focused event bus when one part of the app needs to signal another part without sharing state ownership. It is useful for transient coordination such as notifications, orchestration signals, and integration boundaries where a store would be heavier than the actual problem.',
+            ],
+            id: 'overview',
+            intro:
+              'Start with the root event bus, then add React bindings only when the component tree needs one shared instance.',
+            summary: 'A narrow event bus for decoupled coordination.',
+            title: 'Overview',
+          },
+          {
+            blocks: [
+              {
+                bullets: [
+                  'Events represent something that happened, not long-lived state.',
+                  'Publishers should not know which subscribers exist.',
+                  'Subscribers can be replaced, added, or removed without changing the publisher flow.',
+                ],
+                id: 'event-model',
+                paragraphs: [
+                  'Vent works best for transient coordination. If the value itself must remain readable and derivable over time, use a state handler. If the important thing is that something happened and multiple listeners may react, an event bus is the simpler fit.',
+                ],
+                title: 'Choose events for transient coordination',
+              },
+              {
+                bullets: [
+                  'Use one event bus per feature boundary when possible.',
+                  'Keep topic names explicit, usually namespaced by feature or workflow.',
+                  'Prefer typed payloads over `any` so event contracts stay readable.',
+                ],
+                id: 'contracts',
+                paragraphs: [
+                  'A good Vent setup is intentionally boring: one clear topic vocabulary, payloads that describe the event data, and subscribers that only do their own work after the event is emitted.',
+                ],
+                title: 'Treat topics as contracts',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            id: 'concepts',
+            intro:
+              'Use Vent when coordination should stay decoupled and short-lived, not when you need another source of durable state.',
+            summary: 'Events for signals, state for ownership.',
+            title: 'Concepts',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: `import createVent from '@veams/vent';`,
+                    label: 'Framework-agnostic root',
+                    language: 'ts',
+                  },
+                  {
+                    code: ventReactImports,
+                    label: 'Optional React entry',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  'The root package is framework-agnostic and owns the bus.',
+                  'React bindings live under `@veams/vent/react`.',
+                ],
+                id: 'framework-support',
+                paragraphs: [
+                  'Vent keeps integration layers at the edge. React does not own the event model; it only helps subscribe and provide one shared instance in a component subtree.',
+                ],
+                title: 'Keep integration surfaces separate',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            id: 'framework-support',
+            intro:
+              'Use the root API everywhere, then add the React subpath only where the component tree needs provider-based subscriptions.',
+            summary: 'Generic root, optional React layer.',
+            title: 'Framework Support',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: ventInstall,
+                    label: 'Install',
+                    language: 'bash',
+                  },
+                ],
+                id: 'install',
+                paragraphs: [
+                  'Install the package once. The React entrypoint is exposed as a subpath, so there is no separate React package to add.',
+                ],
+                title: 'Install the package',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            id: 'installation',
+            intro: 'Add the package, then pick the entrypoint that matches your runtime boundary.',
+            summary: 'One package, multiple narrow surfaces.',
+            title: 'Installation',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: ventQuickStart,
+                    label: 'Typed root event bus',
+                    language: 'ts',
+                  },
+                  {
+                    code: ventReactQuickStart,
+                    label: 'React provider and subscriber',
+                    language: 'tsx',
+                  },
+                ],
+                id: 'first-flow',
+                paragraphs: [
+                  'The quickest path is one event type, one publisher, and one subscriber. From there, React can host the shared bus with a provider if multiple components need to participate in the same event flow.',
+                ],
+                title: 'Publish once, react in multiple places',
+              },
+            ],
+            eyebrow: 'Getting Started',
+            id: 'quick-start',
+            intro:
+              'Create the bus, subscribe to a topic, and publish a typed payload. Add the React provider only when multiple components need the same instance.',
+            summary: 'A minimal event bus with optional React scope.',
+            title: 'Quick Start',
+          },
+        ],
+        title: 'Getting Started',
+      },
+      {
+        id: 'api',
+        pages: [
+          {
+            blocks: [
+              {
+                bullets: [
+                  'Creates one event handler instance.',
+                  'Supports typed topics and typed payloads.',
+                  'Returns the `publish`, `subscribe`, and `unsubscribe` surface plus aliases.',
+                ],
+                id: 'create-event-handling',
+                paragraphs: [
+                  'Use `createEventHandling()` from the root package when you want a plain event bus with no framework dependency. This is the primary entrypoint for Vent.',
+                ],
+                title: 'createEventHandling',
+              },
+              {
+                bullets: [
+                  '`publish(topic, data?, scope?)` emits an event.',
+                  '`subscribe(topic, callback)` registers one callback for one or multiple space-separated topics.',
+                  '`unsubscribe(topic, callback, completely?)` removes callback registrations from one or multiple topics.',
+                  'Aliases are `trigger`, `on`, and `off`.',
+                ],
+                id: 'event-handler',
+                paragraphs: [
+                  'The `EventHandler` API stays intentionally small. It only deals with event publishing and subscription lifecycle. There is no state snapshot layer in this package.',
+                ],
+                title: 'EventHandler',
+              },
+              {
+                bullets: [
+                  '`VentProvider` shares one event bus through React context.',
+                  '`useVent()` reads the current bus instance.',
+                  '`useVentSubscribe(topic, callback)` subscribes in an effect and cleans up automatically.',
+                ],
+                id: 'react-api',
+                paragraphs: [
+                  'The React subpath is intentionally narrow. It exists to host one shared bus and make subscription cleanup automatic inside components. It does not add selectors, state caching, or a second abstraction on top of the event model.',
+                ],
+                title: 'React API',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: ventPluginSetup,
+                    label: 'Plugin entry',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  'Import from `@veams/vent/plugin`.',
+                  'Attaches `Veams.Vent` and merges additional topics into `Veams.EVENTS`.',
+                  'Keeps plugin-specific behavior out of the root package surface.',
+                ],
+                id: 'plugin-api',
+                paragraphs: [
+                  'Use the plugin entry when your runtime already revolves around Veams and you want the bus attached there. The plugin remains a separate concern so the root package stays generic.',
+                ],
+                title: 'Plugin API',
+              },
+            ],
+            eyebrow: 'API',
+            id: 'api',
+            intro:
+              'The public surface is split into one generic event bus, one narrow React entry, and one separate plugin entry.',
+            summary: 'Everything the package exposes, without extra layers.',
+            title: 'API',
+          },
+        ],
+        title: 'API',
+      },
+      {
+        id: 'examples',
+        pages: [
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: ventExampleSetup,
+                    label: 'Provider setup',
+                    language: 'tsx',
+                  },
+                  {
+                    code: ventExampleSubscribers,
+                    label: 'Publisher and subscriber roles',
+                    language: 'tsx',
+                  },
+                ],
+                id: 'release-bus',
+                liveExample: 'vent-release-bus',
+                paragraphs: [
+                  'This example shows the intended React shape: one provider-scoped bus, one publisher, and multiple subscribers that update independently from the same event stream.',
+                ],
+                title: 'Provider-scoped release bus',
+              },
+            ],
+            eyebrow: 'Examples',
+            id: 'example-release-bus',
+            intro:
+              'Use one shared Vent instance in a subtree when several components should react to the same transient workflow events.',
+            summary: 'A real event bus with decoupled React subscribers.',
+            title: 'Provider-scoped release bus',
+          },
+        ],
+        title: 'Examples',
+      },
+    ],
+    title: 'Vent',
+  },
+  {
     accent: 'violet',
     description:
       'Generic form state over Status Quo, with optional React bindings for native and controlled fields.',
@@ -5526,7 +5958,7 @@ export const docsPackages: DocsPackage[] = [
             blocks: [
               {
                 id: 'showcase',
-                liveExample: 'css-animations-showcase' as any,
+                liveExample: 'css-animations-showcase',
                 paragraphs: [
                   'Interact with all available animations in this showcase. Hit the button next to each animation name to see it in action on the preview element.',
                 ],

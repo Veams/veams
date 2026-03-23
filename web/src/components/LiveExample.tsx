@@ -14,6 +14,8 @@ import {
   useStateSubscription,
 } from '@veams/status-quo/react';
 import { ANIMATIONS, type AnimationName } from '@veams/css-animations';
+import createVent from '@veams/vent';
+import { VentProvider, useVent, useVentSubscribe } from '@veams/vent/react';
 import { useState, useRef, type ReactNode } from 'react';
 
 import { CodeBlock } from './CodeBlock';
@@ -23,6 +25,15 @@ import type { CodeExample, LiveExampleId } from '../content/site';
 type LiveExampleProps = {
   id: LiveExampleId;
   sourceExamples?: CodeExample[];
+};
+
+type ReleaseChannel = 'docs' | 'ops' | 'ui';
+
+type VentExampleTopic = 'release:queued' | 'release:clear';
+
+type VentMessage = {
+  channel: ReleaseChannel;
+  text: string;
 };
 
 function ExampleChrome({
@@ -677,6 +688,169 @@ function SelectorProfileExample() {
   );
 }
 
+const ventChannelLabels: Record<ReleaseChannel, string> = {
+  docs: 'Docs',
+  ops: 'Ops',
+  ui: 'UI',
+};
+
+function VentComposerCard() {
+  const vent = useVent<VentExampleTopic, VentMessage>();
+  const [channel, setChannel] = useState<ReleaseChannel>('docs');
+  const [message, setMessage] = useState('Ship the Vent docs page before the form package.');
+
+  const publish = () => {
+    const trimmedMessage = message.trim();
+
+    if (!trimmedMessage) {
+      return;
+    }
+
+    vent.publish('release:queued', {
+      channel,
+      text: trimmedMessage,
+    });
+  };
+
+  return (
+    <ExampleCard title="Publisher">
+      <div className="example-chip-row">
+        {(Object.keys(ventChannelLabels) as ReleaseChannel[]).map((entry) => (
+          <ChipButton
+            active={channel === entry}
+            key={entry}
+            onClick={() => setChannel(entry)}
+          >
+            {ventChannelLabels[entry]}
+          </ChipButton>
+        ))}
+      </div>
+      <label className="example-field">
+        <span>Message</span>
+        <textarea
+          onChange={(event) => setMessage(event.target.value)}
+          rows={4}
+          value={message}
+        />
+      </label>
+      <div className="example-counter-actions">
+        <button onClick={publish} type="button">
+          Publish event
+        </button>
+        <button
+          onClick={() => {
+            vent.publish('release:clear', {
+              channel,
+              text: '',
+            });
+          }}
+          type="button"
+        >
+          Clear subscribers
+        </button>
+      </div>
+      <p className="example-note-copy">
+        This card only publishes events. It never touches subscriber state directly.
+      </p>
+    </ExampleCard>
+  );
+}
+
+function VentActivityCard() {
+  const [entries, setEntries] = useState<VentMessage[]>([]);
+
+  useVentSubscribe<VentExampleTopic, VentMessage>('release:queued', (payload) => {
+    setEntries((currentEntries) => [payload, ...currentEntries].slice(0, 4));
+  });
+
+  useVentSubscribe<VentExampleTopic, VentMessage>('release:clear', () => {
+    setEntries([]);
+  });
+
+  return (
+    <ExampleCard title="Activity feed">
+      {entries.length > 0 ? (
+        <div className="content-stack">
+          {entries.map((entry, index) => (
+            <div className="example-stat" key={`${entry.channel}-${entry.text}-${index + 1}`}>
+              <span>{ventChannelLabels[entry.channel]}</span>
+              <strong>{entry.text}</strong>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="example-note-copy">
+          Publish an event to see independent subscribers react.
+        </p>
+      )}
+    </ExampleCard>
+  );
+}
+
+function VentMetricsCard() {
+  const [metrics, setMetrics] = useState<Record<ReleaseChannel, number>>({
+    docs: 0,
+    ops: 0,
+    ui: 0,
+  });
+
+  useVentSubscribe<VentExampleTopic, VentMessage>('release:queued', (payload) => {
+    setMetrics((currentMetrics) => ({
+      ...currentMetrics,
+      [payload.channel]: currentMetrics[payload.channel] + 1,
+    }));
+  });
+
+  useVentSubscribe<VentExampleTopic, VentMessage>('release:clear', () => {
+    setMetrics({
+      docs: 0,
+      ops: 0,
+      ui: 0,
+    });
+  });
+
+  const total = metrics.docs + metrics.ops + metrics.ui;
+  const busiestChannel = (Object.entries(metrics) as Array<[ReleaseChannel, number]>).sort(
+    (current, next) => next[1] - current[1]
+  )[0];
+
+  return (
+    <ExampleCard title="Independent subscriber">
+      <StatGrid
+        items={[
+          { label: 'Total', value: String(total) },
+          { label: 'Docs', value: String(metrics.docs) },
+          { label: 'Ops', value: String(metrics.ops) },
+          { label: 'UI', value: String(metrics.ui) },
+        ]}
+      />
+      <RenderMeta
+        detail="Busiest channel"
+        value={busiestChannel[1] > 0 ? ventChannelLabels[busiestChannel[0]] : 'none'}
+      />
+      <p className="example-note-copy">
+        Metrics update from the same events without coupling to the feed.
+      </p>
+    </ExampleCard>
+  );
+}
+
+function VentReleaseBusExample() {
+  const [vent] = useState(() => createVent<VentExampleTopic, VentMessage>());
+
+  return (
+    <ExampleChrome eyebrow="Working Example" title="One publisher, multiple decoupled subscribers">
+      <VentProvider instance={vent}>
+        <div className="example-counter-layout example-two-column-layout">
+          <VentComposerCard />
+          <VentActivityCard />
+        </div>
+        <VentMetricsCard />
+      </VentProvider>
+    </ExampleChrome>
+  );
+}
+
 function CssAnimationsShowcase() {
   const [activeAnimation, setActiveAnimation] = useState<AnimationName | null>(null);
   const [isAnimating, setIsAnimated] = useState(false);
@@ -688,7 +862,7 @@ function CssAnimationsShowcase() {
     setTimeout(() => setIsAnimated(true), 10);
   };
 
-  const renderButtons = (category: any) => {
+  const renderButtons = (category: Record<string, unknown> | undefined) => {
     if (!category) return null;
     return Object.entries(category).map(([key, value]) => {
       if (typeof value === 'string') {
@@ -919,7 +1093,10 @@ export function LiveExample({ id, sourceExamples }: LiveExampleProps) {
     case 'status-quo-selector-profile':
       preview = <SelectorProfileExample />;
       break;
-    case 'css-animations-showcase' as any:
+    case 'vent-release-bus':
+      preview = <VentReleaseBusExample />;
+      break;
+    case 'css-animations-showcase':
       preview = <CssAnimationsShowcase />;
       break;
   }

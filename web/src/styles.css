@@ -17,12 +17,18 @@
   --accent-ocean: #4677d8;
   --accent-ocean-soft: #e6edff;
   --accent-ocean-ghost: rgba(70, 119, 216, 0.18);
+  --accent-graphite: #1f232b;
+  --accent-graphite-soft: #e9ebee;
+  --accent-graphite-ghost: rgba(31, 35, 43, 0.16);
   --accent-teal: #1f8b8f;
   --accent-teal-soft: #e2f4f2;
   --accent-teal-ghost: rgba(31, 139, 143, 0.18);
   --accent-forest: #2d8a44;
   --accent-forest-soft: #eaf5ee;
   --accent-forest-ghost: rgba(45, 138, 68, 0.18);
+  --accent-ochre: #b88d00;
+  --accent-ochre-soft: #fbf3cf;
+  --accent-ochre-ghost: rgba(184, 141, 0, 0.2);
   --accent-pink: #d12d69;
   --accent-pink-soft: #fbeaf1;
   --accent-pink-ghost: rgba(209, 45, 105, 0.18);
@@ -96,6 +102,12 @@ button {
   --accent-ghost: var(--accent-ocean-ghost);
 }
 
+.accent-graphite {
+  --accent: var(--accent-graphite);
+  --accent-soft: var(--accent-graphite-soft);
+  --accent-ghost: var(--accent-graphite-ghost);
+}
+
 .accent-teal {
   --accent: var(--accent-teal);
   --accent-soft: var(--accent-teal-soft);
@@ -112,6 +124,12 @@ button {
   --accent: var(--accent-forest);
   --accent-soft: var(--accent-forest-soft);
   --accent-ghost: var(--accent-forest-ghost);
+}
+
+.accent-ochre {
+  --accent: var(--accent-ochre);
+  --accent-soft: var(--accent-ochre-soft);
+  --accent-ghost: var(--accent-ochre-ghost);
 }
 
 .accent-pink {
@@ -298,12 +316,15 @@ button {
 }
 
 .package-drawer-link {
+  --package-accent: var(--accent);
+  --package-accent-soft: var(--accent-soft);
+  --package-accent-ghost: var(--accent-ghost);
   display: grid;
   gap: 0.4rem;
   padding: 1.2rem 1.4rem;
   border: 1px solid transparent;
   background: rgba(255, 255, 255, 0.72);
-  color: var(--accent);
+  color: var(--package-accent);
   text-decoration: none;
   transition:
     background-color 0.2s ease,
@@ -313,9 +334,10 @@ button {
 
 .package-drawer-link:hover,
 .package-drawer-link.is-active {
-  border-color: var(--border);
+  border-color: color-mix(in srgb, var(--package-accent) 32%, var(--border));
   background: #ffffff;
-  color: #1a383a;
+  color: var(--package-accent);
+  box-shadow: inset 0 0 0 999px var(--package-accent-ghost);
 }
 
 .package-drawer-link span {
@@ -326,7 +348,7 @@ button {
 }
 
 .package-drawer-link small {
-  color: var(--muted);
+  color: color-mix(in srgb, var(--package-accent) 58%, var(--muted));
   line-height: 1.45;
 }
 
@@ -1245,6 +1267,10 @@ button {
   object-fit: contain;
 }
 
+.concept-illustration-vent-card-publish {
+  width: 100%;
+}
+
 .concept-card-body {
   display: grid;
   gap: 1.2rem;
@@ -1640,3 +1666,8 @@ button {
   }
 }
 
+@media (min-width: 761px) {
+  .concept-illustration-vent-card-publish {
+    width: 70%;
+  }
+}

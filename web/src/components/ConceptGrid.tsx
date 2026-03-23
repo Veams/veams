@@ -9,7 +9,11 @@ function ConceptIllustration({ visual }: Pick<FeatureCard, 'visual'>) {
   switch (visual) {
     case 'swap-engine':
       return (
-        <svg aria-hidden="true" className="concept-illustration" viewBox="0 0 320 180">
+        <svg
+          aria-hidden="true"
+          className="concept-illustration concept-illustration-vent-card-publish"
+          viewBox="0 0 320 180"
+        >
           <rect
             fill="rgba(30, 37, 49, 0.96)"
             height="128"
@@ -317,6 +321,69 @@ function ConceptIllustration({ visual }: Pick<FeatureCard, 'visual'>) {
             strokeLinecap="round"
             strokeWidth="4"
           />
+        </svg>
+      );
+    case 'vent-card-publish':
+      return (
+        <svg
+          aria-hidden="true"
+          className="concept-illustration concept-illustration-vent-card-publish"
+          viewBox="0 0 320 180"
+        >
+          <rect
+            fill="rgba(30, 37, 49, 0.96)"
+            height="112"
+            rx="18"
+            stroke="var(--accent)"
+            strokeWidth="2"
+            width="108"
+            x="28"
+            y="34"
+          />
+          <text fill="var(--accent)" fontFamily="var(--font-mono)" fontSize="11" x="48" y="58">
+            Publisher
+          </text>
+          <rect fill="var(--accent-ghost)" height="14" rx="7" width="64" x="50" y="72" />
+          <rect fill="var(--visual-white-soft)" height="18" rx="9" width="72" x="46" y="102" />
+          <text fill="var(--visual-panel)" fontFamily="var(--font-mono)" fontSize="9" x="58" y="115">
+            publish()
+          </text>
+
+          <rect
+            fill="rgba(34, 41, 56, 0.98)"
+            height="112"
+            rx="18"
+            stroke="var(--visual-slate)"
+            strokeWidth="2"
+            width="108"
+            x="196"
+            y="34"
+          />
+          <text fill="var(--visual-slate)" fontFamily="var(--font-mono)" fontSize="11" x="214" y="58">
+            Subscriber
+          </text>
+          <rect fill="var(--visual-blue-dim)" height="14" rx="7" width="64" x="218" y="72" />
+          <rect fill="var(--visual-orange)" height="18" rx="9" width="72" x="214" y="102" />
+          <text fill="var(--visual-panel)" fontFamily="var(--font-mono)" fontSize="9" x="226" y="115">
+            on event
+          </text>
+          <path
+            d="M136 90 H196"
+            fill="none"
+            stroke="var(--visual-white)"
+            strokeLinecap="round"
+            strokeWidth="4"
+          />
+          <path
+            d="M180 74 L196 90 L180 106"
+            fill="none"
+            stroke="var(--visual-white)"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="4"
+          />
+          <rect fill="var(--accent)" height="8" rx="4" width="28" x="152" y="72" />
+          <rect fill="var(--accent)" height="8" rx="4" width="20" x="164" y="102" />
         </svg>
       );
     case 'methodology-regions':

@@ -13,6 +13,7 @@
   "dependencies": {
     "@veams/css-animations": "file:../packages/css-animations",
     "@veams/status-quo": "file:../packages/status-quo",
+    "@veams/vent": "file:../packages/vent",
     "prism-react-renderer": "^2.4.1",
     "prismjs": "^1.30.0",
     "react": "19.2.4",
