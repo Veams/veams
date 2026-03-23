@@ -1,6 +1,6 @@
 {
   "name": "@veams/vent",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "Vent is a simple publish and subscribe system you can use to communicate between modules independently",
   "main": "dist/index.js",
   "module": "dist/index.js",
