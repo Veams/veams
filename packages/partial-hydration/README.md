@@ -43,7 +43,7 @@ React entrypoint:
 
 1. Server rendering emits static HTML for an interactive island.
 2. Serialized props are stored in a nearby `<script type="application/hydration-data">`.
-3. The client scans the DOM, matches wrappers via `data-component`, and activates them when their trigger fires.
+3. The client scans the DOM for `[data-component]`, uses that value to look up the registered component, and activates it when its trigger fires.
 
 The core stays framework-neutral. You decide how rendering happens in the `render()` callback.
 
@@ -61,8 +61,12 @@ type NewsletterProps = {
   title: string;
 };
 
+NewsletterForm.displayName = 'NewsletterForm';
+
 const hydration = createHydration({
   components: {
+    // The key must match the wrapper's data-component value.
+    // When using withHydration(), that value comes from Component.displayName.
     NewsletterForm: {
       Component: NewsletterForm,
       on: 'in-viewport',
@@ -126,8 +130,10 @@ export const HydratedNewsletterForm = withHydration(NewsletterForm, {
 `withHydration()` does three things:
 
 - serializes props into a script tag
-- adds a wrapper with `data-component` and `data-internal-id`
+- adds a wrapper with `data-component={Component.displayName}` and `data-internal-id`
 - injects `HydrationProvider` so `useIsomorphicId()` stays stable inside the hydrated subtree
+
+That means the client-side registration key in `createHydration({ components })` must match the wrapped component's `displayName`.
 
 ## Generated DOM Shape
 
@@ -143,6 +149,8 @@ The client-side loader expects this structure:
   class="island island-newsletter"
 ></div>
 ```
+
+`data-component="NewsletterForm"` is the primary lookup value. The hydration engine uses it to find `components.NewsletterForm` on the client.
 
 If the script is moved away from the wrapper before hydration, the package can still reconnect both nodes through `data-internal-ref` and `data-internal-id`.
 
@@ -160,6 +168,7 @@ type ChartProps = {
 
 const hydration = createHydration({
   components: {
+    // Must match the wrapper's data-component value in the DOM.
     HeavyChart: {
       Component: () => import('./HeavyChart'),
       on: 'in-viewport',
@@ -186,7 +195,7 @@ hydration.init(document);
 
 ## Important Constraints
 
-- React components wrapped with `withHydration()` should have a stable `displayName`.
+- React components wrapped with `withHydration()` must have a stable `displayName`. It is written to `data-component` and used for client-side matching.
 - Props must be serializable to JSON.
 - The root package is framework-agnostic. React-specific helpers only live under `@veams/partial-hydration/react`.
 

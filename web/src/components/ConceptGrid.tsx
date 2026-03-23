@@ -1150,6 +1150,143 @@ function ConceptIllustration({ visual }: Pick<FeatureCard, 'visual'>) {
           />
         </svg>
       );
+    case 'partial-hydration-triggers':
+      return (
+        <svg aria-hidden="true" className="concept-illustration" viewBox="0 0 320 125">
+          <rect
+            fill="rgba(30, 37, 49, 0.96)"
+            height="90"
+            rx="6"
+            stroke="var(--visual-slate)"
+            strokeDasharray="2 2"
+            strokeWidth="1"
+            width="110"
+            x="18"
+            y="18"
+          />
+          <text fill="var(--visual-white)" fontFamily="var(--font-mono)" fontSize="8" x="28" y="34">
+            components
+          </text>
+          <rect
+            fill="rgba(31, 139, 143, 0.18)"
+            height="22"
+            rx="4"
+            stroke="var(--accent-teal)"
+            strokeWidth="1.5"
+            width="90"
+            x="28"
+            y="42"
+          />
+          <text fill="var(--accent-teal)" fontFamily="var(--font-mono)" fontSize="7" x="36" y="56">
+            Navigation
+          </text>
+          <text fill="var(--visual-white)" fontFamily="var(--font-body)" fontSize="6" x="36" y="63">
+            on: init
+          </text>
+          <rect
+            fill="rgba(242, 145, 61, 0.18)"
+            height="22"
+            rx="4"
+            stroke="var(--visual-orange)"
+            strokeWidth="1.5"
+            width="90"
+            x="28"
+            y="72"
+          />
+          <text fill="var(--visual-orange)" fontFamily="var(--font-mono)" fontSize="7" x="36" y="86">
+            SearchFilter
+          </text>
+          <text fill="var(--visual-white)" fontFamily="var(--font-body)" fontSize="6" x="36" y="93">
+            on: in-viewport
+          </text>
+
+          <path
+            d="M128 53 H168"
+            fill="none"
+            stroke="var(--accent-teal)"
+            strokeLinecap="round"
+            strokeWidth="2"
+          />
+          <path d="M168 53 L160 49 M168 53 L160 57" fill="none" stroke="var(--accent-teal)" strokeWidth="2" />
+          <path
+            d="M128 83 H168"
+            fill="none"
+            stroke="var(--visual-orange)"
+            strokeLinecap="round"
+            strokeWidth="2"
+          />
+          <path d="M168 83 L160 79 M168 83 L160 87" fill="none" stroke="var(--visual-orange)" strokeWidth="2" />
+
+          <rect
+            fill="rgba(255, 255, 255, 0.04)"
+            height="90"
+            rx="6"
+            stroke="var(--visual-slate)"
+            strokeWidth="1"
+            width="126"
+            x="176"
+            y="18"
+          />
+          <text fill="var(--visual-white)" fontFamily="var(--font-mono)" fontSize="8" x="186" y="34">
+            DOM wrappers
+          </text>
+          <rect
+            fill="rgba(255, 255, 255, 0.05)"
+            height="24"
+            rx="4"
+            stroke="var(--visual-slate)"
+            strokeWidth="1"
+            width="106"
+            x="186"
+            y="42"
+          />
+          <text fill="var(--visual-white)" fontFamily="var(--font-body)" fontSize="6.5" x="194" y="52">
+            data-component=
+          </text>
+          <text fill="var(--accent-teal)" fontFamily="var(--font-mono)" fontSize="6.5" x="194" y="61">
+            "Navigation"
+          </text>
+          <rect
+            fill="rgba(255, 255, 255, 0.05)"
+            height="24"
+            rx="4"
+            stroke="var(--visual-slate)"
+            strokeWidth="1"
+            width="106"
+            x="186"
+            y="72"
+          />
+          <text fill="var(--visual-white)" fontFamily="var(--font-body)" fontSize="6.5" x="194" y="82">
+            data-component=
+          </text>
+          <text fill="var(--visual-orange)" fontFamily="var(--font-mono)" fontSize="6.5" x="194" y="91">
+            "SearchFilter"
+          </text>
+
+          <rect
+            fill="var(--accent-teal)"
+            height="12"
+            rx="6"
+            width="34"
+            x="214"
+            y="8"
+          />
+          <text fill="var(--visual-white)" fontFamily="var(--font-mono)" fontSize="6" textAnchor="middle" x="231" y="16">
+            init
+          </text>
+          <rect
+            fill="var(--visual-orange)"
+            height="12"
+            rx="6"
+            width="58"
+            x="248"
+            y="8"
+          />
+          <text fill="rgba(30, 37, 49, 0.96)" fontFamily="var(--font-mono)" fontSize="6" textAnchor="middle" x="277" y="16">
+            in-viewport
+          </text>
+        </svg>
+      );
     case 'status-quo-leaf':
       return (
         <svg aria-hidden="true" className="concept-illustration" viewBox="0 0 320 125">

@@ -30,6 +30,7 @@ export type FeatureCard = {
     | 'form-ref-bridge'
     | 'vent-card-publish'
     | 'partial-hydration-architecture'
+    | 'partial-hydration-triggers'
     | 'css-animations-architecture'
     | 'status-quo-leaf';
 };
@@ -1624,34 +1625,35 @@ const formFrameworkReactImports = `import {
 const partialHydrationInstall = `npm install @veams/partial-hydration`;
 
 const partialHydrationQuickStart = `import { createHydration } from '@veams/partial-hydration';
-import { createRoot } from 'react-dom/client';
+import { hydrateRoot } from 'react-dom/client';
 
 // A simple React component
 function Navigation({ title }: { title: string }) {
   return <nav><h1>{title}</h1></nav>;
 }
 
+Navigation.displayName = 'Navigation';
+
 const hydration = createHydration({
   components: {
-    // Non-lazy: Initialize critical UI immediately
+    // Key must match the wrapper's data-component value.
+    // When using withHydration(), that value comes from Component.displayName.
     Navigation: {
       Component: Navigation,
       on: 'init',
       render: (Component, props, el) => {
-        const root = createRoot(el);
-        root.render(<Component {...props} />);
+        hydrateRoot(el, <Component {...props} />);
       }
     },
     // Lazy: Load non-critical UI only when it enters the viewport
-    MyLazyComponent: {
-      Component: () => import('./MyLazyComponent'),
+    HeavyChart: {
+      Component: () => import('./HeavyChart'),
       on: 'in-viewport',
       render: async (Loader, props, el) => {
         const mod = await Loader();
         const Component = mod.default;
-        
-        const root = createRoot(el);
-        root.render(<Component {...props} />);
+
+        hydrateRoot(el, <Component {...props} />);
       }
     }
   }
@@ -1665,7 +1667,7 @@ const partialHydrationDomExample = `<!-- The encoded props are placed immediatel
   {"items":["Home","About"]}
 </script>
 
-<!-- The client-side engine uses these attributes to locate and mount the component -->
+<!-- data-component is the primary lookup attribute on the client -->
 <div 
   data-component="Navigation" 
   data-internal-id="Navigation-1234abcd" 
@@ -1677,18 +1679,18 @@ const partialHydrationDomExample = `<!-- The encoded props are placed immediatel
 
 const partialHydrationLazyExample = `const hydration = createHydration({
   components: {
-    MyLazyComponent: {
+    // Must match the wrapper's data-component value.
+    HeavyChart: {
       // Return a dynamic import instead of the component itself
-      Component: () => import('./MyLazyComponent'),
+      Component: () => import('./HeavyChart'),
       on: 'in-viewport',
       render: async (Loader, props, el) => {
         // Await the loader to get the module when the trigger fires
         const mod = await Loader();
         const Component = mod.default;
-        
-        // Render the component
-        const root = createRoot(el);
-        root.render(<Component {...props} />);
+
+        // Hydrate the server-rendered markup
+        hydrateRoot(el, <Component {...props} />);
       }
     }
   }
@@ -1696,14 +1698,18 @@ const partialHydrationLazyExample = `const hydration = createHydration({
 
 const _partialHydrationHocExample = `import { withHydration } from '@veams/partial-hydration/react';
 
+MyComponent.displayName = 'MyComponent';
+
 // Wrap your component to enable partial hydration metadata.
-// This will serialize props into the HTML during SSR.
+// The wrapper gets data-component="MyComponent" during SSR.
 export const MyHydratedComponent = withHydration(MyComponent);
-MyHydratedComponent.displayName = 'MyComponent';`;
+`;
 
 const partialHydrationHocConfigExample = `import { withHydration } from '@veams/partial-hydration/react';
 
 const MyComponent = ({ title }: { title: string }) => <h1>{title}</h1>;
+
+MyComponent.displayName = 'MyComponent';
 
 // Add custom classes and attributes to the wrapper div
 export const MyHydratedComponent = withHydration(MyComponent, {
@@ -1713,13 +1719,21 @@ export const MyHydratedComponent = withHydration(MyComponent, {
     'aria-live': 'polite'
   }
 });
-MyHydratedComponent.displayName = 'MyComponent';`;
+`;
 
 const partialHydrationProviderExample = `import { HydrationProvider } from '@veams/partial-hydration/react';
 
-function CustomHydrationWrapper({ children, cmpId }: { children: React.ReactNode, cmpId: string }) {
+function CustomHydrationWrapper({
+  children,
+  cmpId,
+  componentName,
+}: {
+  children: React.ReactNode;
+  cmpId: string;
+  componentName: string;
+}) {
   return (
-    <div data-component="Custom" data-internal-id={cmpId}>
+    <div data-component={componentName} data-internal-id={cmpId}>
       {/* Provide the ID to the React tree */}
       <HydrationProvider componentId={cmpId}>
         {children}
@@ -1734,11 +1748,11 @@ import { Navigation } from './Navigation';
 import { HeavyChart } from './HeavyChart';
 
 // Wrap components to inject hydration metadata into HTML
+Navigation.displayName = 'Navigation';
 const HydratedNav = withHydration(Navigation);
-HydratedNav.displayName = 'Navigation';
 
+HeavyChart.displayName = 'HeavyChart';
 const HydratedChart = withHydration(HeavyChart);
-HydratedChart.displayName = 'HeavyChart';
 
 export function Page() {
   return (
@@ -1752,18 +1766,17 @@ export function Page() {
 
 // 2. Client-Side (Entry Point)
 import { createHydration } from '@veams/partial-hydration';
-import { createRoot } from 'react-dom/client';
+import { hydrateRoot } from 'react-dom/client';
 import { Navigation } from './Navigation'; // Imported immediately
 
 const hydration = createHydration({
   components: {
-    // Non-lazy: Initialize critical UI immediately
+    // Keys must match the server-rendered data-component values.
     Navigation: {
       Component: Navigation,
       on: 'init',
       render: (Component, props, el) => {
-        const root = createRoot(el);
-        root.render(<Component {...props} />);
+        hydrateRoot(el, <Component {...props} />);
       }
     },
     // Lazy: Load heavy UI only when scrolled into view
@@ -1774,9 +1787,8 @@ const hydration = createHydration({
       render: async (Loader, props, el) => {
         const mod = await Loader();
         const Component = mod.default ?? mod.HeavyChart;
-        
-        const root = createRoot(el);
-        root.render(<Component {...props} />);
+
+        hydrateRoot(el, <Component {...props} />);
       }
     }
   }
@@ -1807,7 +1819,8 @@ import {
 
 const partialHydrationCreateOptionsExample = `const hydration = createHydration({
   components: {
-    // Key must match the 'data-component' attribute in the DOM.
+    // Key must match the wrapper's data-component attribute in the DOM.
+    // withHydration() writes data-component from Component.displayName.
     'SearchFilter': {
       // The actual component instance or a dynamic import factory.
       Component: () => import('./SearchFilter'),
@@ -5456,8 +5469,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'hydration-flow',
                 paragraphs: [
-                  'The hydration process relies on two key HTML elements generated on the server: a hidden script tag containing the serialized props, and a wrapper div identifying the component.',
-                  'When the client-side loader encounters this structure and the activation trigger fires, it extracts the props, parses the JSON, and hands control over to the defined render function.',
+                  'The hydration process relies on two key HTML elements generated on the server: a hidden script tag containing the serialized props, and a wrapper div with a `data-component` attribute identifying the component.',
+                  'When the client-side loader encounters this structure and the activation trigger fires, it uses `data-component` to resolve the matching entry in `createHydration({ components })`, parses the JSON props, and hands control over to the defined render function.',
                 ],
                 title: 'DOM Architecture',
               },
@@ -5465,6 +5478,7 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   'Props Serialization: Metadata stays with the HTML.',
                   'Lazy Activation: Download and run JS only when triggered.',
+                  'Stable Mapping: `data-component` must match the registered client component key.',
                   'Stable Identity: useIsomorphicId ensures DOM consistency.',
                 ],
                 id: 'hydration-principles',
@@ -5551,7 +5565,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'client-init',
                 paragraphs: [
-                  'To start the hydration process on the client, you create a hydration instance with a map of your components and call `init()`. The loader will then scan the DOM and activate components based on their trigger configuration.',
+                  'To start the hydration process on the client, you create a hydration instance with a map of your components and call `init()`. The loader scans the DOM for `[data-component]`, matches each value against your component map, and activates the matching entries based on their trigger configuration.',
                 ],
                 title: 'Initialize on the client',
               },
@@ -5575,9 +5589,9 @@ export const docsPackages: DocsPackage[] = [
                 featureCards: [
                   {
                     description:
-                      'Interactive islands are the primary target for hydration. They represent autonomous UI units that require JavaScript to function.',
-                    title: 'Interactive Islands',
-                    visual: 'status-quo-leaf',
+                      'Map `data-component` values to activation triggers so each island hydrates only when it should.',
+                    title: 'Trigger Mapping',
+                    visual: 'partial-hydration-triggers',
                   },
                 ],
                 id: 'strategies',
@@ -5602,7 +5616,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'trigger-guide',
                 paragraphs: [
-                  'The `createHydration` options map component names to their activation rules. Each component in the map requires a `render` function, which provides full control over how the framework (like React or Vue) is initialized on the DOM element.',
+                  'The `createHydration` options map `data-component` values to their activation rules. Each component in the map requires a `render` function, which provides full control over how the framework (like React or Vue) is initialized on the DOM element.',
+                  'If you use `withHydration()`, the wrapper `data-component` value is taken from `Component.displayName`, so that `displayName` must stay stable and match the client registration key.',
                   'For viewport-based hydration, you can provide an optional `config.rootMargin` to trigger activation slightly before the element enters the visible area, ensuring a seamless experience for the user.',
                 ],
                 title: 'Trigger Reference & Options',
@@ -5656,10 +5671,11 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   'Pass `modifiers` to add CSS classes to the wrapper div.',
                   'Pass `attributes` to add custom HTML attributes like `data-testid`.',
+                  'Set a stable `displayName` on the wrapped component so `withHydration()` can write the correct `data-component` value.',
                 ],
                 id: 'hoc-options',
                 paragraphs: [
-                  'The `withHydration` HOC accepts an optional configuration object to customize the wrapper `div` it generates. This allows you to apply specific layout classes or accessibility attributes without wrapping the element an additional time.',
+                  'The `withHydration` HOC accepts an optional configuration object to customize the wrapper `div` it generates. It uses the original component `displayName` for `data-component`, then applies your additional classes and attributes without requiring another wrapper element.',
                 ],
                 title: 'Wrapper Configuration',
               },
@@ -5730,11 +5746,11 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   '`withHydration(Component, config?)` wraps a React component.',
                   'Serializes props into the HTML during server rendering.',
-                  'Adds `data-component` and `data-internal-id` attributes to the wrapper.',
+                  'Adds `data-component={Component.displayName}` and `data-internal-id` attributes to the wrapper.',
                 ],
                 id: 'with-hydration-api',
                 paragraphs: [
-                  'Use `withHydration` during SSR to ensure that the client-side loader has all the data it needs to activate the component without a full page re-render.',
+                  'Use `withHydration` during SSR to ensure that the client-side loader has all the data it needs to activate the component without a full page re-render. The client-side `components` key must match the wrapped component `displayName` because that is what ends up in `data-component`.',
                 ],
                 title: 'withHydration',
               },
