@@ -251,18 +251,14 @@ function DocsPage() {
         <div className="topbar-layout">
           <NavLink aria-label="VEAMS Documentation" className="topbar-brand" to="/">
             <VeamsLogo />
-            <span aria-hidden="true" className="brand-separator">
-              |
-            </span>
-            <span className="brand-package-name">{packageDoc.title}</span>
           </NavLink>
           <div className="topbar-actions">
             <button
-              aria-label="Packages"
+              aria-label={isPackageNavOpen ? 'Close package menu' : 'Open package menu'}
               aria-controls="package-switcher"
               aria-expanded={isPackageNavOpen}
               className="topbar-menu-toggle"
-              onClick={() => setIsPackageNavOpen(true)}
+              onClick={() => setIsPackageNavOpen((open) => !open)}
               type="button"
             >
               <span aria-hidden="true" className="topbar-menu-icon">
@@ -270,8 +266,13 @@ function DocsPage() {
                 <span />
                 <span />
               </span>
-              <span className="topbar-menu-label">Packages</span>
+              <span className="topbar-menu-label">{isPackageNavOpen ? 'Close' : 'Menu'}</span>
             </button>
+          </div>
+          <div className="topbar-package-row">
+            <NavLink className="topbar-package-link" to={getPackagePath(packageDoc.id, getFirstPage(packageDoc).id)}>
+              <span className="brand-package-name">{packageDoc.title}</span>
+            </NavLink>
           </div>
         </div>
       </header>

@@ -156,17 +156,19 @@ button {
 }
 
 .topbar-layout {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: 'brand package actions';
   align-items: center;
   justify-content: space-between;
   gap: 2rem;
 }
 
 .topbar-brand {
+  grid-area: brand;
   display: flex;
   align-items: center;
-  gap: 1.6rem;
-  padding: 0.35rem 0.8rem 0.35rem 0;
+  padding: 0.35rem 0;
   line-height: 1;
   text-decoration: none;
 }
@@ -178,12 +180,6 @@ button {
   height: auto;
 }
 
-.brand-separator {
-  color: rgba(35, 36, 31, 0.35);
-  font-size: 2rem;
-  font-weight: 300;
-}
-
 .brand-package-name {
   color: var(--accent);
   font-family: var(--font-body);
@@ -192,9 +188,25 @@ button {
   line-height: 1;
 }
 
+.topbar-package-row {
+  grid-area: package;
+  min-width: 0;
+  padding-left: 1.8rem;
+  border-left: 1px solid var(--header-border);
+}
+
+.topbar-package-link {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  text-decoration: none;
+}
+
 .topbar-actions {
+  grid-area: actions;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 1.2rem;
 }
 
@@ -264,11 +276,13 @@ button {
   right: 0;
   z-index: 40;
   display: grid;
-  align-content: start;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 2rem;
   width: min(34rem, calc(100vw - 2rem));
   height: 100vh;
+  height: 100dvh;
   padding: 4rem 2rem 3rem;
+  overflow: hidden;
   background: var(--page-soft);
   box-shadow: -6px 0 40px rgba(0, 0, 0, 0.28);
   visibility: hidden;
@@ -312,7 +326,12 @@ button {
 
 .package-drawer-nav {
   display: grid;
+  min-height: 0;
   gap: 1rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.4rem;
+  -webkit-overflow-scrolling: touch;
 }
 
 .package-drawer-link {
@@ -1590,8 +1609,12 @@ button {
   }
 
   .topbar-layout {
-    align-items: flex-start;
-    flex-wrap: wrap;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'brand actions'
+      'package package';
+    align-items: center;
+    gap: 0.8rem 1.2rem;
   }
 
   .brand-logo {
@@ -1600,10 +1623,21 @@ button {
 
   .brand-package-name {
     font-size: 2.2rem;
+    text-align: center;
   }
 
-  .topbar-actions {
-    width: auto;
+  .topbar-package-row {
+    justify-self: stretch;
+    padding-top: 0.95rem;
+    padding-left: 0;
+    border-top: 1px solid var(--header-border);
+    border-left: 0;
+    text-align: center;
+  }
+
+  .topbar-package-link {
+    justify-content: center;
+    width: 100%;
   }
 
   .topbar-menu-label {
@@ -1611,7 +1645,7 @@ button {
   }
 
   .topbar-menu-toggle {
-    padding: 0.8rem 1rem;
+    padding: 0.75rem 0.9rem;
   }
 
   .content-panel,
@@ -1621,8 +1655,9 @@ button {
   }
 
   .package-drawer {
-    width: calc(100vw - 1.6rem);
-    padding: 7rem 1.6rem 2.4rem;
+    width: calc(100vw - 0.8rem);
+    gap: 1.4rem;
+    padding: 4.8rem 1.2rem 1.6rem;
   }
 
   .content-panel {
