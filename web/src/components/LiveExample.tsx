@@ -36,6 +36,104 @@ type VentMessage = {
   text: string;
 };
 
+type ShowcaseCategory = {
+  animations: Array<{
+    label: string;
+    value: AnimationName;
+  }>;
+  id: string;
+  label: string;
+};
+
+function toAnimationOptions(
+  ...groups: Array<Record<string, string> | undefined>
+): ShowcaseCategory['animations'] {
+  return groups.flatMap((group) =>
+    Object.entries(group ?? {}).flatMap(([key, value]) =>
+      typeof value === 'string'
+        ? [
+            {
+              label: key.toLowerCase().replace(/_/g, '-'),
+              value: value as AnimationName,
+            },
+          ]
+        : [],
+    ),
+  );
+}
+
+const showcaseCategories: ShowcaseCategory[] = [
+  {
+    animations: toAnimationOptions(ANIMATIONS.FEEDBACK),
+    id: 'feedback',
+    label: 'Feedback Effects',
+  },
+  {
+    animations: toAnimationOptions(ANIMATIONS.IN_OUT.CAROUSEL),
+    id: 'carousel',
+    label: 'In/Out: Carousel',
+  },
+  {
+    animations: toAnimationOptions(ANIMATIONS.IN_OUT.CUBE),
+    id: 'cube',
+    label: 'In/Out: Cube',
+  },
+  {
+    animations: toAnimationOptions(ANIMATIONS.IN_OUT.FLIP),
+    id: 'flip',
+    label: 'In/Out: Flip',
+  },
+  {
+    animations: toAnimationOptions(ANIMATIONS.IN_OUT.MOVE),
+    id: 'move',
+    label: 'In/Out: Move',
+  },
+  {
+    animations: toAnimationOptions(ANIMATIONS.IN_OUT.ROOM),
+    id: 'room',
+    label: 'In/Out: Room',
+  },
+  {
+    animations: toAnimationOptions(ANIMATIONS.IN_OUT.SLIDES),
+    id: 'slides',
+    label: 'In/Out: Slides',
+  },
+  {
+    animations: toAnimationOptions(ANIMATIONS.IN_OUT.FOLD),
+    id: 'fold',
+    label: 'In/Out: Fold',
+  },
+  {
+    animations: toAnimationOptions(ANIMATIONS.IN_OUT.UNFOLD),
+    id: 'unfold',
+    label: 'In/Out: Unfold',
+  },
+  {
+    animations: toAnimationOptions(ANIMATIONS.IN_OUT.SCALE),
+    id: 'scale',
+    label: 'In/Out: Scale',
+  },
+  {
+    animations: toAnimationOptions(ANIMATIONS.IN_OUT.ROTATE_AND_SCALE),
+    id: 'rotate-and-scale',
+    label: 'In/Out: Rotate & Scale',
+  },
+  {
+    animations: toAnimationOptions(ANIMATIONS.IN_OUT.PUSH_PULL),
+    id: 'push-pull',
+    label: 'In/Out: Push & Pull',
+  },
+  {
+    animations: toAnimationOptions(
+      ANIMATIONS.IN_OUT.FALL,
+      ANIMATIONS.IN_OUT.NEWSPAPER,
+      ANIMATIONS.IN_OUT.SIDES,
+    ),
+    id: 'other',
+    label: 'In/Out: Other',
+  },
+];
+
 function ExampleChrome({
   children,
   eyebrow,
@@ -852,33 +950,30 @@ function VentReleaseBusExample() {
 }
 
 function CssAnimationsShowcase() {
+  const [selectedCategoryId, setSelectedCategoryId] = useState(showcaseCategories[0]?.id ?? '');
   const [activeAnimation, setActiveAnimation] = useState<AnimationName | null>(null);
   const [isAnimating, setIsAnimated] = useState(false);
 
   const triggerAnimation = (name: AnimationName) => {
+    const nextCategory = showcaseCategories.find((category) =>
+      category.animations.some((animation) => animation.value === name),
+    );
+
+    if (nextCategory) {
+      setSelectedCategoryId(nextCategory.id);
+    }
     setActiveAnimation(name);
     setIsAnimated(false);
     // Force reflow to restart animation
     setTimeout(() => setIsAnimated(true), 10);
   };
 
-  const renderButtons = (category: Record<string, unknown> | undefined) => {
-    if (!category) return null;
-    return Object.entries(category).map(([key, value]) => {
-      if (typeof value === 'string') {
-        return (
-          <ChipButton
-            active={activeAnimation === value}
-            key={key}
-            onClick={() => triggerAnimation(value as AnimationName)}
-          >
-            {key.toLowerCase().replace(/_/g, '-')}
-          </ChipButton>
-        );
-      }
-      return null;
-    });
-  };
+  const selectedCategory =
+    showcaseCategories.find((category) => category.id === selectedCategoryId) ?? showcaseCategories[0];
+  const selectedEffectValue =
+    activeAnimation && selectedCategory?.animations.some((animation) => animation.value === activeAnimation)
+      ? activeAnimation
+      : '';
 
   const selectedImportExample = activeAnimation
     ? {
@@ -896,98 +991,72 @@ function CssAnimationsShowcase() {
     <ExampleChrome eyebrow="Interactive Guide" title="All available animations">
       <div className="example-animation-showcase">
         <div className="example-animation-grid">
-          <div className="example-animation-section">
-            <h5>Feedback Effects</h5>
-            <div className="example-animation-buttons">
-              {renderButtons(ANIMATIONS.FEEDBACK)}
+          <div className="example-animation-mobile-controls">
+            <div className="example-animation-mobile-field">
+              <label htmlFor="animation-category">Category</label>
+              <select
+                id="animation-category"
+                onChange={(event) => {
+                  const nextCategoryId = event.target.value;
+                  setSelectedCategoryId(nextCategoryId);
+
+                  const nextCategory = showcaseCategories.find(
+                    (category) => category.id === nextCategoryId,
+                  );
+
+                  if (!nextCategory?.animations.some((animation) => animation.value === activeAnimation)) {
+                    setActiveAnimation(null);
+                    setIsAnimated(false);
+                  }
+                }}
+                value={selectedCategory?.id ?? ''}
+              >
+                {showcaseCategories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="example-animation-mobile-field">
+              <label htmlFor="animation-effect">Effect</label>
+              <select
+                id="animation-effect"
+                onChange={(event) => {
+                  const nextAnimation = event.target.value;
+                  if (nextAnimation) {
+                    triggerAnimation(nextAnimation as AnimationName);
+                  }
+                }}
+                value={selectedEffectValue}
+              >
+                <option value="">Select an effect</option>
+                {selectedCategory?.animations.map((animation) => (
+                  <option key={animation.value} value={animation.value}>
+                    {animation.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
-          <div className="example-animation-section">
-            <h5>In/Out: Carousel</h5>
-            <div className="example-animation-buttons">
-              {renderButtons(ANIMATIONS.IN_OUT.CAROUSEL)}
+          {showcaseCategories.map((category) => (
+            <div className="example-animation-section" key={category.id}>
+              <h5>{category.label}</h5>
+              <div className="example-animation-buttons">
+                {category.animations.map((animation) => (
+                  <ChipButton
+                    active={activeAnimation === animation.value}
+                    key={animation.value}
+                    onClick={() => triggerAnimation(animation.value)}
+                  >
+                    {animation.label}
+                  </ChipButton>
+                ))}
+              </div>
             </div>
-          </div>
-
-          <div className="example-animation-section">
-            <h5>In/Out: Cube</h5>
-            <div className="example-animation-buttons">
-              {renderButtons(ANIMATIONS.IN_OUT.CUBE)}
-            </div>
-          </div>
-
-          <div className="example-animation-section">
-            <h5>In/Out: Flip</h5>
-            <div className="example-animation-buttons">
-              {renderButtons(ANIMATIONS.IN_OUT.FLIP)}
-            </div>
-          </div>
-
-          <div className="example-animation-section">
-            <h5>In/Out: Move</h5>
-            <div className="example-animation-buttons">
-              {renderButtons(ANIMATIONS.IN_OUT.MOVE)}
-            </div>
-          </div>
-
-          <div className="example-animation-section">
-            <h5>In/Out: Room</h5>
-            <div className="example-animation-buttons">
-              {renderButtons(ANIMATIONS.IN_OUT.ROOM)}
-            </div>
-          </div>
-
-          <div className="example-animation-section">
-            <h5>In/Out: Slides</h5>
-            <div className="example-animation-buttons">
-              {renderButtons(ANIMATIONS.IN_OUT.SLIDES)}
-            </div>
-          </div>
-
-          <div className="example-animation-section">
-            <h5>In/Out: Fold</h5>
-            <div className="example-animation-buttons">
-              {renderButtons(ANIMATIONS.IN_OUT.FOLD)}
-            </div>
-          </div>
-
-          <div className="example-animation-section">
-            <h5>In/Out: Unfold</h5>
-            <div className="example-animation-buttons">
-              {renderButtons(ANIMATIONS.IN_OUT.UNFOLD)}
-            </div>
-          </div>
-
-          <div className="example-animation-section">
-            <h5>In/Out: Scale</h5>
-            <div className="example-animation-buttons">
-              {renderButtons(ANIMATIONS.IN_OUT.SCALE)}
-            </div>
-          </div>
-
-          <div className="example-animation-section">
-            <h5>In/Out: Rotate & Scale</h5>
-            <div className="example-animation-buttons">
-              {renderButtons(ANIMATIONS.IN_OUT.ROTATE_AND_SCALE)}
-            </div>
-          </div>
-
-          <div className="example-animation-section">
-            <h5>In/Out: Push & Pull</h5>
-            <div className="example-animation-buttons">
-              {renderButtons(ANIMATIONS.IN_OUT.PUSH_PULL)}
-            </div>
-          </div>
-
-          <div className="example-animation-section">
-            <h5>In/Out: Other</h5>
-            <div className="example-animation-buttons">
-              {renderButtons(ANIMATIONS.IN_OUT.FALL)}
-              {renderButtons(ANIMATIONS.IN_OUT.NEWSPAPER)}
-              {renderButtons(ANIMATIONS.IN_OUT.SIDES)}
-            </div>
-          </div>
+          ))}
         </div>
 
         <div className="example-animation-preview-stack">
