@@ -1,6 +1,6 @@
 {
   "name": "@veams/partial-hydration",
-  "version": "0.0.2",
+  "version": "1.1.0",
   "description": "The hydration package contains the core functionality to make components interactive.",
   "main": "dist/index.js",
   "module": "dist/index.js",
