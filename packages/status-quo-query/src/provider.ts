@@ -7,13 +7,13 @@ import {
 // Import mutation and query setup functions and their factory types.
 import {
   type CreateMutation,
-  type CreateTrackedMutation,
+  type CreateUntrackedMutation,
   type MutationService,
   type TrackedMutationServiceOptions,
   setupMutation,
   setupTrackedMutation,
 } from './mutation';
-import { type CreateQuery, type CreateTrackedQuery, setupQuery, setupTrackedQuery } from './query';
+import { type CreateQuery, type CreateUntrackedQuery, setupQuery, setupTrackedQuery } from './query';
 import {
   createTrackingRegistry,
   type TrackedDependencyValue,
@@ -25,7 +25,7 @@ import {
  * This omits `dependencyKeys` on purpose because the paired helper already captured those keys
  * once at setup time and injects them automatically for each tracked mutation it creates.
  */
-export interface CreateTrackedMutationWithDefaults<TDependencyKey extends string> {
+export interface CreateMutationWithDefaults<TDependencyKey extends string> {
   <TData = unknown, TError = Error, TVariables = void, TOnMutateResult = unknown>(
     mutationFn: MutationFunction<TData, TVariables>,
     options?: Omit<
@@ -44,26 +44,26 @@ export interface CreateTrackedMutationWithDefaults<TDependencyKey extends string
 /**
  * Paired tracked helper that captures dependency keys once for default mutation resolution.
  */
-export interface CreateTrackedQueryAndMutation {
+export interface CreateQueryAndMutation {
   <const TDependencyKeys extends readonly string[]>(
     dependencyKeys: TDependencyKeys
-  ): readonly [CreateTrackedQuery, CreateTrackedMutationWithDefaults<TDependencyKeys[number]>];
+  ): readonly [CreateQuery, CreateMutationWithDefaults<TDependencyKeys[number]>];
 }
 
 /**
  * Defines the public API for the query manager facade.
  */
 export interface QueryManager {
-  // Factory for creating a mutation service within the context of this provider.
+  // Factory for creating a dependency-tracked mutation service within the context of this provider.
   createMutation: CreateMutation;
-  // Factory for creating a query service within the context of this provider.
+  // Factory for creating a dependency-tracked query service within the context of this provider.
   createQuery: CreateQuery;
-  // Factory for creating tracked query services with dependency-aware query keys.
-  createTrackedQuery: CreateTrackedQuery;
-  // Factory for creating tracked mutation services with automatic invalidation.
-  createTrackedMutation: CreateTrackedMutation;
+  // Factory for creating an untracked query service within the context of this provider.
+  createUntrackedQuery: CreateUntrackedQuery;
+  // Factory for creating an untracked mutation service within the context of this provider.
+  createUntrackedMutation: CreateUntrackedMutation;
   // Convenience helper that shares dependency keys between tracked queries and mutations.
-  createTrackedQueryAndMutation: CreateTrackedQueryAndMutation;
+  createQueryAndMutation: CreateQueryAndMutation;
   // Cancels active queries for the specified filters.
   cancelQueries: QueryClient['cancelQueries'];
   // Synchronously retrieves a snapshot of the current query data.
@@ -89,8 +89,10 @@ export function setupQueryManager(queryClient: QueryClient): QueryManager {
   // One shared registry is the whole point of the manager-only tracked API. Queries and
   // mutations created from the same manager can now coordinate invalidation through it.
   const trackingRegistry = createTrackingRegistry();
-  const trackedQueryFactory = setupTrackedQuery(queryClient, trackingRegistry);
-  const trackedMutationFactory = setupTrackedMutation(queryClient, trackingRegistry);
+  const queryFactory = setupTrackedQuery(queryClient, trackingRegistry);
+  const mutationFactory = setupTrackedMutation(queryClient, trackingRegistry);
+  const untrackedQueryFactory = setupQuery(queryClient);
+  const untrackedMutationFactory = setupMutation(queryClient);
 
   queryClient.getQueryCache().subscribe((event) => {
     if (event.type === 'removed') {
@@ -104,18 +106,18 @@ export function setupQueryManager(queryClient: QueryClient): QueryManager {
   // Return the implementation of the QueryManager interface.
   return {
     // Bind mutation factory to this QueryClient.
-    createMutation: setupMutation(queryClient),
+    createMutation: mutationFactory,
     // Bind query factory to this QueryClient.
-    createQuery: setupQuery(queryClient),
-    // Bind tracked query factory to this client and registry.
-    createTrackedQuery: trackedQueryFactory,
-    // Bind tracked mutation factory to this client and registry.
-    createTrackedMutation: trackedMutationFactory,
+    createQuery: queryFactory,
+    // Bind untracked query factory to this QueryClient.
+    createUntrackedQuery: untrackedQueryFactory,
+    // Bind untracked mutation factory to this QueryClient.
+    createUntrackedMutation: untrackedMutationFactory,
     // Provide a paired helper that captures dependency keys once.
-    createTrackedQueryAndMutation: <const TDependencyKeys extends readonly string[]>(
+    createQueryAndMutation: <const TDependencyKeys extends readonly string[]>(
       dependencyKeys: TDependencyKeys
     ) => {
-      const createTrackedMutationWithDefaults: CreateTrackedMutationWithDefaults<
+      const createMutationWithDefaults: CreateMutationWithDefaults<
         TDependencyKeys[number]
       > = <TData = unknown, TError = Error, TVariables = void, TOnMutateResult = unknown>(
         mutationFn: MutationFunction<TData, TVariables>,
@@ -132,7 +134,7 @@ export function setupQueryManager(queryClient: QueryClient): QueryManager {
       ) =>
         // Inject the dependency keys once so the paired mutation factory can derive dependency
         // values directly from mutation variables without repeating the mapping each time.
-        trackedMutationFactory<
+        mutationFactory<
           Record<TDependencyKeys[number], TrackedDependencyValue>,
           TData,
           TError,
@@ -143,7 +145,7 @@ export function setupQueryManager(queryClient: QueryClient): QueryManager {
           dependencyKeys,
         });
 
-      return [trackedQueryFactory, createTrackedMutationWithDefaults] as const;
+      return [queryFactory, createMutationWithDefaults] as const;
     },
     // Proxy for canceling queries with this client context.
     cancelQueries: queryClient.cancelQueries.bind(queryClient),

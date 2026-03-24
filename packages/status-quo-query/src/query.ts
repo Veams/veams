@@ -89,9 +89,9 @@ export interface QueryInvalidateOptions
     Pick<InvalidateQueryFilters, 'refetchType'> {}
 
 /**
- * Function signature for the query factory.
+ * Function signature for the untracked query factory.
  */
-export interface CreateQuery {
+export interface CreateUntrackedQuery {
   <
     TQueryFnData = unknown,
     TError = Error,
@@ -109,12 +109,13 @@ export interface CreateQuery {
 }
 
 /**
- * Function signature for tracked queries that derive dependencies from the final query-key segment.
+ * Function signature for the default query factory that derives dependencies from the final
+ * query-key segment.
  *
  * The tracked query handle deliberately stays API-compatible with the normal query service.
  * The only extra behavior is invisible: dependency registration and on-demand re-registration.
  */
-export interface CreateTrackedQuery {
+export interface CreateQuery {
   <
     TDeps extends TrackedDependencyRecord,
     TQueryFnData = unknown,
@@ -167,7 +168,7 @@ export function isQueryLoading(query: QueryMetaState): boolean {
 /**
  * Prepares the query factory by binding it to a specific QueryClient instance.
  */
-export function setupQuery(queryClient: QueryClient): CreateQuery {
+export function setupQuery(queryClient: QueryClient): CreateUntrackedQuery {
   // Returns the actual factory function for creating individual query services.
   return function createQuery<
     TQueryFnData = unknown,
@@ -185,7 +186,7 @@ export function setupQuery(queryClient: QueryClient): CreateQuery {
 }
 
 /**
- * Prepares a tracked query factory that registers and re-registers query dependencies on demand.
+ * Prepares the default query factory that registers and re-registers query dependencies on demand.
  *
  * Tracked queries register immediately on creation, but TanStack is still free to garbage-collect
  * the underlying query when it becomes idle. When that happens, the provider-level cache
@@ -197,8 +198,8 @@ export function setupQuery(queryClient: QueryClient): CreateQuery {
 export function setupTrackedQuery(
   queryClient: QueryClient,
   trackingRegistry: TrackingRegistry
-): CreateTrackedQuery {
-  return function createTrackedQuery<
+): CreateQuery {
+  return function createQuery<
     TDeps extends TrackedDependencyRecord,
     TQueryFnData = unknown,
     TError = Error,

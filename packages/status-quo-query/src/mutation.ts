@@ -88,9 +88,9 @@ export type MutationServiceOptions<
 > = Omit<MutationObserverOptions<TData, TError, TVariables, TOnMutateResult>, 'mutationFn'>;
 
 /**
- * Function signature for the mutation factory.
+ * Function signature for the untracked mutation factory.
  */
-export interface CreateMutation {
+export interface CreateUntrackedMutation {
   <TData = unknown, TError = Error, TVariables = void, TOnMutateResult = unknown>(
     // The asynchronous function that performs the mutation.
     mutationFn: MutationFunction<TData, TVariables>,
@@ -124,9 +124,9 @@ export interface TrackedMutationServiceOptions<
 }
 
 /**
- * Function signature for tracked mutation factories.
+ * Function signature for the default mutation factory with automatic invalidation.
  */
-export interface CreateTrackedMutation {
+export interface CreateMutation {
   <
     TDeps extends TrackedDependencyRecord = TrackedDependencyRecord,
     TData = unknown,
@@ -142,7 +142,7 @@ export interface CreateTrackedMutation {
 /**
  * Prepares the mutation factory by binding it to a specific QueryClient instance.
  */
-export function setupMutation(queryClient: QueryClient): CreateMutation {
+export function setupMutation(queryClient: QueryClient): CreateUntrackedMutation {
   // Returns the actual factory function for creating individual mutation services.
   return function createMutation<
     TData = unknown,
@@ -158,7 +158,7 @@ export function setupMutation(queryClient: QueryClient): CreateMutation {
 }
 
 /**
- * Prepares a tracked mutation factory that coordinates invalidation through the shared registry.
+ * Prepares the default mutation factory that coordinates invalidation through the shared registry.
  *
  * The implementation intentionally wraps the normal mutation service instead of re-implementing
  * TanStack lifecycle behavior. TanStack still owns retries, callbacks, and state transitions;
@@ -168,8 +168,8 @@ export function setupTrackedMutation(
   queryClient: QueryClient,
   trackingRegistry: TrackingRegistry,
   defaultDependencyKeys?: readonly string[]
-): CreateTrackedMutation {
-  return function createTrackedMutation<
+): CreateMutation {
+  return function createMutation<
     TDeps extends TrackedDependencyRecord = TrackedDependencyRecord,
     TData = unknown,
     TError = Error,
