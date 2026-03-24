@@ -1035,18 +1035,18 @@ const saveProduct = async (variables: {
   saved: true as const,
 });
 
-const [createTrackedQuery, createTrackedMutation] = manager.createTrackedQueryAndMutation([
+const [createQuery, createMutation] = manager.createQueryAndMutation([
   'applicationId',
   'productId',
 ] as const);
 
-const productQuery = createTrackedQuery(
+const productQuery = createQuery(
   ['product', { deps: { applicationId, productId }, view: { page: 1 } }],
   () => fetchProduct(applicationId, productId),
   { enabled: false }
 );
 
-const updateProduct = createTrackedMutation(saveProduct, {
+const updateProduct = createMutation(saveProduct, {
   invalidateOn: 'success',
 });
 
@@ -1075,22 +1075,22 @@ const saveProduct = async (variables: {
   productName: string;
 }) => variables;
 
-const [createTrackedQuery, createTrackedMutation] = manager.createTrackedQueryAndMutation([
+const [createQuery, createMutation] = manager.createQueryAndMutation([
   'applicationId',
   'productId',
 ] as const);
 
-createTrackedQuery(
+createQuery(
   ['product', { deps: { applicationId: 'app-1', productId: 'product-1' }, view: { page: 1 } }],
   () => fetchProduct('app-1', 'product-1')
 );
 
-createTrackedQuery(
+createQuery(
   ['product', { deps: { applicationId: 'app-1', productId: 'product-2' }, view: { page: 1 } }],
   () => fetchProduct('app-1', 'product-2')
 );
 
-const renameProduct = createTrackedMutation(saveProduct);
+const renameProduct = createMutation(saveProduct);
 
 await renameProduct.mutate({
   applicationId: 'app-1',
@@ -1118,22 +1118,22 @@ const syncProductData = async (variables: {
   productId: string;
 }) => variables;
 
-const [createTrackedQuery, createTrackedMutation] = manager.createTrackedQueryAndMutation([
+const [createQuery, createMutation] = manager.createQueryAndMutation([
   'applicationId',
   'productId',
 ] as const);
 
-createTrackedQuery(
+createQuery(
   ['product', { deps: { applicationId: 'app-1', productId: 'product-1' }, view: { page: 1 } }],
   () => fetchProduct('app-1', 'product-1')
 );
 
-createTrackedQuery(
+createQuery(
   ['product', { deps: { applicationId: 'app-2', productId: 'product-1' }, view: { page: 1 } }],
   () => fetchProduct('app-2', 'product-1')
 );
 
-const syncProduct = createTrackedMutation(syncProductData, {
+const syncProduct = createMutation(syncProductData, {
   matchMode: 'union',
 });
 
@@ -1155,16 +1155,16 @@ const fetchProducts = async (applicationId: string) => [{ applicationId, product
 
 const removeProducts = async (variables: { applicationId: string }) => variables;
 
-const [createTrackedQuery, createTrackedMutation] = manager.createTrackedQueryAndMutation([
+const [createQuery, createMutation] = manager.createQueryAndMutation([
   'applicationId',
 ] as const);
 
-createTrackedQuery(
+createQuery(
   ['product-list', { deps: { applicationId: 'app-1' }, view: { page: 1 } }],
   () => fetchProducts('app-1')
 );
 
-const cleanupProducts = createTrackedMutation(removeProducts, {
+const cleanupProducts = createMutation(removeProducts, {
   invalidateOn: 'settled',
 });
 
@@ -1186,7 +1186,7 @@ const saveProduct = async (variables: {
   productName: string;
 }) => variables;
 
-const trackedMutation = manager.createTrackedMutation(saveProduct, {
+const trackedMutation = manager.createMutation(saveProduct, {
   resolveDependencies: (variables: {
     payload: { applicationId: string };
     product: { id: string };
@@ -1222,15 +1222,15 @@ const saveProduct = async (variables: {
   productName: string;
 }) => variables;
 
-const [createTrackedQuery, createTrackedMutation] =
-  manager.createTrackedQueryAndMutation(['applicationId', 'productId'] as const);
+const [createQuery, createMutation] =
+  manager.createQueryAndMutation(['applicationId', 'productId'] as const);
 
-const productQuery = createTrackedQuery(
+const productQuery = createQuery(
   ['product', { deps: { applicationId, productId }, view: { page: 1 } }],
   () => fetchProduct(applicationId, productId)
 );
 
-const saveProductMutation = createTrackedMutation(saveProduct);
+const saveProductMutation = createMutation(saveProduct);
 
 await saveProductMutation.mutate({
   applicationId,
@@ -1246,7 +1246,7 @@ manager.setQueryData(['user', 42], (current) =>
 );`;
 
 const statusQuoQuerySpecificExample = `// A handle (Query or Mutation) knows its own key and context.
-const userQuery = manager.createQuery(['user', 42], fetchUser);
+const userQuery = manager.createUntrackedQuery(['user', 42], fetchUser);
 
 // Specific action: no keys required.
 await userQuery.refetch();
@@ -1351,7 +1351,7 @@ const statusQuoFrameworkReactImports = `import {
 } from '@veams/status-quo/react';`;
 
 const statusQuoQueryApiImports = `import {
-  setupQueryProvider,
+  setupQueryManager,
   setupMutation,
   setupQuery,
   isQueryLoading,
@@ -4391,7 +4391,7 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  'Use `manager.createTrackedQueryAndMutation(...)` when query and mutation share the same dependency names.',
+                  'Use `manager.createQueryAndMutation(...)` when query and mutation share the same dependency names.',
                   'Put invalidation-relevant values into `deps` and view-only variants into `view`.',
                   'Call commands on the handle, not on the snapshot.',
                 ],
@@ -4471,7 +4471,7 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   '`query.invalidate()` targets the current query key.',
-                  '`createTrackedMutation(...)` can invalidate matching tracked queries automatically.',
+                  '`createMutation(...)` can invalidate matching tracked queries automatically.',
                   '`manager.invalidateQueries()` supports broader filters.',
                   '`manager.setQueryData()` is the imperative path when you already know the correct next state value.',
                 ],
@@ -4544,63 +4544,75 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  '`createMutation(mutationFn, options?)` accepts one TanStack-compatible mutation function and optional observer options.',
-                  '`mutationFn(variables)` performs the async write. `options?` configures retry and lifecycle callbacks.',
+                  '`createMutation(mutationFn, options?)` accepts one TanStack-compatible mutation function and tracked invalidation options.',
+                  '`mutationFn(variables)` performs the async write. `options?` configures retry, lifecycle callbacks, and tracked matching.',
                   'Returns a mutation handle with `getSnapshot()`, `subscribe(listener)`, `mutate(variables, mutateOptions?)`, `reset()`, and `unsafe_getResult()`.',
                 ],
                 id: 'create-mutation',
                 paragraphs: [
-                  'Use `createMutation` for one explicit write workflow. The function signature is small on purpose: one mutation function in, one imperative mutation handle out.',
+                  'Use `createMutation` for the default dependency-tracked write workflow. It keeps invalidation close to domain keys instead of scattering exact cache keys across mutations.',
                 ],
                 title: 'createMutation',
               },
               {
                 bullets: [
-                  '`createTrackedMutation(mutationFn, options?)` adds automatic invalidation on top of the normal mutation handle.',
-                  '`options.dependencyKeys?` enables the default variable reader. `options.resolveDependencies?` is the escape hatch for nested or transformed mutation variables.',
-                  '`invalidateOn?` supports `success`, `error`, and `settled`. `matchMode?` supports `intersection` and `union`.',
+                  '`createUntrackedMutation(mutationFn, options?)` keeps the plain mutation handle without tracked invalidation.',
+                  'Use it when invalidation is fully manual or handled entirely elsewhere.',
+                  'Returns the same mutation handle shape as `createMutation(...)`, but without `dependencyKeys`, `resolveDependencies`, `invalidateOn`, or `matchMode`.',
                 ],
-                id: 'create-tracked-mutation',
+                id: 'create-untracked-mutation',
                 paragraphs: [
-                  'Use `createTrackedMutation` when the write should invalidate queries by named dependencies instead of forcing callers to remember exact cache keys manually.',
+                  'Reach for `createUntrackedMutation` when the write should stay fully manual and should not participate in dependency-based invalidation.',
                 ],
-                title: 'createTrackedMutation',
+                title: 'createUntrackedMutation',
               },
               {
                 bullets: [
-                  '`createQuery(queryKey, queryFn, options?)` accepts one TanStack query key, one query function, and optional observer options.',
-                  '`queryKey` identifies the cache slot. `queryFn` performs the async read. `options?` configures stale time, retries, refetch behavior, and related observer settings.',
+                  '`createMutation(mutationFn, options?)` adds automatic invalidation on top of the normal mutation handle.',
+                  '`options.dependencyKeys?` enables the default variable reader. `options.resolveDependencies?` is the escape hatch for nested or transformed mutation variables.',
+                  '`invalidateOn?` supports `success`, `error`, and `settled`. `matchMode?` supports `intersection` and `union`.',
+                ],
+                id: 'create-mutation-options',
+                paragraphs: [
+                  'Use `createMutation` when the write should invalidate queries by named dependencies instead of forcing callers to remember exact cache keys manually.',
+                ],
+                title: 'createMutation Options',
+              },
+              {
+                bullets: [
+                  '`createQuery(queryKey, queryFn, options?)` accepts one tracked query key, one query function, and optional observer options.',
+                  '`queryKey` must end with an object segment that contains `deps` and may contain `view`.',
                   'Returns a query handle with `getSnapshot()`, `subscribe(listener)`, `refetch(options?)`, `invalidate(options?)`, and `unsafe_getResult()`.',
                 ],
                 id: 'create-query',
                 paragraphs: [
-                  'Use `createQuery` for one focused read workflow. It is the main per-query reference object most application code should work with after setup.',
+                  'Use `createQuery` for the default dependency-tracked read workflow. It registers itself under named dependencies so tracked mutations can find it later.',
                 ],
                 title: 'createQuery',
               },
               {
                 bullets: [
-                  '`createTrackedQuery(queryKey, queryFn, options?)` uses the same query handle API as `createQuery(...)`.',
-                  'Tracked query keys end with an object segment that contains `deps` and may contain `view` or other normal cache-key data.',
-                  'Only `deps` participates in tracked invalidation. `view` keeps pagination, sorting, and filter semantics readable without becoming invalidation dependencies.',
+                  '`createUntrackedQuery(queryKey, queryFn, options?)` keeps the plain query handle without dependency registration.',
+                  'Use it when the query should not participate in tracked invalidation, or when you want a very small TanStack wrapper only.',
+                  'Returns the same query handle shape as `createQuery(...)`, but does not require a `{ deps, view? }` key segment.',
                 ],
-                id: 'create-tracked-query',
+                id: 'create-untracked-query',
                 paragraphs: [
-                  'Use `createTrackedQuery` when one query should register itself under named domain dependencies and later be invalidated by tracked mutations.',
+                  'Reach for `createUntrackedQuery` when the cache entry should stay completely manual and independent from the tracked registry.',
                 ],
-                title: 'createTrackedQuery',
+                title: 'createUntrackedQuery',
               },
               {
                 bullets: [
-                  '`createTrackedQueryAndMutation(dependencyKeys)` returns the tracked query factory plus a tracked mutation factory with default dependency resolution.',
+                  '`createQueryAndMutation(dependencyKeys)` returns the tracked query factory plus a tracked mutation factory with default dependency resolution.',
                   'Declare the dependency names once, then let the paired mutation factory read `variables[dependencyKey]` automatically.',
                   'Use the paired helper when one feature flow shares the same dependency names across its tracked queries and tracked mutations.',
                 ],
-                id: 'create-tracked-query-and-mutation',
+                id: 'create-query-and-mutation',
                 paragraphs: [
                   'This helper is the most ergonomic tracked entry point. It keeps dependency names in one place and removes the need to repeat `dependencyKeys` on every tracked mutation in the same flow.',
                 ],
-                title: 'createTrackedQueryAndMutation',
+                title: 'createQueryAndMutation',
               },
               {
                 bullets: [
@@ -4653,7 +4665,7 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   '`QueryManager` groups the broad management API around one `QueryClient`.',
-                  'Factory methods are `createMutation(mutationFn, options?)`, `createQuery(queryKey, queryFn, options?)`, `createTrackedMutation(mutationFn, options?)`, `createTrackedQuery(queryKey, queryFn, options?)`, and `createTrackedQueryAndMutation(dependencyKeys)`.',
+                  'Factory methods are `createQuery(queryKey, queryFn, options?)`, `createMutation(mutationFn, options?)`, `createQueryAndMutation(dependencyKeys)`, `createUntrackedQuery(queryKey, queryFn, options?)`, and `createUntrackedMutation(mutationFn, options?)`.',
                   'Management methods are `cancelQueries(filters?, options?)`, `getQueryData(queryKey)`, `invalidateQueries(filters?, options?)`, `refetchQueries(filters?, options?)`, `removeQueries(filters?)`, `resetQueries(filters?, options?)`, `setQueryData(queryKey, updater)`, and `unsafe_getClient()`.',
                 ],
                 id: 'query-manager',
@@ -4723,15 +4735,49 @@ export const docsPackages: DocsPackage[] = [
                 title: 'toQueryMetaState',
               },
             ],
-            eyebrow: 'API',
+            eyebrow: 'Guides',
             id: 'api',
             intro:
               'The public surface is split into query handles, mutation handles, and one query manager for broader management.',
             summary: 'Everything you can call, in one place.',
             title: 'API Reference',
           },
+          {
+            blocks: [
+              {
+                bullets: [
+                  '`view` is still part of the TanStack cache key, so page 1 and page 2 remain separate cache entries.',
+                  'Tracked invalidation intentionally matches only `deps`, because pagination, sorting, and filters usually describe presentation variants rather than domain identity.',
+                  'That split keeps the cache key expressive without turning every UI variant into an invalidation dependency.',
+                ],
+                id: 'faq-deps-vs-view',
+                paragraphs: [
+                  'A common question is whether `view` should participate in automatic invalidation. The short answer is no: it still shapes cache identity, but it is intentionally excluded from tracked matching.',
+                ],
+                title: 'Why `view` is not tracked',
+              },
+              {
+                bullets: [
+                  'If one mutation truly should refresh only one page, use `query.invalidate()` or `manager.invalidateQueries({ queryKey, exact: true })` for that exact key.',
+                  'If page-specific invalidation is part of the domain semantics, move that value from `view` into `deps` intentionally.',
+                  'Broad tracked invalidation is often the right tradeoff after create, delete, rename, or filter-affecting updates because those writes can shift pagination, sorting, and list membership across multiple views.',
+                ],
+                id: 'faq-narrow-vs-broad',
+                paragraphs: [
+                  'The default behavior favors correctness across related list variants. Narrow invalidation stays available as an explicit manual escape hatch when you need it.',
+                ],
+                title: 'When to stay broad and when to narrow',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'faq',
+            intro:
+              'These edge cases come up quickly once you start using `deps` and `view` deliberately. The key is to separate cache identity from invalidation semantics.',
+            summary: 'Other facts about usage.',
+            title: 'FAQ',
+          },
         ],
-        title: 'API',
+        title: 'Guides',
       },
       {
         id: 'examples',
