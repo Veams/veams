@@ -2581,6 +2581,7 @@ import {
   FormProvider,
   useFieldMeta,
   useFormController,
+  useFormMeta,
   useUncontrolledField,
 } from '@veams/form/react';`;
 
@@ -5477,12 +5478,13 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   'Use `validateForm()` for client-side rules before submit.',
                   'Use `setFieldError()` for backend field errors after submit.',
+                  'Use `setSubmitError()` for backend failures that do not belong to one field.',
                   'Call `touchAllFields()` on invalid submit so errors become visible immediately.',
                 ],
                 id: 'validator-submit-cycle',
                 paragraphs: [
-                  'Client and server validation should not compete. The clean split is: local validator for synchronous checks, server responses mapped with `setFieldError()` for authoritative backend constraints.',
-                  'This keeps the submit cycle explicit and debuggable: validate, touch, submit, map remote errors, and retry with corrected values.',
+                  'Client and server validation should not compete. The clean split is: local validator for synchronous checks, server field responses mapped with `setFieldError()`, and generic backend failures mapped with `setSubmitError()`.',
+                  'This keeps the submit cycle explicit and debuggable: validate, touch, submit, map remote field errors or form-level failures, and retry with corrected values.',
                 ],
                 title: 'Compose client and server validation',
               },
@@ -5647,14 +5649,30 @@ export const docsPackages: DocsPackage[] = [
                 title: 'FormProvider',
               },
               {
+                codeExamples: [
+                  {
+                    code: formValidatorFlowExample,
+                    label: 'Handler validation lifecycle',
+                    language: 'ts',
+                  },
+                ],
                 bullets: [
                   '`new FormStateHandler(config)` takes `{ initialValues, validator?, options? }`.',
-                  '`initialValues` seeds `values`. `validator?` returns the typed error map. `options?.devTools` configures the underlying Status Quo devtools integration.',
-                  'Main methods are `resetForm(values?)`, `setFieldError(name, errorMessage?)`, `setFieldTouched(name, isTouched?)`, `setFieldValue(name, value)`, `setSubmitting(isSubmitting)`, `touchAllFields()`, and `validateForm()`.',
+                  '`initialValues` seeds `values` with the same nested shape the form will keep for its whole lifetime. `validator?` returns the typed field-error map. `options?.devTools` configures the underlying Status Quo devtools integration.',
+                  'The state snapshot is `{ values, errors, submitError, touched, isSubmitting, isValid }`.',
+                  '`errors` contains active field-level messages keyed by dot-path. Missing keys mean valid fields. `submitError` is the form-level backend message and stays separate from field validation.',
+                  '`isValid` is derived from the field error map only. A `submitError` may exist while `isValid` is still `true`.',
+                  '`setFieldValue(name, value)` updates the nested value, reruns the validator for the full snapshot, updates `errors`, and clears stale `submitError`.',
+                  '`validateForm()` reruns the validator against the current snapshot, stores the resulting field errors, and returns the boolean result for submit flow control.',
+                  '`setFieldError(name, errorMessage?)` is for authoritative backend field constraints. `setSubmitError(errorMessage?)` is for generic backend failures that do not belong to one field.',
+                  '`setFieldTouched(name, isTouched?)` marks one field explicitly. `touchAllFields()` marks every leaf field so validation messages can become visible in one step.',
+                  '`resetForm(values?)` replaces the current values with either the original `initialValues` or a new snapshot and clears `errors`, `submitError`, `touched`, and submit state.',
+                  '`setSubmitting(isSubmitting)` exists for non-React or custom submit orchestration. When you use `FormProvider`, the provider manages that flag around `onSubmit` for you.',
                 ],
                 id: 'form-state-handler-api',
                 paragraphs: [
-                  'This is the generic root controller. It owns `values`, `errors`, `touched`, `isSubmitting`, and `isValid`, and it remains usable outside React.',
+                  'This is the generic root controller. It owns the full form lifecycle and remains usable outside React.',
+                  'The important distinction in this API is between field validation state and form-level submit state. Field rules flow through `errors` and `isValid`; backend-wide failures flow through `submitError`. That split keeps rendering, submit logic, and debugging much easier to reason about.',
                 ],
                 title: 'FormStateHandler',
               },
@@ -5693,6 +5711,18 @@ export const docsPackages: DocsPackage[] = [
                   'Use this hook when a component needs direct access to the controller itself rather than one of the higher-level field hooks.',
                 ],
                 title: 'useFormController',
+              },
+              {
+                bullets: [
+                  '`useFormMeta()` takes no parameters.',
+                  'Returns aggregate form metadata including `{ errors, submitError, touched, isSubmitting, isValid }`.',
+                  'Use it for error summaries, submit banners, or other UI that depends on more than one field at once.',
+                ],
+                id: 'use-form-meta-api',
+                paragraphs: [
+                  'This hook is the broad read surface in the React layer. It is intentionally suited to form-level UI rather than per-field rendering.',
+                ],
+                title: 'useFormMeta',
               },
               {
                 bullets: [

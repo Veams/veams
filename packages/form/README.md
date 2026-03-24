@@ -282,6 +282,21 @@ function RoleForm() {
 }
 ```
 
+## Form-Level Submit Errors
+
+Keep backend errors that are not tied to one field out of the field error map.
+Use `setSubmitError()` for those cases and read aggregate state through `useFormMeta()`.
+
+```tsx
+import { FormProvider, useFormMeta } from '@veams/form/react';
+
+function SubmitErrorBanner() {
+  const { submitError } = useFormMeta<{ email: string; password: string }>();
+
+  return submitError ? <p role="alert">{submitError}</p> : null;
+}
+```
+
 ## Schema Validators (Zod)
 
 `@veams/form` does not depend on Zod, but it exposes a lightweight adapter for Zod-style `safeParse` schemas.
