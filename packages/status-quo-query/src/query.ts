@@ -13,6 +13,7 @@ import {
   type QueryKey,
   // Import QueryObserver to monitor and manage individual queries.
   QueryObserver,
+  type QueryOptions,
   // Import configuration options for the query observer.
   type QueryObserverOptions,
   // Import the result shape returned by the query observer.
@@ -22,6 +23,13 @@ import {
   // Import the status enum for query results (pending, success, error).
   type QueryStatus as TanstackQueryStatus,
 } from '@tanstack/query-core';
+
+import {
+  type TrackedDependencyRecord,
+  type TrackingRegistry,
+  type TrackedQueryKey,
+  extractTrackedDependencies,
+} from './tracking';
 
 // Re-export FetchStatus and QueryStatus for internal naming consistency.
 export type QueryFetchStatus = FetchStatus;
@@ -101,6 +109,27 @@ export interface CreateQuery {
 }
 
 /**
+ * Function signature for tracked queries that derive dependencies from the final query-key segment.
+ *
+ * The tracked query handle deliberately stays API-compatible with the normal query service.
+ * The only extra behavior is invisible: dependency registration and on-demand re-registration.
+ */
+export interface CreateTrackedQuery {
+  <
+    TDeps extends TrackedDependencyRecord,
+    TQueryFnData = unknown,
+    TError = Error,
+    TData = TQueryFnData,
+    TQueryData = TQueryFnData,
+    TQueryKey extends TrackedQueryKey<TDeps> = TrackedQueryKey<TDeps>,
+  >(
+    queryKey: TQueryKey,
+    queryFn: QueryFunction<TQueryFnData, TQueryKey>,
+    options?: QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey>
+  ): QueryService<TData, TError>;
+}
+
+/**
  * Configuration options for creating a query service, excluding function and key.
  */
 export type QueryServiceOptions<
@@ -151,39 +180,85 @@ export function setupQuery(queryClient: QueryClient): CreateQuery {
     queryFn: QueryFunction<TQueryFnData, TQueryKey>,
     options?: QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey>
   ): QueryService<TData, TError> {
-    // Create a new QueryObserver instance to manage this specific query's lifecycle.
-    const observer = new QueryObserver<TQueryFnData, TError, TData, TQueryData, TQueryKey>(
-      queryClient,
-      {
-        ...options,
-        queryFn,
-        queryKey,
-      }
-    );
+    return createQueryService(queryClient, queryKey, queryFn, options).service;
+  };
+}
 
-    // Return the implementation of the QueryService interface.
+/**
+ * Prepares a tracked query factory that registers and re-registers query dependencies on demand.
+ *
+ * Tracked queries register immediately on creation, but TanStack is still free to garbage-collect
+ * the underlying query when it becomes idle. When that happens, the provider-level cache
+ * subscription removes the old query hash from the tracking registry.
+ *
+ * A later `refetch()` or first subscription can rebuild the TanStack query. That is why tracked
+ * query handles call `ensureRegistered()` before they become active again.
+ */
+export function setupTrackedQuery(
+  queryClient: QueryClient,
+  trackingRegistry: TrackingRegistry
+): CreateTrackedQuery {
+  return function createTrackedQuery<
+    TDeps extends TrackedDependencyRecord,
+    TQueryFnData = unknown,
+    TError = Error,
+    TData = TQueryFnData,
+    TQueryData = TQueryFnData,
+    TQueryKey extends TrackedQueryKey<TDeps> = TrackedQueryKey<TDeps>,
+  >(
+    queryKey: TQueryKey,
+    queryFn: QueryFunction<TQueryFnData, TQueryKey>,
+    options?: QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey>
+  ): QueryService<TData, TError> {
+    // Validate and normalize the dependency entries once when the handle is created.
+    const dependencies = extractTrackedDependencies(queryKey);
+    // Reuse the same core query service implementation as the untracked API.
+    const service = createQueryService(queryClient, queryKey, queryFn, options);
+    // We only need re-registration on the transition from zero to one subscribers.
+    let subscriberCount = 0;
+
+    // Register the current query hash immediately so future tracked mutations can find it.
+    trackingRegistry.register(service.observer.getCurrentQuery().queryHash, dependencies);
+
+    const ensureRegistered = () => {
+      // Build resolves the current live TanStack query for the stored observer options. This is
+      // the same mechanism TanStack uses internally when a query gets recreated after GC.
+      const liveQuery = queryClient.getQueryCache().build(
+        queryClient,
+        toQueryOptions(queryKey, queryFn, options)
+      );
+
+      // Re-register only when TanStack has recreated the query and the registry has already
+      // cleaned up the previous hash. This keeps the edge-case handling cheap in the common case.
+      if (!trackingRegistry.has(liveQuery.queryHash)) {
+        trackingRegistry.register(liveQuery.queryHash, dependencies);
+      }
+    };
+
     return {
-      // Map the current observer state to our service's snapshot format.
-      getSnapshot: () => toQueryServiceSnapshot(observer.getCurrentResult()),
-      // Subscribe to observer changes and notify the listener with updated snapshots.
-      subscribe: (listener) =>
-        observer.subscribe((result) => {
-          listener(toQueryServiceSnapshot(result));
-        }),
-      // Proxy the refetch call and map the async result back to a snapshot.
-      refetch: async (options) => toQueryServiceSnapshot(await observer.refetch(options)),
-      // Trigger a targeted invalidation using the query's key and custom options.
-      invalidate: (options) =>
-        queryClient.invalidateQueries(
-          {
-            exact: true,
-            queryKey,
-            ...(options?.refetchType === undefined ? {} : { refetchType: options.refetchType }),
-          },
-          toInvalidateOptions(options)
-        ),
-      // Provide direct access to the raw observer result when needed.
-      unsafe_getResult: () => observer.getCurrentResult(),
+      ...service.service,
+      refetch: async (refetchOptions) => {
+        // Refetch is one of the two explicit reactivation paths agreed on in the design.
+        ensureRegistered();
+        return service.service.refetch(refetchOptions);
+      },
+      subscribe: (listener) => {
+        // The first active subscriber is the other reactivation path. Re-running registration
+        // here makes a previously removed query visible to tracked invalidation again.
+        if (subscriberCount === 0) {
+          ensureRegistered();
+        }
+
+        subscriberCount += 1;
+
+        const unsubscribe = service.service.subscribe(listener);
+
+        return () => {
+          // Keep the counter bounded so accidental double-unsubscribe cannot push it negative.
+          subscriberCount = Math.max(0, subscriberCount - 1);
+          unsubscribe();
+        };
+      },
     };
   };
 }
@@ -204,6 +279,75 @@ function toQueryServiceSnapshot<TData, TError>(
     isFetching: result.isFetching,
     isPending: result.isPending,
     isSuccess: result.isSuccess,
+  };
+}
+
+function createQueryService<
+  TQueryFnData = unknown,
+  TError = Error,
+  TData = TQueryFnData,
+  TQueryData = TQueryFnData,
+  TQueryKey extends QueryKey = QueryKey,
+>(
+  queryClient: QueryClient,
+  queryKey: TQueryKey,
+  queryFn: QueryFunction<TQueryFnData, TQueryKey>,
+  options?: QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey>
+): {
+  // Expose the observer internally so tracked queries can access the current query hash.
+  observer: QueryObserver<TQueryFnData, TError, TData, TQueryData, TQueryKey>;
+  // Preserve the public query-service shape for all callers.
+  service: QueryService<TData, TError>;
+} {
+  const observer = new QueryObserver<TQueryFnData, TError, TData, TQueryData, TQueryKey>(
+    queryClient,
+    toQueryOptions(queryKey, queryFn, options)
+  );
+
+  return {
+    observer,
+    service: {
+      getSnapshot: () => toQueryServiceSnapshot(observer.getCurrentResult()),
+      subscribe: (listener) =>
+        observer.subscribe((result) => {
+          listener(toQueryServiceSnapshot(result));
+        }),
+      refetch: async (refetchOptions) =>
+        toQueryServiceSnapshot(await observer.refetch(refetchOptions)),
+      invalidate: (invalidateOptions) =>
+        queryClient.invalidateQueries(
+          {
+            exact: true,
+            queryKey,
+            ...(invalidateOptions?.refetchType === undefined
+              ? {}
+              : { refetchType: invalidateOptions.refetchType }),
+          },
+          toInvalidateOptions(invalidateOptions)
+        ),
+      unsafe_getResult: () => observer.getCurrentResult(),
+    },
+  };
+}
+
+function toQueryOptions<
+  TQueryFnData = unknown,
+  TError = Error,
+  TData = TQueryFnData,
+  TQueryData = TQueryFnData,
+  TQueryKey extends QueryKey = QueryKey,
+>(
+  queryKey: TQueryKey,
+  queryFn: QueryFunction<TQueryFnData, TQueryKey>,
+  options?: QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey>
+): QueryOptions<TQueryFnData, TError, TQueryData, TQueryKey> &
+  QueryObserverOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey> {
+  // Centralize option assembly so both normal queries and tracked queries build observers and
+  // live TanStack query instances from exactly the same inputs.
+  return {
+    ...options,
+    queryFn,
+    queryKey,
   };
 }
 

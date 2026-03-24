@@ -15,6 +15,17 @@ import {
   type QueryClient,
 } from '@tanstack/query-core';
 
+import {
+  type TrackedDependencyRecord,
+  type TrackingRegistry,
+  type TrackedInvalidateOn,
+  type TrackedMatchMode,
+  type TrackedDependencyValue,
+  pickTrackedDependencies,
+  resolveTrackedQueries,
+  toTrackedDependencyEntries,
+} from './tracking';
+
 // Re-export MutationStatus for consistent naming within the service.
 export type MutationStatus = TanstackMutationStatus;
 
@@ -89,6 +100,46 @@ export interface CreateMutation {
 }
 
 /**
+ * Additional options for tracked mutations that invalidate queries automatically.
+ *
+ * The tracked mutation still behaves like a normal mutation service from the outside. These
+ * options only describe how the facade should derive dependency values and when it should
+ * invalidate matching tracked queries after the mutation lifecycle settles.
+ */
+export interface TrackedMutationServiceOptions<
+  TDeps extends TrackedDependencyRecord = TrackedDependencyRecord,
+  TData = unknown,
+  TError = Error,
+  TVariables = void,
+  TOnMutateResult = unknown,
+> extends MutationServiceOptions<TData, TError, TVariables, TOnMutateResult> {
+  // Optional dependency keys used by the default variable reader.
+  dependencyKeys?: readonly (keyof TDeps & string)[];
+  // Optional custom resolver when mutation variables do not expose dependency fields directly.
+  resolveDependencies?: (variables: TVariables) => Partial<TDeps>;
+  // Lifecycle hook that triggers automatic invalidation.
+  invalidateOn?: TrackedInvalidateOn;
+  // Matching strategy for resolved dependencies.
+  matchMode?: TrackedMatchMode;
+}
+
+/**
+ * Function signature for tracked mutation factories.
+ */
+export interface CreateTrackedMutation {
+  <
+    TDeps extends TrackedDependencyRecord = TrackedDependencyRecord,
+    TData = unknown,
+    TError = Error,
+    TVariables = void,
+    TOnMutateResult = unknown,
+  >(
+    mutationFn: MutationFunction<TData, TVariables>,
+    options?: TrackedMutationServiceOptions<TDeps, TData, TError, TVariables, TOnMutateResult>
+  ): MutationService<TData, TError, TVariables, TOnMutateResult>;
+}
+
+/**
  * Prepares the mutation factory by binding it to a specific QueryClient instance.
  */
 export function setupMutation(queryClient: QueryClient): CreateMutation {
@@ -102,30 +153,98 @@ export function setupMutation(queryClient: QueryClient): CreateMutation {
     mutationFn: MutationFunction<TData, TVariables>,
     options?: MutationServiceOptions<TData, TError, TVariables, TOnMutateResult>
   ): MutationService<TData, TError, TVariables, TOnMutateResult> {
-    // Create a new MutationObserver instance to manage this specific mutation's lifecycle.
-    const observer = new MutationObserver<TData, TError, TVariables, TOnMutateResult>(
-      queryClient,
-      {
-        ...options,
-        mutationFn,
-      }
-    );
+    return createMutationService(queryClient, mutationFn, options);
+  };
+}
 
-    // Return the implementation of the MutationService interface.
+/**
+ * Prepares a tracked mutation factory that coordinates invalidation through the shared registry.
+ *
+ * The implementation intentionally wraps the normal mutation service instead of re-implementing
+ * TanStack lifecycle behavior. TanStack still owns retries, callbacks, and state transitions;
+ * the facade only adds dependency resolution plus the follow-up invalidation pass.
+ */
+export function setupTrackedMutation(
+  queryClient: QueryClient,
+  trackingRegistry: TrackingRegistry,
+  defaultDependencyKeys?: readonly string[]
+): CreateTrackedMutation {
+  return function createTrackedMutation<
+    TDeps extends TrackedDependencyRecord = TrackedDependencyRecord,
+    TData = unknown,
+    TError = Error,
+    TVariables = void,
+    TOnMutateResult = unknown,
+  >(
+    mutationFn: MutationFunction<TData, TVariables>,
+    options?: TrackedMutationServiceOptions<TDeps, TData, TError, TVariables, TOnMutateResult>
+  ): MutationService<TData, TError, TVariables, TOnMutateResult> {
+    // Split tracked-only options from the underlying TanStack mutation observer options.
+    const {
+      dependencyKeys,
+      invalidateOn = 'success',
+      matchMode = 'intersection',
+      resolveDependencies,
+      ...mutationOptions
+    } = options ?? {};
+    // Reuse the normal mutation service so snapshots and subscription behavior stay identical.
+    const service = createMutationService(queryClient, mutationFn, mutationOptions);
+    // The paired helper injects dependency keys here, while standalone tracked mutations can
+    // still provide them directly or bypass them with a custom resolver.
+    const resolvedDependencyKeys = (dependencyKeys ?? defaultDependencyKeys);
+
+    const invalidateTrackedQueries = async (variables: TVariables) => {
+      // Resolve the mutation variables into the same named dependency shape that tracked queries
+      // registered under when they were created.
+      const dependencies = resolveTrackedMutationDependencies(
+        variables,
+        resolvedDependencyKeys,
+        resolveDependencies
+      );
+      // Ask the registry for matching query hashes using the selected invalidation breadth.
+      const queryHashes = trackingRegistry.match(
+        toTrackedDependencyEntries(dependencies, 'Tracked mutation dependency resolution'),
+        matchMode
+      );
+      // Filter the registry result down to currently live TanStack queries before invalidating.
+      const queries = resolveTrackedQueries(queryClient, queryHashes);
+
+      await Promise.all(
+        queries.map((query) =>
+          queryClient.invalidateQueries({
+            exact: true,
+            queryKey: query.queryKey,
+          })
+        )
+      );
+    };
+
     return {
-      // Map the current observer state to our service's snapshot format.
-      getSnapshot: () => toMutationServiceSnapshot(observer.getCurrentResult()),
-      // Subscribe to observer changes and notify the listener with updated snapshots.
-      subscribe: (listener) =>
-        observer.subscribe((result) => {
-          listener(toMutationServiceSnapshot(result));
-        }),
-      // Proxy the mutate call to the underlying observer.
-      mutate: (variables, mutateOptions) => observer.mutate(variables, mutateOptions),
-      // Reset the underlying observer state.
-      reset: () => observer.reset(),
-      // Provide direct access to the raw observer result when needed.
-      unsafe_getResult: () => observer.getCurrentResult(),
+      ...service,
+      mutate: async (variables, mutateOptions) => {
+        try {
+          // Let TanStack finish the mutation first so its own callbacks and state machine remain
+          // authoritative. The facade only coordinates the follow-up invalidation.
+          const result = await service.mutate(variables, mutateOptions);
+
+          if (invalidateOn === 'success' || invalidateOn === 'settled') {
+            await invalidateTrackedQueries(variables);
+          }
+
+          return result;
+        } catch (error) {
+          if (invalidateOn === 'error' || invalidateOn === 'settled') {
+            try {
+              await invalidateTrackedQueries(variables);
+            } catch {
+              // Preserve the original mutation failure as the primary rejection. If invalidation
+              // also fails here, the caller still sees the mutation error that triggered this path.
+            }
+          }
+
+          throw error;
+        }
+      },
     };
   };
 }
@@ -147,4 +266,59 @@ function toMutationServiceSnapshot<TData, TError, TVariables, TOnMutateResult>(
     isPending: result.isPending,
     isSuccess: result.isSuccess,
   };
+}
+
+function createMutationService<
+  TData = unknown,
+  TError = Error,
+  TVariables = void,
+  TOnMutateResult = unknown,
+>(
+  queryClient: QueryClient,
+  mutationFn: MutationFunction<TData, TVariables>,
+  options?: MutationServiceOptions<TData, TError, TVariables, TOnMutateResult>
+): MutationService<TData, TError, TVariables, TOnMutateResult> {
+  // Keep the original mutation implementation in one place so tracked and untracked mutations
+  // always expose the same observer-backed runtime behavior.
+  const observer = new MutationObserver<TData, TError, TVariables, TOnMutateResult>(queryClient, {
+    ...options,
+    mutationFn,
+  });
+
+  return {
+    getSnapshot: () => toMutationServiceSnapshot(observer.getCurrentResult()),
+    subscribe: (listener) =>
+      observer.subscribe((result) => {
+        listener(toMutationServiceSnapshot(result));
+      }),
+    mutate: (variables, mutateOptions) => observer.mutate(variables, mutateOptions),
+    reset: () => observer.reset(),
+    unsafe_getResult: () => observer.getCurrentResult(),
+  };
+}
+
+function resolveTrackedMutationDependencies<
+  TDeps extends TrackedDependencyRecord,
+  TVariables,
+>(
+  variables: TVariables,
+  dependencyKeys: readonly (keyof TDeps & string)[] | undefined,
+  resolveDependencies:
+    | ((variables: TVariables) => Partial<TDeps>)
+    | undefined
+): Partial<Record<string, TrackedDependencyValue>> {
+  // A custom resolver takes precedence because it can adapt nested payloads or renamed fields.
+  if (resolveDependencies) {
+    return resolveDependencies(variables);
+  }
+
+  // Without a custom resolver, tracked mutations need known dependency keys so the default
+  // variable picker knows which fields are invalidation-relevant.
+  if (!dependencyKeys || dependencyKeys.length === 0) {
+    throw new Error(
+      'Tracked mutations require resolveDependencies or dependencyKeys to derive invalidation targets.'
+    );
+  }
+
+  return pickTrackedDependencies(dependencyKeys, variables);
 }
