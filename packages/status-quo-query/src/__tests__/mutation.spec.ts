@@ -40,10 +40,10 @@ describe('Mutation Service', () => {
   it('tracks failed mutations', async () => {
     const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: 0 } } });
     const createMutation = setupMutation(queryClient);
-    const mutationFn = jest.fn().mockRejectedValue(new Error('boom'));
+    const mutationFn = jest.fn((_variables: void) => Promise.reject(new Error('boom')));
     const service = createMutation(mutationFn);
 
-    await expect(service.mutate()).rejects.toThrow('boom');
+    await expect(service.mutate(undefined)).rejects.toThrow('boom');
     expect(service.getSnapshot().status).toBe('error');
   });
 });
