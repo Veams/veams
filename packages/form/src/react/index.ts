@@ -7,10 +7,12 @@ export {
   FormProvider,
   useFieldMeta,
   useFormController,
+  useFormMeta,
   useUncontrolledField,
   type ControllerProps,
   type ControllerRenderProps,
   type FieldMeta,
+  type FormMeta,
   type FormProviderProps,
   type UseFieldOptions,
 } from './react-form.js';

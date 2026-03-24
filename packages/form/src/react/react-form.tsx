@@ -10,6 +10,7 @@ import { getValueAtPath } from '../path-utils.js';
 import { FormContext, type AnyFieldValues } from './context.js';
 import { useFieldMeta, type FieldMeta } from './hooks/use-field-meta.js';
 import { useFormController } from './hooks/use-form-controller.js';
+import { useFormMeta, type FormMeta } from './hooks/use-form-meta.js';
 import { useUncontrolledField, type UseFieldOptions } from './hooks/use-uncontrolled-field.js';
 
 import type { FormHTMLAttributes, ReactNode, SyntheticEvent } from 'react';
@@ -142,6 +143,7 @@ export function FormProvider<T extends FormValues>({
    */
   const handleSubmit = async (event: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
     event.preventDefault();
+    controller.setSubmitError(undefined);
 
     // Trigger full form validation before submission.
     if (!controller.validateForm()) {
@@ -218,5 +220,5 @@ export function Controller({ name, render }: ControllerProps) {
 }
 
 // Re-export core hooks for convenient access.
-export { useFieldMeta, useFormController, useUncontrolledField };
-export type { FieldMeta, UseFieldOptions };
+export { useFieldMeta, useFormController, useFormMeta, useUncontrolledField };
+export type { FieldMeta, FormMeta, UseFieldOptions };

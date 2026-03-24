@@ -28,6 +28,7 @@ handler.setFieldValue('profile.email', 'jane@veams.org');
 handler.setFieldValue('profile.newsletter', true);
 handler.setFieldTouched('profile.email', true);
 handler.setFieldError('profile.email', 'Already taken');
+handler.setSubmitError('Temporary backend outage');
 
 // @ts-expect-error unknown path
 handler.setFieldValue('profile.name', 'Jane');

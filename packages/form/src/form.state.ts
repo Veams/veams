@@ -66,6 +66,8 @@ export interface FormState<T extends FormValues> {
   values: T;
   // Current validation errors.
   errors: FormErrors<T>;
+  // Generic submit-level backend error, not tied to a field path.
+  submitError?: string;
   // Which fields have been interacted with.
   touched: FormTouched<T>;
   // Whether the form is currently being submitted.
@@ -117,6 +119,8 @@ export interface FormActions<T extends FormValues> {
   resetForm: (values?: T) => void;
   // Sets an explicit error message for a field.
   setFieldError: (name: FormFieldName<T>, errorMessage?: string) => void;
+  // Sets a generic submit-level error message.
+  setSubmitError: (errorMessage?: string) => void;
   // Updates the touched status of a specific field.
   setFieldTouched: (name: FormFieldName<T>, isTouched?: boolean) => void;
   // Updates the value of a specific field and triggers validation.
@@ -153,6 +157,7 @@ export class FormStateHandler<T extends FormValues> extends SignalStateHandler<
       initialState: {
         values: initialValues,
         errors: {},
+        submitError: undefined,
         touched: {},
         isSubmitting: false,
         isValid: true,
@@ -174,6 +179,7 @@ export class FormStateHandler<T extends FormValues> extends SignalStateHandler<
     return {
       resetForm: this.resetForm,
       setFieldError: this.setFieldError,
+      setSubmitError: this.setSubmitError,
       setFieldTouched: this.setFieldTouched,
       setFieldValue: this.setFieldValue,
       setSubmitting: this.setSubmitting,
@@ -193,6 +199,7 @@ export class FormStateHandler<T extends FormValues> extends SignalStateHandler<
       {
         values: nextValues,
         errors: {} as FormErrors<T>,
+        submitError: undefined,
         touched: {} as FormTouched<T>,
         isSubmitting: false,
         isValid: true,
@@ -216,6 +223,7 @@ export class FormStateHandler<T extends FormValues> extends SignalStateHandler<
       {
         values: nextValues,
         errors: nextErrors,
+        submitError: undefined,
         isValid: this.isEmptyErrors(nextErrors),
       },
       `Form :: Set ${String(name)}`
@@ -256,6 +264,18 @@ export class FormStateHandler<T extends FormValues> extends SignalStateHandler<
         isValid: this.isEmptyErrors(nextErrors),
       },
       `Form :: Error ${String(name)}`
+    );
+  };
+
+  /**
+   * Manually sets a generic submit-level error message.
+   */
+  setSubmitError = (errorMessage?: string) => {
+    this.setState(
+      {
+        submitError: errorMessage,
+      },
+      errorMessage ? 'Form :: Submit Error' : 'Form :: Submit Error Clear'
     );
   };
 

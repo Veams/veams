@@ -187,4 +187,32 @@ describe('react-form', () => {
     expect(container.querySelector('#role-touched')?.textContent).toBe('true');
     expect(externalFormHandler.getState().values.role).toBe('admin');
   });
+
+  it('should clear stale submitError before a new submit attempt', () => {
+    const externalFormHandler = new FormStateHandler({
+      initialValues: {
+        email: 'alice@example.com',
+      },
+    });
+    externalFormHandler.setSubmitError('Previous backend error');
+
+    const handleSubmit = jest.fn();
+
+    act(() => {
+      root.render(
+        <FormProvider formHandlerInstance={externalFormHandler} onSubmit={handleSubmit}>
+          <button type="submit">Submit</button>
+        </FormProvider>
+      );
+    });
+
+    const form = container.querySelector('form');
+
+    act(() => {
+      form?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    });
+
+    expect(handleSubmit).toHaveBeenCalledTimes(1);
+    expect(externalFormHandler.getState().submitError).toBeUndefined();
+  });
 });

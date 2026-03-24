@@ -21,6 +21,7 @@ describe('FormStateHandler', () => {
       errors: {},
       isSubmitting: false,
       isValid: true,
+      submitError: undefined,
       touched: {},
       values: {
         email: '',
@@ -77,6 +78,34 @@ describe('FormStateHandler', () => {
     expect(handler.getState().isValid).toBe(true);
   });
 
+  it('should handle submit-level errors separately from field errors', () => {
+    const handler = new FormStateHandler({
+      initialValues: { email: '' },
+    });
+
+    handler.setSubmitError('Backend unavailable');
+
+    expect(handler.getState().submitError).toBe('Backend unavailable');
+    expect(handler.getState().errors).toEqual({});
+    expect(handler.getState().isValid).toBe(true);
+
+    handler.setSubmitError(undefined);
+
+    expect(handler.getState().submitError).toBeUndefined();
+  });
+
+  it('should clear submitError when a field value changes', () => {
+    const handler = new FormStateHandler({
+      initialValues: { email: '' },
+      validator,
+    });
+
+    handler.setSubmitError('Backend unavailable');
+    handler.setFieldValue('email', 'hello@veams.org');
+
+    expect(handler.getState().submitError).toBeUndefined();
+  });
+
   it('should mark all fields as touched', () => {
     const handler = new FormStateHandler({
       initialValues: { company: '', email: '' },
@@ -124,6 +153,7 @@ describe('FormStateHandler', () => {
       errors: {},
       isSubmitting: false,
       isValid: true,
+      submitError: undefined,
       touched: {},
       values: {
         email: 'reset@example.com',
