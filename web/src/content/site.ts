@@ -1017,15 +1017,226 @@ import { setupQueryManager } from '@veams/status-quo-query';
 
 const queryClient = new QueryClient();
 const manager = setupQueryManager(queryClient);
+const applicationId = 'app-1';
+const productId = 'product-1';
 
-const userQuery = manager.createQuery(['user', 42], () => fetchUser(42), {
-  enabled: false,
+const fetchProduct = async (currentApplicationId: string, currentProductId: string) => ({
+  applicationId: currentApplicationId,
+  name: 'Ada',
+  productId: currentProductId,
 });
 
-const updateUser = manager.createMutation(saveUser);
+const saveProduct = async (variables: {
+  applicationId: string;
+  productId: string;
+  productName: string;
+}) => ({
+  ...variables,
+  saved: true as const,
+});
 
-await userQuery.refetch();
-await updateUser.mutate({ id: 42, name: 'Ada' });`;
+const [createTrackedQuery, createTrackedMutation] = manager.createTrackedQueryAndMutation([
+  'applicationId',
+  'productId',
+] as const);
+
+const productQuery = createTrackedQuery(
+  ['product', { deps: { applicationId, productId }, view: { page: 1 } }],
+  () => fetchProduct(applicationId, productId),
+  { enabled: false }
+);
+
+const updateProduct = createTrackedMutation(saveProduct, {
+  invalidateOn: 'success',
+});
+
+await productQuery.refetch();
+await updateProduct.mutate({
+  applicationId,
+  productId,
+  productName: 'Ada',
+});`;
+
+const statusQuoQueryTrackedIntersectionExample = `import { QueryClient } from '@tanstack/query-core';
+import { setupQueryManager } from '@veams/status-quo-query';
+
+const queryClient = new QueryClient();
+const manager = setupQueryManager(queryClient);
+
+const fetchProduct = async (applicationId: string, productId: string) => ({
+  applicationId,
+  name: 'Ada',
+  productId,
+});
+
+const saveProduct = async (variables: {
+  applicationId: string;
+  productId: string;
+  productName: string;
+}) => variables;
+
+const [createTrackedQuery, createTrackedMutation] = manager.createTrackedQueryAndMutation([
+  'applicationId',
+  'productId',
+] as const);
+
+createTrackedQuery(
+  ['product', { deps: { applicationId: 'app-1', productId: 'product-1' }, view: { page: 1 } }],
+  () => fetchProduct('app-1', 'product-1')
+);
+
+createTrackedQuery(
+  ['product', { deps: { applicationId: 'app-1', productId: 'product-2' }, view: { page: 1 } }],
+  () => fetchProduct('app-1', 'product-2')
+);
+
+const renameProduct = createTrackedMutation(saveProduct);
+
+await renameProduct.mutate({
+  applicationId: 'app-1',
+  productId: 'product-1',
+  productName: 'Ada',
+});
+
+// Default matchMode is 'intersection', so only the
+// app-1 / product-1 query is invalidated.`;
+
+const statusQuoQueryTrackedUnionExample = `import { QueryClient } from '@tanstack/query-core';
+import { setupQueryManager } from '@veams/status-quo-query';
+
+const queryClient = new QueryClient();
+const manager = setupQueryManager(queryClient);
+
+const fetchProduct = async (applicationId: string, productId: string) => ({
+  applicationId,
+  name: 'Ada',
+  productId,
+});
+
+const syncProductData = async (variables: {
+  applicationId: string;
+  productId: string;
+}) => variables;
+
+const [createTrackedQuery, createTrackedMutation] = manager.createTrackedQueryAndMutation([
+  'applicationId',
+  'productId',
+] as const);
+
+createTrackedQuery(
+  ['product', { deps: { applicationId: 'app-1', productId: 'product-1' }, view: { page: 1 } }],
+  () => fetchProduct('app-1', 'product-1')
+);
+
+createTrackedQuery(
+  ['product', { deps: { applicationId: 'app-2', productId: 'product-1' }, view: { page: 1 } }],
+  () => fetchProduct('app-2', 'product-1')
+);
+
+const syncProduct = createTrackedMutation(syncProductData, {
+  matchMode: 'union',
+});
+
+await syncProduct.mutate({
+  applicationId: 'app-1',
+  productId: 'product-1',
+});
+
+// 'union' invalidates queries that match either dependency:
+// applicationId === 'app-1' or productId === 'product-1'.`;
+
+const statusQuoQueryTrackedLifecycleExample = `import { QueryClient } from '@tanstack/query-core';
+import { setupQueryManager } from '@veams/status-quo-query';
+
+const queryClient = new QueryClient();
+const manager = setupQueryManager(queryClient);
+
+const fetchProducts = async (applicationId: string) => [{ applicationId, productId: 'product-1' }];
+
+const removeProducts = async (variables: { applicationId: string }) => variables;
+
+const [createTrackedQuery, createTrackedMutation] = manager.createTrackedQueryAndMutation([
+  'applicationId',
+] as const);
+
+createTrackedQuery(
+  ['product-list', { deps: { applicationId: 'app-1' }, view: { page: 1 } }],
+  () => fetchProducts('app-1')
+);
+
+const cleanupProducts = createTrackedMutation(removeProducts, {
+  invalidateOn: 'settled',
+});
+
+await cleanupProducts.mutate({
+  applicationId: 'app-1',
+});
+
+// 'settled' invalidates after success or error.`;
+
+const statusQuoQueryTrackedCustomResolverExample = `import { QueryClient } from '@tanstack/query-core';
+import { setupQueryManager } from '@veams/status-quo-query';
+
+const queryClient = new QueryClient();
+const manager = setupQueryManager(queryClient);
+
+const saveProduct = async (variables: {
+  payload: { applicationId: string };
+  product: { id: string };
+  productName: string;
+}) => variables;
+
+const trackedMutation = manager.createTrackedMutation(saveProduct, {
+  resolveDependencies: (variables: {
+    payload: { applicationId: string };
+    product: { id: string };
+  }) => ({
+    applicationId: variables.payload.applicationId,
+    productId: variables.product.id,
+  }),
+});
+
+await trackedMutation.mutate({
+  payload: { applicationId: 'app-1' },
+  product: { id: 'product-1' },
+  productName: 'Ada',
+});`;
+
+const statusQuoQueryTrackedPairExample = `import { QueryClient } from '@tanstack/query-core';
+import { setupQueryManager } from '@veams/status-quo-query';
+
+const queryClient = new QueryClient();
+const manager = setupQueryManager(queryClient);
+const applicationId = 'app-1';
+const productId = 'product-1';
+
+const fetchProduct = async (currentApplicationId: string, currentProductId: string) => ({
+  applicationId: currentApplicationId,
+  name: 'Ada',
+  productId: currentProductId,
+});
+
+const saveProduct = async (variables: {
+  applicationId: string;
+  productId: string;
+  productName: string;
+}) => variables;
+
+const [createTrackedQuery, createTrackedMutation] =
+  manager.createTrackedQueryAndMutation(['applicationId', 'productId'] as const);
+
+const productQuery = createTrackedQuery(
+  ['product', { deps: { applicationId, productId }, view: { page: 1 } }],
+  () => fetchProduct(applicationId, productId)
+);
+
+const saveProductMutation = createTrackedMutation(saveProduct);
+
+await saveProductMutation.mutate({
+  applicationId,
+  productId,
+  productName: 'Ada',
+});`;
 
 const statusQuoQueryInvalidateExample = `await userQuery.invalidate({ refetchType: 'none' });
 await manager.invalidateQueries({ queryKey: ['user'] });
@@ -4008,12 +4219,26 @@ export const docsPackages: DocsPackage[] = [
                   'Query and mutation handles shaped to fit the Status Quo model.',
                   'Passive snapshots that are easy to sync into state handlers.',
                   'A query manager for broader coordination when the flow crosses query boundaries.',
+                  'Tracked invalidation that removes most manual cache-key bookkeeping after mutations.',
                 ],
                 id: 'shape',
                 paragraphs: [
                   'Status Quo Query exists to align TanStack Query with the Status Quo mental model. Instead of pushing raw observer objects through your app, it gives you query and mutation handles that are easier to bridge into state handlers and other explicit state flows.',
                 ],
                 title: 'Bring query state into the same flow',
+              },
+              {
+                bullets: [
+                  'Declare domain dependencies once in `deps`.',
+                  'Keep pagination, sorting, and filters readable in `view`.',
+                  'Let tracked mutations invalidate matching queries automatically.',
+                ],
+                id: 'tracked-invalidation-benefits',
+                paragraphs: [
+                  'The newest addition is tracked invalidation. Instead of teaching every mutation which query keys it must remember to invalidate, the facade keeps a dependency registry behind the manager. Queries register themselves under named dependencies, and mutations invalidate by those same names.',
+                  'For developers this reduces repeated cache-key logic, makes invalidation intent explicit in the key shape, and lowers the chance that one dependent query is forgotten during a write flow.',
+                ],
+                title: 'Tracked invalidation reduces cache bookkeeping',
               },
               {
                 featureCards: statusQuoQueryPhilosophyCards,
@@ -4029,9 +4254,10 @@ export const docsPackages: DocsPackage[] = [
               'Query and mutation handles that fit the Status Quo model.',
               'Passive snapshots that sync cleanly into state handlers.',
               'Explicit management when the flow goes broader.',
+              'Tracked invalidation that maps domain dependencies instead of manual cache keys.',
             ],
             heroParagraphs: [
-              'Status Quo Query connects TanStack Query to the Status Quo way of working. Queries and mutations expose passive snapshots and explicit commands, so syncing remote state into a handler feels natural instead of like an adapter bolted on afterward.',
+              'Status Quo Query connects TanStack Query to the Status Quo way of working. Queries and mutations expose passive snapshots and explicit commands, and tracked invalidation lets the facade coordinate cache refreshes by named domain dependencies instead of repetitive manual key invalidation.',
             ],
             id: 'overview',
             intro:
@@ -4151,20 +4377,21 @@ export const docsPackages: DocsPackage[] = [
                 codeExamples: [
                   {
                     code: statusQuoQueryQuickStart,
-                    label: 'Setup manager, query, and mutation',
+                    label: 'Setup manager, tracked query, and tracked mutation',
                     language: 'ts',
                   },
                 ],
                 id: 'first-flow',
                 paragraphs: [
                   'A good quick start creates both a query and a mutation, because the package is about the service layer around both patterns rather than just one observer type.',
+                  'The tracked version is now the recommended starting point for most feature work. It keeps cache invalidation closer to domain dependencies and further away from hand-maintained key lists.',
                 ],
                 title: 'Create the first end-to-end flow',
               },
               {
                 bullets: [
-                  'Use `manager.createQuery` for the query handle.',
-                  'Use `manager.createMutation` for the mutation handle.',
+                  'Use `manager.createTrackedQueryAndMutation(...)` when query and mutation share the same dependency names.',
+                  'Put invalidation-relevant values into `deps` and view-only variants into `view`.',
                   'Call commands on the handle, not on the snapshot.',
                 ],
                 id: 'workflow',
@@ -4236,12 +4463,14 @@ export const docsPackages: DocsPackage[] = [
                 id: 'invalidate-example',
                 paragraphs: [
                   'Invalidation is where the handle/manager split becomes practical. Exact-key invalidation belongs on the query handle, while broader key filters and direct state updates belong on the query manager.',
+                  'Tracked invalidation adds a third path: let the manager invalidate exact matching queries automatically by dependency name after a tracked mutation.',
                 ],
                 title: 'Coordinate invalidation and state updates',
               },
               {
                 bullets: [
                   '`query.invalidate()` targets the current query key.',
+                  '`createTrackedMutation(...)` can invalidate matching tracked queries automatically.',
                   '`manager.invalidateQueries()` supports broader filters.',
                   '`manager.setQueryData()` is the imperative path when you already know the correct next state value.',
                 ],
@@ -4326,6 +4555,18 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
+                  '`createTrackedMutation(mutationFn, options?)` adds automatic invalidation on top of the normal mutation handle.',
+                  '`options.dependencyKeys?` enables the default variable reader. `options.resolveDependencies?` is the escape hatch for nested or transformed mutation variables.',
+                  '`invalidateOn?` supports `success`, `error`, and `settled`. `matchMode?` supports `intersection` and `union`.',
+                ],
+                id: 'create-tracked-mutation',
+                paragraphs: [
+                  'Use `createTrackedMutation` when the write should invalidate queries by named dependencies instead of forcing callers to remember exact cache keys manually.',
+                ],
+                title: 'createTrackedMutation',
+              },
+              {
+                bullets: [
                   '`createQuery(queryKey, queryFn, options?)` accepts one TanStack query key, one query function, and optional observer options.',
                   '`queryKey` identifies the cache slot. `queryFn` performs the async read. `options?` configures stale time, retries, refetch behavior, and related observer settings.',
                   'Returns a query handle with `getSnapshot()`, `subscribe(listener)`, `refetch(options?)`, `invalidate(options?)`, and `unsafe_getResult()`.',
@@ -4335,6 +4576,54 @@ export const docsPackages: DocsPackage[] = [
                   'Use `createQuery` for one focused read workflow. It is the main per-query reference object most application code should work with after setup.',
                 ],
                 title: 'createQuery',
+              },
+              {
+                bullets: [
+                  '`createTrackedQuery(queryKey, queryFn, options?)` uses the same query handle API as `createQuery(...)`.',
+                  'Tracked query keys end with an object segment that contains `deps` and may contain `view` or other normal cache-key data.',
+                  'Only `deps` participates in tracked invalidation. `view` keeps pagination, sorting, and filter semantics readable without becoming invalidation dependencies.',
+                ],
+                id: 'create-tracked-query',
+                paragraphs: [
+                  'Use `createTrackedQuery` when one query should register itself under named domain dependencies and later be invalidated by tracked mutations.',
+                ],
+                title: 'createTrackedQuery',
+              },
+              {
+                bullets: [
+                  '`createTrackedQueryAndMutation(dependencyKeys)` returns the tracked query factory plus a tracked mutation factory with default dependency resolution.',
+                  'Declare the dependency names once, then let the paired mutation factory read `variables[dependencyKey]` automatically.',
+                  'Use the paired helper when one feature flow shares the same dependency names across its tracked queries and tracked mutations.',
+                ],
+                id: 'create-tracked-query-and-mutation',
+                paragraphs: [
+                  'This helper is the most ergonomic tracked entry point. It keeps dependency names in one place and removes the need to repeat `dependencyKeys` on every tracked mutation in the same flow.',
+                ],
+                title: 'createTrackedQueryAndMutation',
+              },
+              {
+                bullets: [
+                  '`matchMode` belongs to tracked mutations and supports `intersection` and `union`.',
+                  'Default is `intersection`, which invalidates only queries matching every provided dependency pair.',
+                  '`union` broadens invalidation to queries matching any provided dependency pair.',
+                ],
+                id: 'tracked-matching-examples',
+                paragraphs: [
+                  'Match strategy controls invalidation breadth. Keep it narrow with `intersection`, or broaden it intentionally with `union` when one mutation needs to fan out across a larger cache slice.',
+                ],
+                title: 'Tracked Match Modes',
+              },
+              {
+                bullets: [
+                  '`invalidateOn` supports `success`, `error`, and `settled`; default is `success`.',
+                  '`resolveDependencies(variables)` maps mutation variables into named dependency pairs when the default variable reader is not enough.',
+                  'Standalone tracked mutations need either `dependencyKeys` or `resolveDependencies`.',
+                ],
+                id: 'tracked-options-examples',
+                paragraphs: [
+                  'These options define when tracked invalidation runs and how dependency values are derived from mutation variables.',
+                ],
+                title: 'Tracked mutation options',
               },
               {
                 bullets: [
@@ -4363,12 +4652,12 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   '`QueryManager` groups the broad management API around one `QueryClient`.',
-                  'Factory methods are `createMutation(mutationFn, options?)` and `createQuery(queryKey, queryFn, options?)`.',
+                  'Factory methods are `createMutation(mutationFn, options?)`, `createQuery(queryKey, queryFn, options?)`, `createTrackedMutation(mutationFn, options?)`, `createTrackedQuery(queryKey, queryFn, options?)`, and `createTrackedQueryAndMutation(dependencyKeys)`.',
                   'Management methods are `cancelQueries(filters?, options?)`, `getQueryData(queryKey)`, `invalidateQueries(filters?, options?)`, `refetchQueries(filters?, options?)`, `removeQueries(filters?)`, `resetQueries(filters?, options?)`, `setQueryData(queryKey, updater)`, and `unsafe_getClient()`.',
                 ],
                 id: 'query-manager',
                 paragraphs: [
-                  'Use `QueryManager` when an operation crosses handle boundaries or when integration code needs one centralized surface for creation and cache management.',
+                  'Use `QueryManager` when an operation crosses handle boundaries or when integration code needs one centralized surface for creation, tracked invalidation, and cache management.',
                 ],
                 title: 'QueryManager',
               },
@@ -4492,6 +4781,85 @@ export const docsPackages: DocsPackage[] = [
               'Use manager commands after mutations when workflows require coordinated follow-up behavior.',
             summary: 'Manager management after a mutation.',
             title: 'Manager follow-up example',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: statusQuoQueryTrackedPairExample,
+                    label: 'Paired tracked factories',
+                    language: 'ts',
+                  },
+                ],
+                id: 'tracked-pair-example',
+                paragraphs: [
+                  'This is the shortest tracked setup that still shows the full value: declare dependency names once, register the query with `deps`, and let the paired mutation invalidate automatically by reading the same keys from the mutation variables.',
+                ],
+                title: 'Paired tracked workflow',
+              },
+            ],
+            eyebrow: 'Examples',
+            id: 'example-tracked-pair',
+            intro: 'Use the paired helper when one feature flow shares the same dependency names.',
+            summary: 'Declare dependency keys once, reuse them across tracked queries and mutations.',
+            title: 'Paired tracked workflow',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: statusQuoQueryTrackedIntersectionExample,
+                    label: 'Intersection matching',
+                    language: 'ts',
+                  },
+                  {
+                    code: statusQuoQueryTrackedUnionExample,
+                    label: 'Union matching',
+                    language: 'ts',
+                  },
+                ],
+                id: 'tracked-match-mode-examples',
+                paragraphs: [
+                  'These two examples show the same tracked setup with different invalidation breadth. `intersection` keeps the fan-out narrow, while `union` deliberately expands it.',
+                ],
+                title: 'Tracked match mode examples',
+              },
+            ],
+            eyebrow: 'Examples',
+            id: 'example-tracked-match-modes',
+            intro: 'Choose match mode based on how broad the mutation impact really is.',
+            summary: 'Compare `intersection` and `union` with concrete tracked queries.',
+            title: 'Tracked match mode examples',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: statusQuoQueryTrackedLifecycleExample,
+                    label: 'Lifecycle timing',
+                    language: 'ts',
+                  },
+                  {
+                    code: statusQuoQueryTrackedCustomResolverExample,
+                    label: 'Custom dependency resolver',
+                    language: 'ts',
+                  },
+                ],
+                id: 'tracked-option-examples',
+                paragraphs: [
+                  'Use these patterns when tracked invalidation needs custom timing or when mutation variables do not expose the dependency values in the default shape.',
+                ],
+                title: 'Tracked option examples',
+              },
+            ],
+            eyebrow: 'Examples',
+            id: 'example-tracked-options',
+            intro: 'Adjust invalidation timing or dependency resolution when the default flow is not enough.',
+            summary: 'Examples for `invalidateOn` and `resolveDependencies`.',
+            title: 'Tracked option examples',
           },
         ],
         title: 'Examples',
