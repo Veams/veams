@@ -2587,13 +2587,17 @@ import {
 
 const _cssAnimationsInstall = `npm install @veams/css-animations`;
 
-const cssAnimationsScssUsage = `// Import the full bundle (variables, mixins, and all animations)
-@import "@veams/css-animations";
+const cssAnimationsScssUsage = `// Use the full bundle (variables, mixins, and all animations)
+@use "pkg:@veams/css-animations" as *;
 
-// OR import specific pieces for a smaller footprint
-@import "@veams/css-animations/variables";
-@import "@veams/css-animations/mixins";
-@import "@veams/css-animations/animations/feedback-effects/fb-border-simple";
+// OR compose specific pieces for a smaller footprint
+@use "pkg:@veams/css-animations/scss/variables.scss" as vars;
+@use "pkg:@veams/css-animations/scss/animations/feedback-effects/fb-setup.scss" as *;
+@use "pkg:@veams/css-animations/scss/animations/feedback-effects/fb-border-simple.scss" as *;
+
+:root {
+  @include vars.veams-root-vars;
+}
 
 .my-element {
   // Use the setup mixin for feedback animations (creates pseudo-element)
@@ -2601,7 +2605,10 @@ const cssAnimationsScssUsage = `// Import the full bundle (variables, mixins, an
   
   // Apply the animation mixin
   @include fb-border-simple;
-}`;
+}
+
+// Optional: emit the keyframes from a shared stylesheet
+// @include fb-border-simple-keyframes();`;
 
 const cssAnimationsCssUsage = `/* Import the full compiled bundle */
 @import "@veams/css-animations/index.css";
@@ -6394,7 +6401,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'scss-usage',
                 paragraphs: [
-                  'For Sass users, the package provides a highly modular set of mixins. You can import the full bundle or just the specific variables, mixins, and animations you need to keep your CSS footprint small.',
+                  'For Sass users, the package provides a highly modular set of mixins. You can `@use` the full bundle or just the specific variables and animation modules you need to keep your CSS footprint small.',
                   'When using feedback animations, remember to include `@include fb-setup;` on the target element to initialize the required pseudo-element styling.',
                 ],
                 title: 'SCSS Mixins',
@@ -6478,8 +6485,8 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  'Import `@veams/css-animations/animations/*` when you want one specific animation stylesheet instead of the whole bundle.',
-                  'The package exports Sass subpaths for source-level composition and CSS subpaths for built styles.',
+                  'Use `pkg:@veams/css-animations/scss/animations/*.scss` when you want one specific Sass animation module instead of the whole bundle.',
+                  'The package exports Sass subpaths with `.scss` filenames so the Sass Node package importer can resolve them via `pkg:` URLs.',
                   'Use these subpaths when bundle size or stylesheet ownership matters more than one-shot convenience.',
                 ],
                 id: 'animations-subpath',
@@ -6502,9 +6509,9 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  'Import `@veams/css-animations/mixins` when Sass files should consume the package mixins directly.',
-                  'This is the entry point for shared animation mixins such as the feedback setup helpers.',
-                  'Use it when a project wants to compose package behavior into its own Sass architecture instead of only consuming compiled CSS.',
+                  'Use `pkg:@veams/css-animations/scss/mixins.scss` when a Sass module needs the low-level shared helpers from the package.',
+                  'This entry mainly exposes the internal keyframe helper that the animation source files build on.',
+                  'Use it when you are extending the package internals rather than consuming the public animation modules.',
                 ],
                 id: 'mixins-entry',
                 paragraphs: [
@@ -6521,7 +6528,7 @@ export const docsPackages: DocsPackage[] = [
                   },
                 ],
                 bullets: [
-                  'Import `@veams/css-animations/variables` when Sass files need the package variable definitions.',
+                  'Use `pkg:@veams/css-animations/scss/variables.scss` when Sass files need the package variable definitions.',
                   'The runtime CSS also respects the exposed custom properties, so values can be overridden in `:root` or a local scope.',
                   'Use this entry when a team wants theming or timing overrides without forking the animation source.',
                 ],

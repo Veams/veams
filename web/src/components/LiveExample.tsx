@@ -19,6 +19,7 @@ import { VentProvider, useVent, useVentSubscribe } from '@veams/vent/react';
 import { useState, useRef, type ReactNode } from 'react';
 
 import { CodeBlock } from './CodeBlock';
+import '../content/css-animations-showcase.scss';
 
 import type { CodeExample, LiveExampleId } from '../content/site';
 
@@ -60,6 +61,25 @@ function toAnimationOptions(
         : [],
     ),
   );
+}
+
+function toShowcaseModifierClass(name: AnimationName): string {
+  return `is-css-animation-${name}`;
+}
+
+function resolveAnimationMixinName(name: AnimationName): string {
+  switch (name) {
+    case 'fall-rotate':
+      return 'rotate-fall';
+    case 'fade':
+      return 'fade-it';
+    case 'newspaper-rotate-in':
+      return 'newspaper-in';
+    case 'newspaper-rotate-out':
+      return 'newspaper-out';
+    default:
+      return name;
+  }
 }
 
 const showcaseCategories: ShowcaseCategory[] = [
@@ -977,12 +997,19 @@ function CssAnimationsShowcase() {
 
   const selectedImportExample = activeAnimation
     ? {
-        code: `@import "@veams/css-animations/animations/${resolveAnimationImportPath(activeAnimation)}";`,
+        code: `${activeAnimation.startsWith('fb-') ? '@use "pkg:@veams/css-animations/scss/animations/feedback-effects/fb-setup.scss" as *;\n' : ''}@use "pkg:@veams/css-animations/scss/animations/${resolveAnimationImportPath(activeAnimation)}.scss" as *;
+
+// Optional when keyframes should live in a shared stylesheet:
+// @include ${resolveAnimationMixinName(activeAnimation)}-keyframes();
+
+.my-element {
+  ${activeAnimation.startsWith('fb-') ? '@include fb-setup;\n  ' : ''}@include ${resolveAnimationMixinName(activeAnimation)};
+}`,
         description:
           activeAnimation.startsWith('fb-')
-            ? 'Feedback effects also need `@include fb-setup;` on the animated element.'
-            : 'Import only this animation when you want the smallest possible SCSS footprint.',
-        label: 'SCSS import',
+            ? 'Feedback effects still need `@include fb-setup;` on the animated element. The example uses Sass `pkg:` URLs, so your toolchain must enable the Sass Node package importer.'
+            : 'The example uses Sass `pkg:` URLs. Enable the Sass Node package importer when keyframes or animation modules are loaded this way.',
+        label: 'SCSS usage',
         language: 'scss' as const,
       }
     : null;
@@ -1061,9 +1088,9 @@ function CssAnimationsShowcase() {
 
         <div className="example-animation-preview-stack">
           <div className="example-animation-preview">
-            <div
-              className={`example-animation-target${
-                isAnimating ? ` showcase-${activeAnimation} is-animated` : ''
+              <div
+                className={`example-animation-target${
+                isAnimating && activeAnimation ? ` ${toShowcaseModifierClass(activeAnimation)} is-animated` : ''
               }`}
               onAnimationEnd={() => setIsAnimated(false)}
             >
