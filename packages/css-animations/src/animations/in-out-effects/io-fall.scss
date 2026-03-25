@@ -1,5 +1,5 @@
-@import "../../variables";
-@import "../../mixins";
+@use "../../variables" as vars;
+@use "../../mixins" as shared;
 
 /// `Rotation and Falling`
 /// rotates an element and adds a falling animation.
@@ -15,30 +15,41 @@
 ///     @include rotate-fall(300ms, ease-in);
 ///   }
 ///
-@mixin rotate-fall($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
-	transform-origin: 0 0;
-	animation: fall-rotate $transition-duration ease-in both;
-}
 
 /* ---------------------------------------------------
-KEYFRAMES: FALL
+Keyframes
 --------------------------------------------------- */
-@include keyframes(fall-rotate) {
-	0% {
-		transform: rotateZ(0deg);
-	}
-	20% {
-		transform: rotateZ(10deg);
-		animation-timing-function: $transition-ease-method;
-	}
-	40% {
-		transform: rotateZ(17deg);
-	}
-	60% {
-		transform: rotateZ(16deg);
-	}
-	100% {
-		transform: translateY(100%) rotateZ(17deg);
+$_rotate_fall_keyframes-rendered: false !default;
+@mixin rotate-fall-keyframes() {
+	@if $_rotate_fall_keyframes-rendered == false {
+		$_rotate_fall_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(fall-rotate) {
+					0% {
+						transform: rotateZ(0deg);
+					}
+					20% {
+						transform: rotateZ(10deg);
+						animation-timing-function: vars.$transition-ease-method;
+					}
+					40% {
+						transform: rotateZ(17deg);
+					}
+					60% {
+						transform: rotateZ(16deg);
+					}
+					100% {
+						transform: translateY(100%) rotateZ(17deg);
+					}
+				}
+		}
 	}
 }
 
+@mixin rotate-fall($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
+	transform-origin: 0 0;
+	animation: fall-rotate $transition-duration ease-in both;
+	@include rotate-fall-keyframes();
+}

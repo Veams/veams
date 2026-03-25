@@ -1,5 +1,5 @@
-@import "../../variables";
-@import "../../mixins";
+@use "sass:list";
+@use "sass:math";
 /* ===================================================
 FEEDBACK ANIMATIONS
 =================================================== */
@@ -12,7 +12,7 @@ Standard Values
 	position: absolute;
 	top: 50%;
 	left: 50%;
-	margin: (-$height/2) 0 0 (-$width/2);
+	margin: math.div(-$height, 2) 0 0 math.div(-$width, 2);
 	width: $width;
 	height: $height;
 	border-radius: $radius;
@@ -22,8 +22,8 @@ Standard Values
 }
 
 @mixin fb-setup($size: 70px, $radius: 50%) {
-	$width: nth($size, 1);
-	$height: if(length($size) == 2, nth($size, 2), $width);
+	$width: list.nth($size, 1);
+	$height: if(list.length($size) == 2, list.nth($size, 2), $width);
 
 	position: relative;
 	display: inline-block;

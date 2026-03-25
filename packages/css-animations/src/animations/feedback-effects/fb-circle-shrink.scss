@@ -1,10 +1,39 @@
-@import "../../variables";
-@import "../../mixins";
-@import "fb-setup";
+@use "../../variables" as vars;
+@use "../../mixins" as shared;
+@use "fb-setup";
 /* ---------------------------------------------------
 Simple Circle
 --------------------------------------------------- */
-@mixin fb-circle-shrink($bgColor: $animation-bg-color, $transition-duration: $transition-duration, $transition-ease-method: forwards, $fbClass: false) {
+
+/* ---------------------------------------------------
+Keyframes
+--------------------------------------------------- */
+$_fb_circle_shrink_keyframes-rendered: false !default;
+@mixin fb-circle-shrink-keyframes() {
+	@if $_fb_circle_shrink_keyframes-rendered == false {
+		$_fb_circle_shrink_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(fb-circle-shrink) {
+					0% {
+							opacity: 0;
+							transform: scale3d(0.2, 0.2, 1);
+						}
+						50% {
+							opacity: 1;
+							transform: scale3d(1.2, 1.2, 1);
+						}
+						100% {
+							opacity: 0;
+							transform: scale3d(0.8, 0.8, 1);
+						}
+				}
+		}
+	}
+}
+
+@mixin fb-circle-shrink($bgColor: vars.$animation-bg-color, $transition-duration: vars.$transition-duration, $transition-ease-method: forwards, $fbClass: false) {
 
 	&::after {
 		background: $bgColor;
@@ -23,6 +52,7 @@ Simple Circle
 			}
 		}
 	}
+	@include fb-circle-shrink-keyframes();
 }
 
 /*
@@ -31,22 +61,3 @@ Extend
 %fb-circle-shrink {
 	@include fb-circle-shrink();
 }
-
-/*
-Simple Circle Animation
------------------------------ */
-@include keyframes(fb-circle-shrink) {
-	0% {
-			opacity: 0;
-			transform: scale3d(0.2, 0.2, 1);
-		}
-		50% {
-			opacity: 1;
-			transform: scale3d(1.2, 1.2, 1);
-		}
-		100% {
-			opacity: 0;
-			transform: scale3d(0.8, 0.8, 1);
-		}
-}
-

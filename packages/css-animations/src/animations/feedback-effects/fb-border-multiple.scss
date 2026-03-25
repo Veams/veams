@@ -1,10 +1,46 @@
-@import "../../variables";
-@import "../../mixins";
-@import "fb-setup";
+@use "../../variables" as vars;
+@use "../../mixins" as shared;
+@use "fb-setup";
 /* ---------------------------------------------------
 Multiple Border
 --------------------------------------------------- */
-@mixin fb-border-multiple($shadow: $animation-shadow, $transition-duration: $transition-duration, $transition-ease-method: forwards, $fbClass: false) {
+
+/* ---------------------------------------------------
+Keyframes
+--------------------------------------------------- */
+$_fb_border_multiple_keyframes-rendered: false !default;
+@mixin fb-border-multiple-keyframes() {
+	@if $_fb_border_multiple_keyframes-rendered == false {
+		$_fb_border_multiple_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(fb-border-multiple1) {
+					0% {
+					opacity: 1;
+					transform: scale3d(0.5, 0.5, 1)
+				}
+					100% {
+						opacity: 0;
+						transform: scale3d(1.1, 1.1, 1)
+					}
+				}
+
+		@include shared.keyframes(fb-border-multiple2) {
+					0% {
+						opacity: 1;
+						transform: scale3d(0.5, 0.5, 1)
+					}
+					50%, 100% {
+						opacity: 0;
+						transform: scale3d(1.2, 1.2, 1)
+					}
+				}
+		}
+	}
+}
+
+@mixin fb-border-multiple($shadow: vars.$animation-shadow, $transition-duration: vars.$transition-duration, $transition-ease-method: forwards, $fbClass: false) {
 
 	&::after,
 	&::before {
@@ -30,6 +66,7 @@ Multiple Border
 			}
 		}
 	}
+	@include fb-border-multiple-keyframes();
 }
 
 /*
@@ -39,32 +76,6 @@ Extend
 	@include fb-border-multiple();
 
 	&::before {
-		@include fb-setup-pseudo();
+		@include fb-setup.fb-setup-pseudo();
 	}
 }
-
-/*
-Multiple Border Animation
------------------------------ */
-@include keyframes(fb-border-multiple1) {
-	0% {
-	opacity: 1;
-	transform: scale3d(0.5, 0.5, 1)
-}
-	100% {
-		opacity: 0;
-		transform: scale3d(1.1, 1.1, 1)
-	}
-}
-
-@include keyframes(fb-border-multiple2) {
-	0% {
-		opacity: 1;
-		transform: scale3d(0.5, 0.5, 1)
-	}
-	50%, 100% {
-		opacity: 0;
-		transform: scale3d(1.2, 1.2, 1)
-	}
-}
-

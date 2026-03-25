@@ -1,5 +1,5 @@
-@import "../../variables";
-@import "../../mixins";
+@use "../../variables" as vars;
+@use "../../mixins" as shared;
 /* ---------------------------------------------------
 Move From To Fade
 --------------------------------------------------- */
@@ -22,8 +22,327 @@ Move From To
 ///     @include move-to-left(300ms, ease-in);
 ///   }
 ///
-@mixin move-to-left($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+
+/* ---------------------------------------------------
+Keyframes
+--------------------------------------------------- */
+$_move_to_left_keyframes-rendered: false !default;
+@mixin move-to-left-keyframes() {
+	@if $_move_to_left_keyframes-rendered == false {
+		$_move_to_left_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(move-to-left) {
+					from {
+					}
+					to {
+						transform: translateX(-100%);
+						transform: translate3d(-100%, 0, 0);
+					}
+				}
+		}
+	}
+}
+
+$_move_from_left_keyframes-rendered: false !default;
+@mixin move-from-left-keyframes() {
+	@if $_move_from_left_keyframes-rendered == false {
+		$_move_from_left_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(move-from-left) {
+					from {
+						transform: translateX(-100%);
+						transform: translate3d(-100%, 0, 0);
+					}
+				}
+		}
+	}
+}
+
+$_move_to_right_keyframes-rendered: false !default;
+@mixin move-to-right-keyframes() {
+	@if $_move_to_right_keyframes-rendered == false {
+		$_move_to_right_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(move-to-right) {
+					from {
+					}
+					to {
+						transform: translateX(100%);
+						transform: translate3d(100%, 0, 0);
+					}
+				}
+		}
+	}
+}
+
+$_move_from_right_keyframes-rendered: false !default;
+@mixin move-from-right-keyframes() {
+	@if $_move_from_right_keyframes-rendered == false {
+		$_move_from_right_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(move-from-right) {
+					from {
+						transform: translateX(100%);
+						transform: translate3d(100%, 0, 0);
+					}
+				}
+		}
+	}
+}
+
+$_move_to_top_keyframes-rendered: false !default;
+@mixin move-to-top-keyframes() {
+	@if $_move_to_top_keyframes-rendered == false {
+		$_move_to_top_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(move-to-top) {
+					from {
+					}
+					to {
+						transform: translateY(-100%);
+						transform: translate3d(0, -100%, 0);
+					}
+				}
+		}
+	}
+}
+
+$_move_from_top_keyframes-rendered: false !default;
+@mixin move-from-top-keyframes() {
+	@if $_move_from_top_keyframes-rendered == false {
+		$_move_from_top_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(move-from-top) {
+					from {
+						transform: translateY(-100%);
+						transform: translate3d(0, -100%, 0);
+					}
+				}
+		}
+	}
+}
+
+$_move_to_bottom_keyframes-rendered: false !default;
+@mixin move-to-bottom-keyframes() {
+	@if $_move_to_bottom_keyframes-rendered == false {
+		$_move_to_bottom_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(move-to-bottom) {
+					from {
+					}
+					to {
+						transform: translateY(100%);
+						transform: translate3d(0, 100%, 0);
+					}
+				}
+		}
+	}
+}
+
+$_move_from_bottom_keyframes-rendered: false !default;
+@mixin move-from-bottom-keyframes() {
+	@if $_move_from_bottom_keyframes-rendered == false {
+		$_move_from_bottom_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(move-from-bottom) {
+					from {
+						transform: translateY(100%);
+						transform: translate3d(0, 100%, 0);
+					}
+				}
+		}
+	}
+}
+
+$_fade_it_keyframes-rendered: false !default;
+@mixin fade-it-keyframes() {
+	@if $_fade_it_keyframes-rendered == false {
+		$_fade_it_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(fade) {
+					from {
+					}
+					to {
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_move_to_left_fade_keyframes-rendered: false !default;
+@mixin move-to-left-fade-keyframes() {
+	@if $_move_to_left_fade_keyframes-rendered == false {
+		$_move_to_left_fade_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(move-to-left-fade) {
+					from {
+					}
+					to {
+						transform: translateX(-100%);
+						transform: translate3d(-100%, 0, 0);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_move_from_left_fade_keyframes-rendered: false !default;
+@mixin move-from-left-fade-keyframes() {
+	@if $_move_from_left_fade_keyframes-rendered == false {
+		$_move_from_left_fade_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(move-from-left-fade) {
+					from {
+						transform: translateX(-100%);
+						transform: translate3d(-100%, 0, 0);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_move_to_right_fade_keyframes-rendered: false !default;
+@mixin move-to-right-fade-keyframes() {
+	@if $_move_to_right_fade_keyframes-rendered == false {
+		$_move_to_right_fade_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(move-to-right-fade) {
+					from {
+					}
+					to {
+						transform: translateX(100%);
+						transform: translate3d(100%, 0, 0);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_move_from_right_fade_keyframes-rendered: false !default;
+@mixin move-from-right-fade-keyframes() {
+	@if $_move_from_right_fade_keyframes-rendered == false {
+		$_move_from_right_fade_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(move-from-right-fade) {
+					from {
+						transform: translateX(100%);
+						transform: translate3d(100%, 0, 0);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_move_to_top_fade_keyframes-rendered: false !default;
+@mixin move-to-top-fade-keyframes() {
+	@if $_move_to_top_fade_keyframes-rendered == false {
+		$_move_to_top_fade_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(move-to-top-fade) {
+					from {
+					}
+					to {
+						transform: translateY(-100%);
+						transform: translate3d(0, -100%, 0);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_move_from_top_fade_keyframes-rendered: false !default;
+@mixin move-from-top-fade-keyframes() {
+	@if $_move_from_top_fade_keyframes-rendered == false {
+		$_move_from_top_fade_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(move-from-top-fade) {
+					from {
+						transform: translateY(-100%);
+						transform: translate3d(0, -100%, 0);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_move_to_bottom_fade_keyframes-rendered: false !default;
+@mixin move-to-bottom-fade-keyframes() {
+	@if $_move_to_bottom_fade_keyframes-rendered == false {
+		$_move_to_bottom_fade_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(move-to-bottom-fade) {
+					from {
+					}
+					to {
+						transform: translateY(100%);
+						transform: translate3d(0, 100%, 0);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_move_from_bottom_fade_keyframes-rendered: false !default;
+@mixin move-from-bottom-fade-keyframes() {
+	@if $_move_from_bottom_fade_keyframes-rendered == false {
+		$_move_from_bottom_fade_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(move-from-bottom-fade) {
+					from {
+						transform: translateY(100%);
+						transform: translate3d(0, 100%, 0);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+@mixin move-to-left($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: move-to-left $transition-duration $transition-ease-method both;
+	@include move-to-left-keyframes();
 }
 
 /// `Move: From Left`
@@ -40,8 +359,9 @@ Move From To
 ///     @include move-from-left(300ms, ease-in);
 ///   }
 ///
-@mixin move-from-left($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin move-from-left($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: move-from-left $transition-duration $transition-ease-method both;
+	@include move-from-left-keyframes();
 }
 
 /// `Move: To Right`
@@ -58,8 +378,9 @@ Move From To
 ///     @include move-to-right(300ms, ease-in);
 ///   }
 ///
-@mixin move-to-right($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin move-to-right($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: move-to-right $transition-duration $transition-ease-method both;
+	@include move-to-right-keyframes();
 }
 
 /// `Move: From Right`
@@ -76,8 +397,9 @@ Move From To
 ///     @include move-from-right(300ms, ease-in);
 ///   }
 ///
-@mixin move-from-right($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin move-from-right($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: move-from-right $transition-duration $transition-ease-method both;
+	@include move-from-right-keyframes();
 }
 
 /// `Move: To Top`
@@ -94,8 +416,9 @@ Move From To
 ///     @include move-to-top(300ms, ease-in);
 ///   }
 ///
-@mixin move-to-top($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin move-to-top($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: move-to-top $transition-duration $transition-ease-method both;
+	@include move-to-top-keyframes();
 }
 
 /// `Move: From Top`
@@ -112,8 +435,9 @@ Move From To
 ///     @include move-from-top(300ms, ease-in);
 ///   }
 ///
-@mixin move-from-top($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin move-from-top($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: move-from-top $transition-duration $transition-ease-method both;
+	@include move-from-top-keyframes();
 }
 
 /// `Move: To Bottom`
@@ -130,8 +454,9 @@ Move From To
 ///     @include move-to-bottom(300ms, ease-in);
 ///   }
 ///
-@mixin move-to-bottom($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin move-to-bottom($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: move-to-bottom $transition-duration $transition-ease-method both;
+	@include move-to-bottom-keyframes();
 }
 
 /// `Move: From Bottom`
@@ -148,8 +473,9 @@ Move From To
 ///     @include move-from-bottom(300ms, ease-in);
 ///   }
 ///
-@mixin move-from-bottom($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin move-from-bottom($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: move-from-bottom $transition-duration $transition-ease-method both;
+	@include move-from-bottom-keyframes();
 }
 
 /*
@@ -169,8 +495,9 @@ Fade
 ///     @include fade-it(300ms, ease-in);
 ///   }
 ///
-@mixin fade-it($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin fade-it($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: fade $transition-duration $transition-ease-method both;
+	@include fade-it-keyframes();
 }
 
 /*
@@ -191,8 +518,9 @@ Move From To and Fade
 ///     @include move-to-left-fade(300ms, ease-in);
 ///   }
 ///
-@mixin move-to-left-fade($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin move-to-left-fade($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: move-to-left-fade $transition-duration $transition-ease-method both;
+	@include move-to-left-fade-keyframes();
 }
 
 /// `Move: From Left With Fade`
@@ -209,8 +537,9 @@ Move From To and Fade
 ///     @include move-from-left-fade(300ms, ease-in);
 ///   }
 ///
-@mixin move-from-left-fade($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin move-from-left-fade($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: move-from-left-fade $transition-duration $transition-ease-method both;
+	@include move-from-left-fade-keyframes();
 }
 
 /// `Move: To Right With Fade`
@@ -227,8 +556,9 @@ Move From To and Fade
 ///     @include move-to-right-fade(300ms, ease-in);
 ///   }
 ///
-@mixin move-to-right-fade($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin move-to-right-fade($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: move-to-right-fade $transition-duration $transition-ease-method both;
+	@include move-to-right-fade-keyframes();
 }
 
 /// `Move: From Right With Fade`
@@ -245,8 +575,9 @@ Move From To and Fade
 ///     @include move-from-right-fade(300ms, ease-in);
 ///   }
 ///
-@mixin move-from-right-fade($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin move-from-right-fade($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: move-from-right-fade $transition-duration $transition-ease-method both;
+	@include move-from-right-fade-keyframes();
 }
 
 /// `Move: To Top With Fade`
@@ -263,8 +594,9 @@ Move From To and Fade
 ///     @include move-to-top-fade(300ms, ease-in);
 ///   }
 ///
-@mixin move-to-top-fade($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin move-to-top-fade($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: move-to-top-fade $transition-duration $transition-ease-method both;
+	@include move-to-top-fade-keyframes();
 }
 
 /// `Move: From Top With Fade`
@@ -281,8 +613,9 @@ Move From To and Fade
 ///     @include move-from-top-fade(300ms, ease-in);
 ///   }
 ///
-@mixin move-from-top-fade($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin move-from-top-fade($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: move-from-top-fade $transition-duration $transition-ease-method both;
+	@include move-from-top-fade-keyframes();
 }
 
 /// `Move: To Bottom With Fade`
@@ -299,8 +632,9 @@ Move From To and Fade
 ///     @include move-to-bottom-fade(300ms, ease-in);
 ///   }
 ///
-@mixin move-to-bottom-fade($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin move-to-bottom-fade($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: move-to-bottom-fade $transition-duration $transition-ease-method both;
+	@include move-to-bottom-fade-keyframes();
 }
 
 /// `Move: From Bottom With Fade`
@@ -317,157 +651,7 @@ Move From To and Fade
 ///     @include move-from-bottom-fade(300ms, ease-in);
 ///   }
 ///
-@mixin move-from-bottom-fade($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin move-from-bottom-fade($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: move-from-bottom-fade $transition-duration $transition-ease-method both;
+	@include move-from-bottom-fade-keyframes();
 }
-
-/* ---------------------------------------------------
-Keyframes: MOVE FROM TO AND FADE
---------------------------------------------------- */
-
-@include keyframes(move-to-left) {
-	from {
-	}
-	to {
-		transform: translateX(-100%);
-		transform: translate3d(-100%, 0, 0);
-	}
-}
-
-@include keyframes(move-from-left) {
-	from {
-		transform: translateX(-100%);
-		transform: translate3d(-100%, 0, 0);
-	}
-}
-
-@include keyframes(move-to-right) {
-	from {
-	}
-	to {
-		transform: translateX(100%);
-		transform: translate3d(100%, 0, 0);
-	}
-}
-
-@include keyframes(move-from-right) {
-	from {
-		transform: translateX(100%);
-		transform: translate3d(100%, 0, 0);
-	}
-}
-
-@include keyframes(move-to-top) {
-	from {
-	}
-	to {
-		transform: translateY(-100%);
-		transform: translate3d(0, -100%, 0);
-	}
-}
-
-@include keyframes(move-from-top) {
-	from {
-		transform: translateY(-100%);
-		transform: translate3d(0, -100%, 0);
-	}
-}
-
-@include keyframes(move-to-bottom) {
-	from {
-	}
-	to {
-		transform: translateY(100%);
-		transform: translate3d(0, 100%, 0);
-	}
-}
-
-@include keyframes(move-from-bottom) {
-	from {
-		transform: translateY(100%);
-		transform: translate3d(0, 100%, 0);
-	}
-}
-
-/* fade */
-@include keyframes(fade) {
-	from {
-	}
-	to {
-		opacity: 0;
-	}
-}
-
-/* move from / to and fade */
-@include keyframes(move-to-left-fade) {
-	from {
-	}
-	to {
-		transform: translateX(-100%);
-		transform: translate3d(-100%, 0, 0);
-		opacity: 0;
-	}
-}
-
-@include keyframes(move-from-left-fade) {
-	from {
-		transform: translateX(-100%);
-		transform: translate3d(-100%, 0, 0);
-		opacity: 0;
-	}
-}
-
-@include keyframes(move-to-right-fade) {
-	from {
-	}
-	to {
-		transform: translateX(100%);
-		transform: translate3d(100%, 0, 0);
-		opacity: 0;
-	}
-}
-
-@include keyframes(move-from-right-fade) {
-	from {
-		transform: translateX(100%);
-		transform: translate3d(100%, 0, 0);
-		opacity: 0;
-	}
-}
-
-@include keyframes(move-to-top-fade) {
-	from {
-	}
-	to {
-		transform: translateY(-100%);
-		transform: translate3d(0, -100%, 0);
-		opacity: 0;
-	}
-}
-
-@include keyframes(move-from-top-fade) {
-	from {
-		transform: translateY(-100%);
-		transform: translate3d(0, -100%, 0);
-		opacity: 0;
-	}
-}
-
-@include keyframes(move-to-bottom-fade) {
-	from {
-	}
-	to {
-		transform: translateY(100%);
-		transform: translate3d(0, 100%, 0);
-		opacity: 0;
-	}
-}
-
-@include keyframes(move-from-bottom-fade) {
-	from {
-		transform: translateY(100%);
-		transform: translate3d(0, 100%, 0);
-		opacity: 0;
-	}
-}
-

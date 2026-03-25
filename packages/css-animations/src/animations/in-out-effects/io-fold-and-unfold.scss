@@ -1,5 +1,5 @@
-@import "../../variables";
-@import "../../mixins";
+@use "../../variables" as vars;
+@use "../../mixins" as shared;
 /* ---------------------------------------------------
 Fold and Unfold
 --------------------------------------------------- */
@@ -22,9 +22,158 @@ Fold
 ///     @include fold-left(300ms, ease-in);
 ///   }
 ///
-@mixin fold-left($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+
+/* ---------------------------------------------------
+Keyframes
+--------------------------------------------------- */
+$_fold_left_keyframes-rendered: false !default;
+@mixin fold-left-keyframes() {
+	@if $_fold_left_keyframes-rendered == false {
+		$_fold_left_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(rotate-fold-left) {
+					from {
+					}
+					to {
+						transform: translateX(-100%) rotateY(-90deg);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_fold_right_keyframes-rendered: false !default;
+@mixin fold-right-keyframes() {
+	@if $_fold_right_keyframes-rendered == false {
+		$_fold_right_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(rotate-fold-right) {
+					from {
+					}
+					to {
+						transform: translateX(100%) rotateY(90deg);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_fold_top_keyframes-rendered: false !default;
+@mixin fold-top-keyframes() {
+	@if $_fold_top_keyframes-rendered == false {
+		$_fold_top_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(rotate-fold-top) {
+					from {
+					}
+					to {
+						transform: translateY(-100%) rotateX(90deg);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_fold_bottom_keyframes-rendered: false !default;
+@mixin fold-bottom-keyframes() {
+	@if $_fold_bottom_keyframes-rendered == false {
+		$_fold_bottom_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(rotate-fold-bottom) {
+					from {
+					}
+					to {
+						transform: translateY(100%) rotateX(-90deg);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_unfold_left_keyframes-rendered: false !default;
+@mixin unfold-left-keyframes() {
+	@if $_unfold_left_keyframes-rendered == false {
+		$_unfold_left_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(rotate-unfold-left) {
+					from {
+						transform: translateX(-100%) rotateY(-90deg);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_unfold_right_keyframes-rendered: false !default;
+@mixin unfold-right-keyframes() {
+	@if $_unfold_right_keyframes-rendered == false {
+		$_unfold_right_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(rotate-unfold-right) {
+					from {
+						transform: translateX(100%) rotateY(90deg);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_unfold_top_keyframes-rendered: false !default;
+@mixin unfold-top-keyframes() {
+	@if $_unfold_top_keyframes-rendered == false {
+		$_unfold_top_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(rotate-unfold-top) {
+					from {
+						transform: translateY(-100%) rotateX(90deg);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_unfold_bottom_keyframes-rendered: false !default;
+@mixin unfold-bottom-keyframes() {
+	@if $_unfold_bottom_keyframes-rendered == false {
+		$_unfold_bottom_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(rotate-unfold-bottom) {
+					from {
+						transform: translateY(100%) rotateX(-90deg);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+@mixin fold-left($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 100% 50%;
 	animation: rotate-fold-left $transition-duration $transition-ease-method both;
+	@include fold-left-keyframes();
 }
 
 /// `Fold: Right`
@@ -41,9 +190,10 @@ Fold
 ///     @include fold-right(300ms, ease-in);
 ///   }
 ///
-@mixin fold-right($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin fold-right($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 0% 50%;
 	animation: rotate-fold-right $transition-duration $transition-ease-method both;
+	@include fold-right-keyframes();
 }
 
 /// `Fold: Top`
@@ -60,9 +210,10 @@ Fold
 ///     @include fold-top(300ms, ease-in);
 ///   }
 ///
-@mixin fold-top($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin fold-top($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 50% 100%;
 	animation: rotate-fold-top $transition-duration $transition-ease-method both;
+	@include fold-top-keyframes();
 }
 
 /// `Fold: Bottom`
@@ -79,9 +230,10 @@ Fold
 ///     @include fold-bottom(300ms, ease-in);
 ///   }
 ///
-@mixin fold-bottom($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin fold-bottom($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 50% 0%;
 	animation: rotate-fold-bottom $transition-duration $transition-ease-method both;
+	@include fold-bottom-keyframes();
 }
 
 /*
@@ -102,9 +254,10 @@ Unfold
 ///     @include unfold-left(300ms, ease-in);
 ///   }
 ///
-@mixin unfold-left($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin unfold-left($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 100% 50%;
 	animation: rotate-unfold-left $transition-duration $transition-ease-method both;
+	@include unfold-left-keyframes();
 }
 
 /// `Unfold: Right`
@@ -121,9 +274,10 @@ Unfold
 ///     @include unfold-right(300ms, ease-in);
 ///   }
 ///
-@mixin unfold-right($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin unfold-right($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 0% 50%;
 	animation: rotate-unfold-right $transition-duration $transition-ease-method both;
+	@include unfold-right-keyframes();
 }
 
 /// `Unfold: Top`
@@ -140,9 +294,10 @@ Unfold
 ///     @include unfold-top(300ms, ease-in);
 ///   }
 ///
-@mixin unfold-top($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin unfold-top($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 50% 100%;
 	animation: rotate-unfold-top $transition-duration $transition-ease-method both;
+	@include unfold-top-keyframes();
 }
 
 /// `Unfold: Bottom`
@@ -159,84 +314,12 @@ Unfold
 ///     @include unfold-bottom(300ms, ease-in);
 ///   }
 ///
-@mixin unfold-bottom($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin unfold-bottom($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 50% 0%;
 	animation: rotate-unfold-bottom $transition-duration $transition-ease-method both;
+	@include unfold-bottom-keyframes();
 }
 
 /* ---------------------------------------------------
 KEYFRAMES: FOLD AND UNFOLD
 --------------------------------------------------- */
-
-/* ---------------------------------------------------
-Fold
---------------------------------------------------- */
-
-@include keyframes(rotate-fold-right) {
-	from {
-	}
-	to {
-		transform: translateX(100%) rotateY(90deg);
-		opacity: 0;
-	}
-}
-
-@include keyframes(rotate-fold-left) {
-	from {
-	}
-	to {
-		transform: translateX(-100%) rotateY(-90deg);
-		opacity: 0;
-	}
-}
-
-@include keyframes(rotate-fold-top) {
-	from {
-	}
-	to {
-		transform: translateY(-100%) rotateX(90deg);
-		opacity: 0;
-	}
-}
-
-@include keyframes(rotate-fold-bottom) {
-	from {
-	}
-	to {
-		transform: translateY(100%) rotateX(-90deg);
-		opacity: 0;
-	}
-}
-
-/* ---------------------------------------------------
-Unfold
---------------------------------------------------- */
-
-@include keyframes(rotate-unfold-left) {
-	from {
-		transform: translateX(-100%) rotateY(-90deg);
-		opacity: 0;
-	}
-}
-
-@include keyframes(rotate-unfold-right) {
-	from {
-		transform: translateX(100%) rotateY(90deg);
-		opacity: 0;
-	}
-}
-
-@include keyframes(rotate-unfold-top) {
-	from {
-		transform: translateY(-100%) rotateX(90deg);
-		opacity: 0;
-	}
-}
-
-@include keyframes(rotate-unfold-bottom) {
-	from {
-		transform: translateY(100%) rotateX(-90deg);
-		opacity: 0;
-	}
-}
-

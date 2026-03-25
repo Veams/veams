@@ -1,10 +1,38 @@
-@import "../../variables";
-@import "../../mixins";
-@import "fb-setup";
+@use "../../variables" as vars;
+@use "../../mixins" as shared;
+@use "fb-setup";
 /* ---------------------------------------------------
 Simple Circle
 --------------------------------------------------- */
-@mixin fb-circle-big($bgColor: $animation-bg-color, $transition-duration: $transition-duration, $transition-ease-method: forwards, $fbClass: false) {
+
+/* ---------------------------------------------------
+Keyframes
+--------------------------------------------------- */
+$_fb_circle_big_keyframes-rendered: false !default;
+@mixin fb-circle-big-keyframes() {
+	@if $_fb_circle_big_keyframes-rendered == false {
+		$_fb_circle_big_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(fb-circle-big) {
+					0% {
+						transform: scale3d(0.1, 0.1, 1)
+		
+					}
+					25%, 50% {
+						opacity: 1;
+					}
+					to {
+						opacity: 0;
+						transform: scale3d(8, 8, 1)
+					}
+				}
+		}
+	}
+}
+
+@mixin fb-circle-big($bgColor: vars.$animation-bg-color, $transition-duration: vars.$transition-duration, $transition-ease-method: forwards, $fbClass: false) {
 
      &::after {		background: $bgColor;
 	}
@@ -22,6 +50,7 @@ Simple Circle
 			}
 		}
 	}
+	@include fb-circle-big-keyframes();
 }
 
 /*
@@ -30,21 +59,3 @@ Extend
 %fb-circle-big {
 	@include fb-circle-big();
 }
-
-/*
-Simple Circle Animation
------------------------------ */
-@include keyframes(fb-circle-big) {
-	0% {
-		transform: scale3d(0.1, 0.1, 1)
-
-	}
-	25%, 50% {
-		opacity: 1;
-	}
-	to {
-		opacity: 0;
-		transform: scale3d(8, 8, 1)
-	}
-}
-

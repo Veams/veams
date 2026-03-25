@@ -1,5 +1,5 @@
-@import "../../variables";
-@import "../../mixins";
+@use "../../variables" as vars;
+@use "../../mixins" as shared;
 /* ---------------------------------------------------
 Scale and Fade
 --------------------------------------------------- */
@@ -18,8 +18,84 @@ Scale and Fade
 ///     @include scale-down(300ms, ease-in);
 ///   }
 ///
-@mixin scale-down($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+
+/* ---------------------------------------------------
+Keyframes
+--------------------------------------------------- */
+$_scale_down_keyframes-rendered: false !default;
+@mixin scale-down-keyframes() {
+	@if $_scale_down_keyframes-rendered == false {
+		$_scale_down_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(scale-down) {
+					from {
+					}
+					to {
+						opacity: 0;
+						transform: scale(.8);
+					}
+				}
+		}
+	}
+}
+
+$_scale_up_keyframes-rendered: false !default;
+@mixin scale-up-keyframes() {
+	@if $_scale_up_keyframes-rendered == false {
+		$_scale_up_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(scale-up) {
+					from {
+						opacity: 0;
+						transform: scale(.8);
+					}
+				}
+		}
+	}
+}
+
+$_scale_down_center_keyframes-rendered: false !default;
+@mixin scale-down-center-keyframes() {
+	@if $_scale_down_center_keyframes-rendered == false {
+		$_scale_down_center_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(scale-down-center) {
+					from {
+					}
+					to {
+						transform: scale(.7);
+					}
+				}
+		}
+	}
+}
+
+$_scale_up_center_keyframes-rendered: false !default;
+@mixin scale-up-center-keyframes() {
+	@if $_scale_up_center_keyframes-rendered == false {
+		$_scale_up_center_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(scale-up-center) {
+					from {
+						opacity: 0;
+						transform: scale(.7);
+					}
+				}
+		}
+	}
+}
+
+@mixin scale-down($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: scale-down $transition-duration $transition-ease-method both;
+	@include scale-down-keyframes();
 }
 
 /// `Scale: Up`
@@ -36,8 +112,9 @@ Scale and Fade
 ///     @include scale-up(300ms, ease-in);
 ///   }
 ///
-@mixin scale-up($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin scale-up($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: scale-up $transition-duration $transition-ease-method both;
+	@include scale-up-keyframes();
 }
 /// `Scale: Down Center`
 /// animates element scaling factor.
@@ -53,8 +130,9 @@ Scale and Fade
 ///     @include scale-down-center(300ms, ease-in);
 ///   }
 ///
-@mixin scale-down-center($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin scale-down-center($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: scale-down-center $transition-duration $transition-ease-method both;
+	@include scale-down-center-keyframes();
 }
 
 /// `Scale: Up Center`
@@ -71,42 +149,7 @@ Scale and Fade
 ///     @include scale-up-center(300ms, ease-in);
 ///   }
 ///
-@mixin scale-up-center($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin scale-up-center($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: scale-up-center $transition-duration $transition-ease-method both;
+	@include scale-up-center-keyframes();
 }
-
-/* ---------------------------------------------------
-KEYFRAMES: SCALE AND FADE
---------------------------------------------------- */
-
-@include keyframes(scale-down) {
-	from {
-	}
-	to {
-		opacity: 0;
-		transform: scale(.8);
-	}
-}
-
-@include keyframes(scale-up) {
-	from {
-		opacity: 0;
-		transform: scale(.8);
-	}
-}
-
-@include keyframes(scale-down-center) {
-	from {
-	}
-	to {
-		transform: scale(.7);
-	}
-}
-
-@include keyframes(scale-up-center) {
-	from {
-		opacity: 0;
-		transform: scale(.7);
-	}
-}
-

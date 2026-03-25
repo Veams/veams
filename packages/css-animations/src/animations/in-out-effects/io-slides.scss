@@ -1,5 +1,5 @@
-@import "../../variables";
-@import "../../mixins";
+@use "../../variables" as vars;
+@use "../../mixins" as shared;
 /* ---------------------------------------------------
 Slides
 --------------------------------------------------- */
@@ -18,8 +18,65 @@ Slides
 ///     @include slide-rotate-out(300ms, ease-in);
 ///   }
 ///
-@mixin slide-rotate-out($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+
+/* ---------------------------------------------------
+Keyframes
+--------------------------------------------------- */
+$_slide_rotate_out_keyframes-rendered: false !default;
+@mixin slide-rotate-out-keyframes() {
+	@if $_slide_rotate_out_keyframes-rendered == false {
+		$_slide_rotate_out_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(slide-rotate-out) {
+					0% {
+					}
+					25% {
+						transform: translateZ(-500px);
+						opacity: .5;
+					}
+					75% {
+						transform: translateZ(-500px) translateX(-200%);
+						opacity: .5;
+					}
+					100% {
+						transform: translateZ(-500px) translateX(-200%);
+						opacity: .5;
+					}
+				}
+		}
+	}
+}
+
+$_slide_rotate_in_keyframes-rendered: false !default;
+@mixin slide-rotate-in-keyframes() {
+	@if $_slide_rotate_in_keyframes-rendered == false {
+		$_slide_rotate_in_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(slide-rotate-in) {
+					0%, 25% {
+						transform: translateZ(-500px) translateX(200%);
+						opacity: .5;
+					}
+					75% {
+						transform: translateZ(-500px);
+						opacity: .5;
+					}
+					100% {
+						transform: translateZ(0) translateX(0);
+						opacity: 1;
+					}
+				}
+		}
+	}
+}
+
+@mixin slide-rotate-out($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: slide-rotate-out $transition-duration $transition-ease-method both;
+	@include slide-rotate-out-keyframes();
 }
 
 /// `Slide: In`
@@ -36,43 +93,7 @@ Slides
 ///     @include slide-rotate-in(300ms, ease-in);
 ///   }
 ///
-@mixin slide-rotate-in($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin slide-rotate-in($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	animation: slide-rotate-in $transition-duration $transition-ease-method both;
+	@include slide-rotate-in-keyframes();
 }
-
-/* ---------------------------------------------------
-KEYFRAMES: SLIDES
---------------------------------------------------- */
-
-@include keyframes(slide-rotate-out) {
-	0% {
-	}
-	25% {
-		transform: translateZ(-500px);
-		opacity: .5;
-	}
-	75% {
-		transform: translateZ(-500px) translateX(-200%);
-		opacity: .5;
-	}
-	100% {
-		transform: translateZ(-500px) translateX(-200%);
-		opacity: .5;
-	}
-}
-
-@include keyframes(slide-rotate-in) {
-	0%, 25% {
-		transform: translateZ(-500px) translateX(200%);
-		opacity: .5;
-	}
-	75% {
-		transform: translateZ(-500px);
-		opacity: .5;
-	}
-	100% {
-		transform: translateZ(0) translateX(0);
-		opacity: 1;
-	}
-}
-

@@ -1,10 +1,39 @@
-@import "../../variables";
-@import "../../mixins";
-@import "fb-setup";
+@use "../../variables" as vars;
+@use "../../mixins" as shared;
+@use "fb-setup";
 /* ---------------------------------------------------
 Circle with Delay
 --------------------------------------------------- */
-@mixin fb-circle-delay($bgColor: $animation-bg-color, $transition-duration: 1s, $transition-ease-method: ease-out forwards, $fbClass: false) {
+
+/* ---------------------------------------------------
+Keyframes
+--------------------------------------------------- */
+$_fb_circle_delay_keyframes-rendered: false !default;
+@mixin fb-circle-delay-keyframes() {
+	@if $_fb_circle_delay_keyframes-rendered == false {
+		$_fb_circle_delay_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(fb-circle-delay){
+					0% {
+						transform: scale3d(0.5, 0.5, 1);
+						opacity: 1;
+					}
+					25% {
+						transform: scale3d(1, 1, 1);
+						opacity: 1;
+					}
+					100% {
+						transform: scale3d(1, 1, 1);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+@mixin fb-circle-delay($bgColor: vars.$animation-bg-color, $transition-duration: 1s, $transition-ease-method: ease-out forwards, $fbClass: false) {
 
 	&::after {
 		background: $bgColor;
@@ -23,6 +52,7 @@ Circle with Delay
 			}
 		}
 	}
+	@include fb-circle-delay-keyframes();
 }
 
 /*
@@ -31,22 +61,3 @@ Extend
 %fb-circle-delay {
 	@include fb-circle-delay();
 }
-
-/*
-Keyframes
------------------------ */
-@include keyframes(fb-circle-delay){
-	0% {
-		transform: scale3d(0.5, 0.5, 1);
-		opacity: 1;
-	}
-	25% {
-		transform: scale3d(1, 1, 1);
-		opacity: 1;
-	}
-	100% {
-		transform: scale3d(1, 1, 1);
-		opacity: 0;
-	}
-}
-

@@ -1,10 +1,35 @@
-@import "../../variables";
-@import "../../mixins";
-@import "fb-setup";
+@use "../../variables" as vars;
+@use "../../mixins" as shared;
+@use "fb-setup";
 /* ---------------------------------------------------
 Simple Border
 --------------------------------------------------- */
-@mixin fb-border-simple($border: $animation-border, $transition-duration: $transition-duration, $transition-ease-method: ease-out forwards, $fbClass: false) {
+
+/* ---------------------------------------------------
+Keyframes
+--------------------------------------------------- */
+$_fb_border_simple_keyframes-rendered: false !default;
+@mixin fb-border-simple-keyframes() {
+	@if $_fb_border_simple_keyframes-rendered == false {
+		$_fb_border_simple_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(fb-border-simple) {
+					0% {
+						opacity: 1;
+						transform: scale3d(0.5, 0.5, 1)
+					}
+					to {
+						opacity: 0;
+						transform: scale3d(1.2, 1.2, 1)
+					}
+				}
+		}
+	}
+}
+
+@mixin fb-border-simple($border: vars.$animation-border, $transition-duration: vars.$transition-duration, $transition-ease-method: ease-out forwards, $fbClass: false) {
 
 	&::after {
 		border: $border;
@@ -23,6 +48,7 @@ Simple Border
 			}
 		}
 	}
+	@include fb-border-simple-keyframes();
 }
 
 /*
@@ -31,18 +57,3 @@ Extend
 %fb-border-simple {
 	@include fb-border-simple();
 }
-
-/*
-Simple Border Animation
------------------------------ */
-@include keyframes(fb-border-simple) {
-	0% {
-		opacity: 1;
-		transform: scale3d(0.5, 0.5, 1)
-	}
-	to {
-		opacity: 0;
-		transform: scale3d(1.2, 1.2, 1)
-	}
-}
-

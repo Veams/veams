@@ -1,5 +1,5 @@
-@import "../../variables";
-@import "../../mixins";
+@use "../../variables" as vars;
+@use "../../mixins" as shared;
 
 /* ---------------------------------------------------
 Push and Pull
@@ -23,9 +23,158 @@ Push
 ///     @include push-left-rotate(300ms, ease-in);
 ///   }
 ///
-@mixin push-left-rotate($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+
+/* ---------------------------------------------------
+Keyframes
+--------------------------------------------------- */
+$_push_left_rotate_keyframes-rendered: false !default;
+@mixin push-left-rotate-keyframes() {
+	@if $_push_left_rotate_keyframes-rendered == false {
+		$_push_left_rotate_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(rotate-push-left) {
+					from {
+					}
+					to {
+						transform: rotateY(90deg);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_push_right_rotate_keyframes-rendered: false !default;
+@mixin push-right-rotate-keyframes() {
+	@if $_push_right_rotate_keyframes-rendered == false {
+		$_push_right_rotate_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(rotate-push-right) {
+					from {
+					}
+					to {
+						transform: rotateY(-90deg);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_push_top_rotate_keyframes-rendered: false !default;
+@mixin push-top-rotate-keyframes() {
+	@if $_push_top_rotate_keyframes-rendered == false {
+		$_push_top_rotate_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(rotate-push-top) {
+					from {
+					}
+					to {
+						transform: rotateX(-90deg);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_push_bottom_rotate_keyframes-rendered: false !default;
+@mixin push-bottom-rotate-keyframes() {
+	@if $_push_bottom_rotate_keyframes-rendered == false {
+		$_push_bottom_rotate_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(rotate-push-bottom) {
+					from {
+					}
+					to {
+						transform: rotateX(90deg);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_pull_left_rotate_keyframes-rendered: false !default;
+@mixin pull-left-rotate-keyframes() {
+	@if $_pull_left_rotate_keyframes-rendered == false {
+		$_pull_left_rotate_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(rotate-pull-left) {
+					from {
+						transform: rotateY(90deg);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_pull_right_rotate_keyframes-rendered: false !default;
+@mixin pull-right-rotate-keyframes() {
+	@if $_pull_right_rotate_keyframes-rendered == false {
+		$_pull_right_rotate_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(rotate-pull-right) {
+					from {
+						transform: rotateY(-90deg);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_pull_top_rotate_keyframes-rendered: false !default;
+@mixin pull-top-rotate-keyframes() {
+	@if $_pull_top_rotate_keyframes-rendered == false {
+		$_pull_top_rotate_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(rotate-pull-top) {
+					from {
+						transform: rotateX(-90deg);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+$_pull_bottom_rotate_keyframes-rendered: false !default;
+@mixin pull-bottom-rotate-keyframes() {
+	@if $_pull_bottom_rotate_keyframes-rendered == false {
+		$_pull_bottom_rotate_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(rotate-pull-bottom) {
+					from {
+						transform: rotateX(90deg);
+						opacity: 0;
+					}
+				}
+		}
+	}
+}
+
+@mixin push-left-rotate($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 0% 50%;
 	animation: rotate-push-left $transition-duration $transition-ease-method both;
+	@include push-left-rotate-keyframes();
 }
 
 /// `Push: To Right With Rotation`
@@ -42,9 +191,10 @@ Push
 ///     @include push-right-rotate(300ms, ease-in);
 ///   }
 ///
-@mixin  push-right-rotate($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin  push-right-rotate($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 100% 50%;
 	animation: rotate-push-right $transition-duration $transition-ease-method both;
+	@include push-right-rotate-keyframes();
 }
 
 /// `Push: To Top With Rotation`
@@ -61,9 +211,10 @@ Push
 ///     @include push-top-rotate(300ms, ease-in);
 ///   }
 ///
-@mixin push-top-rotate($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin push-top-rotate($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 50% 0%;
 	animation: rotate-push-top $transition-duration $transition-ease-method both;
+	@include push-top-rotate-keyframes();
 }
 
 /// `Push: To Bottom With Rotation`
@@ -80,9 +231,10 @@ Push
 ///     @include push-bottom-rotate(300ms, ease-in);
 ///   }
 ///
-@mixin push-bottom-rotate($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin push-bottom-rotate($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 50% 100%;
 	animation: rotate-push-bottom $transition-duration $transition-ease-method both;
+	@include push-bottom-rotate-keyframes();
 }
 
 /*
@@ -103,9 +255,10 @@ Pull
 ///     @include pull-left-rotate(300ms, ease-in);
 ///   }
 ///
-@mixin pull-left-rotate($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin pull-left-rotate($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 0% 50%;
 	animation: rotate-pull-left $transition-duration $transition-ease-method both;
+	@include pull-left-rotate-keyframes();
 }
 
 /// `Pull: From Right With Rotation`
@@ -122,9 +275,10 @@ Pull
 ///     @include pull-right-rotate(300ms, ease-in);
 ///   }
 ///
-@mixin pull-right-rotate($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin pull-right-rotate($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 100% 50%;
 	animation: rotate-pull-right $transition-duration $transition-ease-method both;
+	@include pull-right-rotate-keyframes();
 }
 
 /// `Pull: From Top With Rotation`
@@ -141,9 +295,10 @@ Pull
 ///     @include pull-top-rotate(300ms, ease-in);
 ///   }
 ///
-@mixin pull-top-rotate($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin pull-top-rotate($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 50% 0%;
 	animation: rotate-pull-top $transition-duration $transition-ease-method both;
+	@include pull-top-rotate-keyframes();
 }
 
 /// `Pull: From Bottom With Rotation`
@@ -160,84 +315,12 @@ Pull
 ///     @include pull-bottom-rotate(300ms, ease-in);
 ///   }
 ///
-@mixin pull-bottom-rotate($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin pull-bottom-rotate($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 50% 100%;
 	animation: rotate-pull-bottom $transition-duration $transition-ease-method both;
+	@include pull-bottom-rotate-keyframes();
 }
 
 /* ---------------------------------------------------
 KEYFRAMES: PUSH AND PULL
 --------------------------------------------------- */
-
-/* ---------------------------------------------------
-Push
---------------------------------------------------- */
-
-@include keyframes(rotate-push-left) {
-	from {
-	}
-	to {
-		transform: rotateY(90deg);
-		opacity: 0;
-	}
-}
-
-@include keyframes(rotate-push-right) {
-	from {
-	}
-	to {
-		transform: rotateY(-90deg);
-		opacity: 0;
-	}
-}
-
-@include keyframes(rotate-push-top) {
-	from {
-	}
-	to {
-		transform: rotateX(-90deg);
-		opacity: 0;
-	}
-}
-
-@include keyframes(rotate-push-bottom) {
-	from {
-	}
-	to {
-		transform: rotateX(90deg);
-		opacity: 0;
-	}
-}
-
-/* ---------------------------------------------------
-Pull
---------------------------------------------------- */
-
-@include keyframes(rotate-pull-right) {
-	from {
-		transform: rotateY(-90deg);
-		opacity: 0;
-	}
-}
-
-@include keyframes(rotate-pull-left) {
-	from {
-		transform: rotateY(90deg);
-		opacity: 0;
-	}
-}
-
-@include keyframes(rotate-pull-top) {
-	from {
-		transform: rotateX(-90deg);
-		opacity: 0;
-	}
-}
-
-@include keyframes(rotate-pull-bottom) {
-	from {
-		transform: rotateX(90deg);
-		opacity: 0;
-	}
-}
-

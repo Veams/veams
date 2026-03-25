@@ -1,5 +1,5 @@
-@import "../../variables";
-@import "../../mixins";
+@use "../../variables" as vars;
+@use "../../mixins" as shared;
 /* ---------------------------------------------------
 Rotate Newspaper
 --------------------------------------------------- */
@@ -18,9 +18,50 @@ Rotate Newspaper
 ///     @include newspaper-out(300ms, ease-in);
 ///   }
 ///
-@mixin newspaper-out($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+
+/* ---------------------------------------------------
+Keyframes
+--------------------------------------------------- */
+$_newspaper_out_keyframes-rendered: false !default;
+@mixin newspaper-out-keyframes() {
+	@if $_newspaper_out_keyframes-rendered == false {
+		$_newspaper_out_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(newspaper-rotate-out) {
+					from {
+					}
+					to {
+						opacity: 0;
+						transform: translateZ(-3000px) rotateZ(360deg);
+					}
+				}
+		}
+	}
+}
+
+$_newspaper_in_keyframes-rendered: false !default;
+@mixin newspaper-in-keyframes() {
+	@if $_newspaper_in_keyframes-rendered == false {
+		$_newspaper_in_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(newspaper-rotate-in) {
+					from {
+						opacity: 0;
+						transform: translateZ(-3000px) rotateZ(-360deg);
+					}
+				}
+		}
+	}
+}
+
+@mixin newspaper-out($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 50% 50%;
 	animation: newspaper-rotate-out $transition-duration ease-in both;
+	@include newspaper-out-keyframes();
 }
 
 /// `Newspaper: Rotate In`
@@ -37,27 +78,8 @@ Rotate Newspaper
 ///     @include newspaper-in(300ms, ease-in);
 ///   }
 ///
-@mixin newspaper-in($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin newspaper-in($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 50% 50%;
 	animation: newspaper-rotate-in $transition-duration ease-out both;
+	@include newspaper-in-keyframes();
 }
-
-/* ---------------------------------------------------
-KEYFRAMES: NEWSPAPER
---------------------------------------------------- */
-@include keyframes(newspaper-rotate-out) {
-	from {
-	}
-	to {
-		opacity: 0;
-		transform: translateZ(-3000px) rotateZ(360deg);
-	}
-}
-
-@include keyframes(newspaper-rotate-in) {
-	from {
-		opacity: 0;
-		transform: translateZ(-3000px) rotateZ(-360deg);
-	}
-}
-

@@ -1,5 +1,5 @@
-@import "../../variables";
-@import "../../mixins";
+@use "../../variables" as vars;
+@use "../../mixins" as shared;
 
 /* ---------------------------------------------------
 Rotate First and Scale
@@ -18,9 +18,110 @@ Rotate First and Scale
 ///     @include side-rotate-right-first(300ms, ease-in);
 ///   }
 ///
-@mixin side-rotate-right-first($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+
+/* ---------------------------------------------------
+Keyframes
+--------------------------------------------------- */
+$_side_rotate_right_first_keyframes-rendered: false !default;
+@mixin side-rotate-right-first-keyframes() {
+	@if $_side_rotate_right_first_keyframes-rendered == false {
+		$_side_rotate_right_first_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(rotate-right-side-first) {
+					0% {
+					}
+					40% {
+						opacity: .8;
+						transform: rotateY(15deg);
+						animation-timing-function: ease-out;
+					}
+					100% {
+						opacity: 0;
+						transform: scale(0.8) translateZ(-200px);
+					}
+				}
+		}
+	}
+}
+
+$_side_rotate_left_first_keyframes-rendered: false !default;
+@mixin side-rotate-left-first-keyframes() {
+	@if $_side_rotate_left_first_keyframes-rendered == false {
+		$_side_rotate_left_first_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(rotate-left-side-first) {
+					0% {
+					}
+					40% {
+						opacity: .8;
+						transform: rotateY(-15deg);
+						animation-timing-function: ease-out;
+					}
+					100% {
+						opacity: 0;
+						transform: scale(0.8) translateZ(-200px);
+					}
+				}
+		}
+	}
+}
+
+$_side_rotate_top_first_keyframes-rendered: false !default;
+@mixin side-rotate-top-first-keyframes() {
+	@if $_side_rotate_top_first_keyframes-rendered == false {
+		$_side_rotate_top_first_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(rotate-top-side-first) {
+					0% {
+					}
+					40% {
+						opacity: .8;
+						transform: rotateX(-15deg);
+						animation-timing-function: ease-out;
+					}
+					100% {
+						opacity: 0;
+						transform: scale(0.8) translateZ(-200px);
+					}
+				}
+		}
+	}
+}
+
+$_side_rotate_bottom_first_keyframes-rendered: false !default;
+@mixin side-rotate-bottom-first-keyframes() {
+	@if $_side_rotate_bottom_first_keyframes-rendered == false {
+		$_side_rotate_bottom_first_keyframes-rendered: true !global;
+
+		@at-root {
+
+		@include shared.keyframes(rotate-bottom-side-first) {
+					0% {
+					}
+					40% {
+						opacity: .8;
+						transform: rotateX(-15deg);
+						animation-timing-function: ease-out;
+					}
+					100% {
+						opacity: 0;
+						transform: scale(0.8) translateZ(-200px);
+					}
+				}
+		}
+	}
+}
+
+@mixin side-rotate-right-first($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 0% 50%;
 	animation: rotate-right-side-first $transition-duration $transition-ease-method both;
+	@include side-rotate-right-first-keyframes();
 }
 
 /// `Side: Rotate Left First Animation`
@@ -36,9 +137,10 @@ Rotate First and Scale
 ///     @include side-rotate-left-first(300ms, ease-in);
 ///   }
 ///
-@mixin side-rotate-left-first($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin side-rotate-left-first($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 100% 50%;
 	animation: rotate-left-side-first $transition-duration $transition-ease-method both;
+	@include side-rotate-left-first-keyframes();
 }
 
 /// `Side: Rotate Top First Animation`
@@ -54,9 +156,10 @@ Rotate First and Scale
 ///     @include side-rotate-top-first(300ms, ease-in);
 ///   }
 ///
-@mixin side-rotate-top-first($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin side-rotate-top-first($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 50% 100%;
 	animation: rotate-top-side-first $transition-duration $transition-ease-method both;
+	@include side-rotate-top-first-keyframes();
 }
 
 /// `Side: Rotate Bottom First Animation`
@@ -72,67 +175,8 @@ Rotate First and Scale
 ///     @include side-rotate-bottom-first(300ms, ease-in);
 ///   }
 ///
-@mixin side-rotate-bottom-first($transition-duration: $transition-duration, $transition-ease-method: $transition-ease-method) {
+@mixin side-rotate-bottom-first($transition-duration: vars.$transition-duration, $transition-ease-method: vars.$transition-ease-method) {
 	transform-origin: 50% 0%;
 	animation: rotate-bottom-side-first $transition-duration $transition-ease-method both;
+	@include side-rotate-bottom-first-keyframes();
 }
-
-/* ---------------------------------------------------
-KEYFRAMES: ROTATE SIDES AND SCALE
---------------------------------------------------- */
-@include keyframes(rotate-right-side-first) {
-	0% {
-	}
-	40% {
-		opacity: .8;
-		transform: rotateY(15deg);
-		animation-timing-function: ease-out;
-	}
-	100% {
-		opacity: 0;
-		transform: scale(0.8) translateZ(-200px);
-	}
-}
-
-@include keyframes(rotate-left-side-first) {
-	0% {
-	}
-	40% {
-		opacity: .8;
-		transform: rotateY(-15deg);
-		animation-timing-function: ease-out;
-	}
-	100% {
-		opacity: 0;
-		transform: scale(0.8) translateZ(-200px);
-	}
-}
-
-@include keyframes(rotate-top-side-first) {
-	0% {
-	}
-	40% {
-		opacity: .8;
-		transform: rotateX(-15deg);
-		animation-timing-function: ease-out;
-	}
-	100% {
-		opacity: 0;
-		transform: scale(0.8) translateZ(-200px);
-	}
-}
-
-@include keyframes(rotate-bottom-side-first) {
-	0% {
-	}
-	40% {
-		opacity: .8;
-		transform: rotateX(-15deg);
-		animation-timing-function: ease-out;
-	}
-	100% {
-		opacity: 0;
-		transform: scale(0.8) translateZ(-200px);
-	}
-}
-
