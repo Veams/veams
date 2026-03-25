@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import react from '@vitejs/plugin-react';
+import { NodePackageImporter } from 'sass';
 import { defineConfig } from 'vite';
 
 const workspaceRoot = fileURLToPath(new URL('..', import.meta.url));
@@ -26,28 +27,48 @@ function spaFallbackPlugin() {
 
 export default defineConfig({
   base: githubPagesBase,
-  resolve: {
-    alias: {
-      '@veams/status-quo/react': path.resolve(
-        workspaceRoot,
-        'packages/status-quo/src/react/index.ts'
-      ),
-      '@veams/status-quo/store': path.resolve(
-        workspaceRoot,
-        'packages/status-quo/src/store/index.ts'
-      ),
-      '@veams/status-quo': path.resolve(workspaceRoot, 'packages/status-quo/src/index.ts'),
-      '@veams/status-quo-query': path.resolve(
-        workspaceRoot,
-        'packages/status-quo-query/src/index.ts'
-      ),
-      '@veams/form/react': path.resolve(workspaceRoot, 'packages/form/src/react/index.ts'),
-      '@veams/form/validators/zod': path.resolve(
-        workspaceRoot,
-        'packages/form/src/validators/zod.ts'
-      ),
-      '@veams/form': path.resolve(workspaceRoot, 'packages/form/src/index.ts'),
+  css: {
+    preprocessorOptions: {
+      scss: {
+        importers: [new NodePackageImporter()],
+      },
     },
+  },
+  resolve: {
+    alias: [
+      {
+        find: /^@veams\/css-animations$/,
+        replacement: path.resolve(workspaceRoot, 'packages/css-animations/src/index.ts'),
+      },
+      {
+        find: '@veams/status-quo/react',
+        replacement: path.resolve(workspaceRoot, 'packages/status-quo/src/react/index.ts'),
+      },
+      {
+        find: '@veams/status-quo/store',
+        replacement: path.resolve(workspaceRoot, 'packages/status-quo/src/store/index.ts'),
+      },
+      {
+        find: '@veams/status-quo',
+        replacement: path.resolve(workspaceRoot, 'packages/status-quo/src/index.ts'),
+      },
+      {
+        find: '@veams/status-quo-query',
+        replacement: path.resolve(workspaceRoot, 'packages/status-quo-query/src/index.ts'),
+      },
+      {
+        find: '@veams/form/react',
+        replacement: path.resolve(workspaceRoot, 'packages/form/src/react/index.ts'),
+      },
+      {
+        find: '@veams/form/validators/zod',
+        replacement: path.resolve(workspaceRoot, 'packages/form/src/validators/zod.ts'),
+      },
+      {
+        find: '@veams/form',
+        replacement: path.resolve(workspaceRoot, 'packages/form/src/index.ts'),
+      },
+    ],
   },
   plugins: [react(), spaFallbackPlugin()],
 });

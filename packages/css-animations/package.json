@@ -25,6 +25,30 @@
       "sass": "./src/animations/*.scss",
       "style": "./dist/animations/*.css"
     },
+    "./scss": {
+      "sass": "./src/index.scss"
+    },
+    "./scss/index.scss": {
+      "sass": "./src/index.scss"
+    },
+    "./scss/animations/*": {
+      "sass": "./src/animations/*.scss"
+    },
+    "./scss/animations/*.scss": {
+      "sass": "./src/animations/*.scss"
+    },
+    "./scss/variables": {
+      "sass": "./src/_variables.scss"
+    },
+    "./scss/variables.scss": {
+      "sass": "./src/_variables.scss"
+    },
+    "./scss/mixins": {
+      "sass": "./src/_mixins.scss"
+    },
+    "./scss/mixins.scss": {
+      "sass": "./src/_mixins.scss"
+    },
     "./variables": {
       "sass": "./src/_variables.scss"
     },

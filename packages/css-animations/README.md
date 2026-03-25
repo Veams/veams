@@ -26,19 +26,33 @@ npm install @veams/css-animations
 
 ### SCSS
 
-Import the main SCSS file:
+Use the main Sass module with Sass `pkg:` URLs:
 
 ```scss
-@import "@veams/css-animations";
+@use "pkg:@veams/css-animations" as *;
 ```
 
-Or import specific animations, variables, or mixins:
+Or compose only the pieces you need:
 
 ```scss
-@import "@veams/css-animations/animations/feedback-effects/fb-border-simple";
-@import "@veams/css-animations/variables";
-@import "@veams/css-animations/mixins";
+@use "pkg:@veams/css-animations/scss/variables.scss" as vars;
+@use "pkg:@veams/css-animations/scss/animations/feedback-effects/fb-setup.scss" as *;
+@use "pkg:@veams/css-animations/scss/animations/feedback-effects/fb-border-simple.scss" as *;
+
+:root {
+  @include vars.veams-root-vars;
+}
+
+.my-element {
+  @include fb-setup;
+  @include fb-border-simple;
+}
+
+/* Optional: emit the keyframes from a shared stylesheet */
+// @include fb-border-simple-keyframes();
 ```
+
+This requires Sass's Node package importer to be enabled in your toolchain.
 
 ### CSS
 
@@ -46,7 +60,7 @@ If you are not using Sass, you can import the pre-compiled CSS files:
 
 ```css
 /* All animations */
-@import "@veams/css-animations/dist/index.css";
+@import "@veams/css-animations/index.css";
 
 /* Specific animation */
 @import "@veams/css-animations/animations/feedback-effects/fb-border-simple.css";
