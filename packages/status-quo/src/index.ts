@@ -11,7 +11,7 @@ import {
   NativeStateHandler,
   ObservableStateHandler,
   SignalStateHandler,
-} from './store';
+} from './store/index.js';
 
 // Import necessary types for external use.
 import type {
@@ -21,7 +21,7 @@ import type {
   DistinctOptions,
   StatusQuoConfig,
 } from './config/status-quo-config.js';
-import type { StateSingleton, StateSingletonOptions } from './store';
+import type { StateSingleton, StateSingletonOptions } from './store/index.js';
 import type { StateSubscriptionHandler } from './types/types.js';
 
 /**
