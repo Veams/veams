@@ -969,9 +969,42 @@ setupStatusQuo({
   },
   distinct: {
     enabled: true,
-    comparator: (previous, next) => JSON.stringify(previous) === JSON.stringify(next),
+    comparator: (previous, next) => JSON.stringify(previous) === JSON.stringify(next), // as simple overwrite example
   },
 });`;
+
+const statusQuoHandlerDistinctExample = `import { NativeStateHandler } from '@veams/status-quo';
+
+type SearchState = {
+  version: number;
+  resultIds: string[];
+};
+
+type SearchActions = {
+  replace: (version: number, resultIds: string[]) => void;
+};
+
+class SearchHandler extends NativeStateHandler<SearchState, SearchActions> {
+  constructor() {
+    super({
+      initialState: {
+        version: 0,
+        resultIds: [],
+      },
+      options: {
+        distinct: {
+          comparator: (previous, next) => previous.version === next.version,
+        },
+      },
+    });
+  }
+
+  getActions(): SearchActions {
+    return {
+      replace: (version, resultIds) => this.setState({ version, resultIds }, 'replace'),
+    };
+  }
+}`;
 
 const statusQuoDevToolsExample = `import { SignalStateHandler } from '@veams/status-quo';
 
@@ -3719,7 +3752,7 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   'Subscribe to full state only when the component really needs all of it.',
                   'Reach for a selector as soon as one branch of state clearly drives the UI.',
-                  'Add an equality function when referential comparison is still too noisy.',
+                  'Add an equality function when the default `Object.is` check is still too noisy.',
                 ],
                 id: 'selector-guidelines',
                 paragraphs: [
@@ -3734,6 +3767,79 @@ export const docsPackages: DocsPackage[] = [
               'Do not pipe the whole handler into every component just because it is easy. Subscribe to the part that really drives the UI.',
             summary: 'Listen to less. Rerender less.',
             title: 'Selectors',
+          },
+          {
+            blocks: [
+              {
+                callout:
+                  'Comparison rules belong in the handler first. Hook-level equality is the last-mile escape hatch.',
+                bullets: [
+                  'Handler-level distinct comparison decides whether updates should propagate at all.',
+                  'Hook-level `isEqual` only decides whether one selected value should rerender one subscriber.',
+                  'Treat those as different responsibilities instead of mixing them together in the component.',
+                ],
+                id: 'comparison-layers',
+                paragraphs: [
+                  'Status Quo has two comparison layers on purpose. The handler is the primary definition of state behavior and should own the broad rule for what counts as a meaningful update. Subscription hooks sit later in the pipeline and are best used for UI-specific selection boundaries.',
+                ],
+                title: 'Know the two comparison layers',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: statusQuoGlobalSetup,
+                    label: 'Global handler-level distinct comparator',
+                    language: 'ts',
+                  },
+                  {
+                    code: statusQuoHandlerDistinctExample,
+                    label: 'Per-handler distinct comparator',
+                    language: 'ts',
+                  },
+                  {
+                    code: statusQuoSelectorExample,
+                    label: 'Hook-level custom equality',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  'Handler distinct comparison defaults to an `Object.is` fast path with JSON structural fallback, including `Map` and `Set` serialization support.',
+                  'You can set that rule globally through `setupStatusQuo({ distinct })` or override it on one handler with `options.distinct`.',
+                  'Hook subscription equality defaults to `Object.is`.',
+                  'If a selector creates a fresh object, `Object.is` will treat it as changed until you provide a custom equality function.',
+                ],
+                id: 'comparison-defaults',
+                paragraphs: [
+                  'The defaults are intentionally different because they operate at different layers. Handler distinct comparison is broader and protects the state pipeline itself. Its built-in JSON fallback uses a replacer so `Map` and `Set` values are compared structurally instead of collapsing to empty objects. You can keep that rule global or pin a different comparator to one handler instance through constructor options. Hook equality is narrower and only filters one selected subscription result.',
+                ],
+                title: 'Understand the defaults',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: statusQuoBindSubscribableExample,
+                    label: 'Handler-owned comparison with bindSubscribable',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  'Prefer handler-owned comparators when the rule belongs to the feature, source sync, or every consumer of that state.',
+                  'Use hook-level `isEqual` when a single component is projecting a temporary view model or other UI-only shape.',
+                  'Component-level tuning is possible, but it should stay the exception rather than the place where state semantics live.',
+                ],
+                id: 'comparison-guidelines',
+                paragraphs: [
+                  'If the same comparison rule would otherwise be copied into several components, move it down into the handler. Keep the state handler as the primary definition of behavior, and let hooks stay thin: subscribe, select, render, trigger actions.',
+                ],
+                title: 'Keep ownership with the handler',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'comparators-and-defaults',
+            intro:
+              'Comparator behavior exists at the handler layer and at the subscription layer. Keep the primary rule in the handler, then use hook-level equality only when a component truly needs local render tuning.',
+            summary: 'Handler-first comparison rules, hook-level escape hatches.',
+            title: 'Comparators and Defaults',
           },
           {
             blocks: [

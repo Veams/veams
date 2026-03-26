@@ -274,6 +274,71 @@ class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
 }
 ```
 
+## Comparator defaults
+
+Status Quo has two comparison layers, and they solve different problems.
+
+- Handler-level distinct comparison decides whether a state update should propagate at all.
+- Hook-level `isEqual` decides whether one selected value should trigger a rerender.
+- The handler is the primary place to define comparison behavior. Hook-level equality is possible, but it should stay focused on UI-specific selection boundaries.
+
+Default behavior:
+
+- `setupStatusQuo({ distinct })` and per-handler `options.distinct` use a comparator with an `Object.is` fast path and a JSON-based structural fallback that serializes `Map` and `Set` values through a custom replacer.
+- `useStateSubscription()`, `useProvidedStateSubscription()`, `useStateFactory()`, and `useStateSingleton()` default `isEqual` to `Object.is`.
+- If a selector returns a fresh object on each run, `Object.is` will treat that as changed unless you provide a custom equality function.
+
+Set the distinct comparator globally:
+
+```ts
+import { setupStatusQuo } from '@veams/status-quo';
+
+setupStatusQuo({
+  distinct: {
+    comparator: (previous, next) => previous.version === next.version,
+  },
+});
+```
+
+Or set it per handler:
+
+```ts
+import { NativeStateHandler } from '@veams/status-quo';
+
+class SearchHandler extends NativeStateHandler<
+  { version: number; resultIds: string[] },
+  { replace: (version: number, resultIds: string[]) => void }
+> {
+  constructor() {
+    super({
+      initialState: {
+        version: 0,
+        resultIds: [],
+      },
+      options: {
+        distinct: {
+          comparator: (previous, next) => previous.version === next.version,
+        },
+      },
+    });
+  }
+
+  getActions() {
+    return {
+      replace: (version: number, resultIds: string[]) => {
+        this.setState({ version, resultIds }, 'replace');
+      },
+    };
+  }
+}
+```
+
+Practical rule:
+
+- If several consumers need the same comparison rule, move it into the handler.
+- Use hook-level `isEqual` only when one component is projecting a temporary view model or other UI-specific slice.
+- Avoid making the component layer the primary home of state semantics when the handler can own that rule once.
+
 ## API Guide
 
 This section documents the primary public API with behavior notes and usage examples.
@@ -290,7 +355,7 @@ type StatusQuoConfig = {
   };
   distinct?: {
     enabled?: boolean; // default: true
-    comparator?: (previous: unknown, next: unknown) => boolean; // default: JSON compare
+    comparator?: (previous: unknown, next: unknown) => boolean; // default: Object.is fast path + JSON structural fallback with Map/Set support
   };
 };
 ```
