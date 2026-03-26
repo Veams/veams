@@ -4003,7 +4003,8 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   '`useStateSubscription(source, selector?, isEqual?)` subscribes to a handler instance or singleton.',
-                  '`source` is the handler or singleton to read from. `selector?` narrows the subscribed slice. `isEqual?` customizes equality.',
+                  'For local state, `source` is the same handler instance returned by `useStateHandler()` that you would also pass to `useStateActions(handler)`.',
+                  '`source` can also be a singleton definition. `selector?` narrows the subscribed slice. `isEqual?` customizes equality.',
                   'Returns `[selectedState, actions]` and is the main React rendering surface for Status Quo state.',
                 ],
                 id: 'use-state-subscription',

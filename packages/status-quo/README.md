@@ -133,6 +133,7 @@ For full signatures and practical examples, see [API Guide](#api-guide).
   - Returns actions without subscribing to state.
 - `useStateSubscription(handlerOrSingleton, selector?, isEqual?)`
   - Subscribes to full state or a selected slice and returns `[state, actions]`.
+  - For local state, pass the same handler instance returned by `useStateHandler()` that you would also pass to `useStateActions()`.
 - `useStateFactory(factory, selector?, isEqual?, params?)`
   - Shortcut for `useStateHandler + useStateSubscription`.
 - `useStateSingleton(singleton, selector?, isEqual?)`
@@ -374,6 +375,8 @@ const actions = useProvidedStateActions<UserState, UserActions>();
 Subscribes to either a handler instance or a singleton and returns `[selectedState, actions]`.
 
 - `source`: `StateSubscriptionHandler` or `StateSingleton`
+  - When you use local state, `source` is the handler instance returned by `useStateHandler()`.
+  - That means it is the same object you would pass to `useStateActions(handler)`.
 - `selector`: optional projection function; defaults to identity
 - `isEqual`: optional equality function; defaults to `Object.is`
 
