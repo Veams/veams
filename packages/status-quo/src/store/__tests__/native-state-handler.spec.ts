@@ -49,6 +49,8 @@ type CounterState = { count: number };
 type CounterActions = { increase: () => void };
 type CounterBucketSelection = { bucket: number };
 type CounterBucketState = { bucket: number };
+type SetState = { openItems: Set<string> };
+type SetActions = { toggle: (id: string) => void };
 
 class CounterNativeStateHandler extends NativeStateHandler<CounterState, CounterActions> {
   constructor(initialCount = 0) {
@@ -133,6 +135,32 @@ class CounterNativeBucketBridgeStateHandler extends NativeStateHandler<
   getActions(): { noop: () => void } {
     return {
       noop: () => undefined,
+    };
+  }
+}
+
+class SetNativeStateHandler extends NativeStateHandler<SetState, SetActions> {
+  constructor() {
+    super({
+      initialState: {
+        openItems: new Set(),
+      },
+    });
+  }
+
+  getActions(): SetActions {
+    return {
+      toggle: (id: string) => {
+        const openItems = new Set(this.getState().openItems);
+
+        if (openItems.has(id)) {
+          openItems.delete(id);
+        } else {
+          openItems.add(id);
+        }
+
+        this.setState({ openItems }, 'toggle');
+      },
     };
   }
 }
@@ -245,6 +273,19 @@ describe('Native State Handler', () => {
     unsubscribe();
 
     expect(spy).toHaveBeenCalledTimes(2); // initial + one change
+  });
+
+  it('should notify subscribers when Set state changes', () => {
+    const handler = new SetNativeStateHandler();
+    const spy = jest.fn();
+    const unsubscribe = handler.subscribe(spy);
+
+    handler.getActions().toggle('item-1');
+    handler.getActions().toggle('item-1');
+
+    unsubscribe();
+
+    expect(spy).toHaveBeenCalledTimes(3); // initial + open + close
   });
 
   it('should notify another state handler for each singleton counter update', () => {

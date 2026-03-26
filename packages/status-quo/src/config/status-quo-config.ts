@@ -57,6 +57,24 @@ type ResolvedStatusQuoConfig = {
   distinct: ResolvedDistinctOptions;
 };
 
+function distinctReplacer(_key: string, value: unknown) {
+  if (value instanceof Set) {
+    return {
+      __statusQuoType: 'Set',
+      values: [...value],
+    };
+  }
+
+  if (value instanceof Map) {
+    return {
+      __statusQuoType: 'Map',
+      entries: [...value.entries()],
+    };
+  }
+
+  return value;
+}
+
 /**
  * Default comparator function that uses referential equality (Object.is)
  * and falls back to JSON stringification for structural equality.
@@ -69,7 +87,9 @@ function distinctAsJson(previous: unknown, next: unknown) {
 
   // Structural comparison using JSON stringification as a fallback.
   try {
-    return JSON.stringify(previous) === JSON.stringify(next);
+    return (
+      JSON.stringify(previous, distinctReplacer) === JSON.stringify(next, distinctReplacer)
+    );
   } catch {
     // If stringification fails, assume they are not equal.
     return false;
