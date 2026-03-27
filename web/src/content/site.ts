@@ -1858,6 +1858,57 @@ function LoginForm() {
   );
 }`;
 
+const formValidationModesExample = `import { Controller, FormProvider, useUncontrolledField } from '@veams/form/react';
+
+function EmailField() {
+  const { meta, registerProps } = useUncontrolledField('email', {
+    validationMode: 'change',
+  });
+
+  return (
+    <label>
+      Email
+      <input {...registerProps} type="email" />
+      {meta.showError ? <span>{meta.error}</span> : null}
+    </label>
+  );
+}
+
+function RoleField() {
+  return (
+    <Controller
+      name="role"
+      validationMode="submit"
+      render={({ field, fieldState }) => (
+        <>
+          <RoleSelect
+            onBlur={field.onBlur}
+            onChange={field.onChange}
+            value={field.value as string}
+          />
+          {fieldState.touched && fieldState.error ? <span>{fieldState.error}</span> : null}
+        </>
+      )}
+    />
+  );
+}
+
+function AccountForm() {
+  return (
+    <FormProvider
+      initialValues={{ email: '', role: 'user' }}
+      onSubmit={handleSubmit}
+      validator={validator}
+      validationMode="blur"
+      revalidationMode="change"
+    >
+      <EmailField />
+      <RoleField />
+      <button type="submit">Save</button>
+    </FormProvider>
+  );
+}`;
+
 const formFrameworkCoreImports = `import { FormStateHandler } from '@veams/form';`;
 
 const formFrameworkReactImports = `import {
@@ -5555,10 +5606,12 @@ export const docsPackages: DocsPackage[] = [
                   '`FormProvider` owns one controller instance locally when you do not pass `formHandlerInstance`.',
                   '`useUncontrolledField()` wires native inputs without turning every field into controlled React state.',
                   '`useFieldMeta()` is already included in the hook result as `meta` for validation UI.',
+                  'By default, fields validate on first blur and revalidate on change after they have been touched once.',
                 ],
                 id: 'react-layer',
                 paragraphs: [
                   'The fast path for a plain React form is the provider plus uncontrolled field registration. That keeps render churn low while still syncing the DOM to the shared form snapshot.',
+                  'That default timing keeps initial render quiet, shows errors on first leave, and clears them live while the user corrects the field.',
                 ],
                 title: 'Bind it into React',
               },
@@ -5623,7 +5676,7 @@ export const docsPackages: DocsPackage[] = [
                 id: 'validator-basics',
                 paragraphs: [
                   'A validator in `FormStateHandler` is a pure function over the full value snapshot. That design is deliberate: it allows single-field updates and full-submit validation to run the same business rules and produce the same error shape.',
-                  'In practice, this means `setFieldValue()` and `validateForm()` stay consistent. The UI can trust `errors`, `isValid`, and touched state without adding hidden ad-hoc checks in components.',
+                  'By default, `setFieldValue()` and `validateForm()` use the same validator and produce the same error shape. React field bindings can intentionally defer validation by calling `setFieldValue(name, value, { validate: false })` until blur or submit.',
                 ],
                 title: 'Model validation as one typed function',
               },
@@ -5786,8 +5839,9 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  '`Controller({ name, render })` bridges controlled inputs through a render prop.',
+                  '`Controller({ name, render, validationMode?, revalidationMode? })` bridges controlled inputs through a render prop.',
                   '`name` is the dot-path field name. `render` receives `{ field, fieldState }` so controlled widgets can bind `value`, `onChange`, and `onBlur` explicitly.',
+                  '`validationMode?` and `revalidationMode?` override the current `FormProvider` timing for that field only.',
                   'Use it for third-party inputs that require controlled props. Native fields should usually stay on `useUncontrolledField()`.',
                 ],
                 id: 'controller-api',
@@ -5799,14 +5853,34 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   '`FormProvider(props)` has two valid shapes.',
-                  'Local mode takes `{ children, initialValues, onSubmit, validator?, ...formProps }`. External mode takes `{ children, formHandlerInstance, onSubmit, ...formProps }`.',
+                  'Local mode takes `{ children, initialValues, onSubmit, validator?, validationMode?, revalidationMode?, ...formProps }`. External mode takes `{ children, formHandlerInstance, onSubmit, validationMode?, revalidationMode?, ...formProps }`.',
                   '`onSubmit(values, form)` receives the validated values and the resolved `FormStateHandler`. The provider calls `validateForm()` and `touchAllFields()` before invoking it.',
+                  '`validationMode` defaults to `blur`. `revalidationMode` defaults to `change`.',
                 ],
                 id: 'form-provider-api',
                 paragraphs: [
                   'Use `FormProvider` to own or bridge one controller instance into a React subtree. The API stays explicit about whether React owns the controller lifecycle or just hosts it.',
                 ],
                 title: 'FormProvider',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: formValidationModesExample,
+                    label: 'Validation timing defaults and overrides',
+                    language: 'tsx',
+                  },
+                ],
+                bullets: [
+                  'React forms validate on first blur by default.',
+                  'Touched fields revalidate on change by default so stale errors clear while the user types.',
+                  'Use `validationMode` and `revalidationMode` on `FormProvider`, `useUncontrolledField()`, and `Controller` to override that timing.',
+                ],
+                id: 'validation-timing-api',
+                paragraphs: [
+                  'Validation timing belongs in the React binding layer, not in `setFieldTouched()`. That keeps the core form state API explicit while still allowing form-level defaults and per-field overrides in UI code.',
+                ],
+                title: 'Validation Timing',
               },
               {
                 codeExamples: [
@@ -5822,7 +5896,7 @@ export const docsPackages: DocsPackage[] = [
                   'The state snapshot is `{ values, errors, submitError, touched, isSubmitting, isValid }`.',
                   '`errors` contains active field-level messages keyed by dot-path. Missing keys mean valid fields. `submitError` is the form-level backend message and stays separate from field validation.',
                   '`isValid` is derived from the field error map only. A `submitError` may exist while `isValid` is still `true`.',
-                  '`setFieldValue(name, value)` updates the nested value, reruns the validator for the full snapshot, updates `errors`, and clears stale `submitError`.',
+                  '`setFieldValue(name, value, options?)` updates the nested value, optionally reruns the validator for the full snapshot, updates `errors`, and clears stale `submitError`.',
                   '`validateForm()` reruns the validator against the current snapshot, stores the resulting field errors, and returns the boolean result for submit flow control.',
                   '`setFieldError(name, errorMessage?)` is for authoritative backend field constraints. `setSubmitError(errorMessage?)` is for generic backend failures that do not belong to one field.',
                   '`setFieldTouched(name, isTouched?)` marks one field explicitly. `touchAllFields()` marks every leaf field so validation messages can become visible in one step.',
@@ -5851,7 +5925,7 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   '`useFieldMeta(name)` takes one field name or dot-path.',
-                  'Returns `{ error, touched }` for that field only.',
+                  'Returns `{ error, touched, showError }` for that field only.',
                   'Use it when a component only needs validation metadata and should not subscribe to the full form snapshot.',
                 ],
                 id: 'use-field-meta-api',
@@ -5887,7 +5961,7 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   '`useUncontrolledField(name, options?)` takes one field name or dot-path plus optional field configuration.',
-                  '`options?` varies by element type and covers cases such as checkboxes, radios, selects, default values, and value extraction.',
+                  '`options?` varies by element type and covers cases such as checkboxes, radios, selects, default values, value extraction, and `validationMode` / `revalidationMode` overrides.',
                   'Returns the registration props and `meta` needed to bind native inputs without making every keystroke controlled React state.',
                 ],
                 id: 'use-uncontrolled-field-api',

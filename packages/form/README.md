@@ -141,6 +141,63 @@ function LoginForm() {
 }
 ```
 
+## Validation Timing
+
+In the React layer, fields validate on first blur by default and revalidate on change after they have been touched once.
+That keeps empty fields quiet until the user leaves them, while still clearing stale errors as they type a fix.
+
+```tsx
+<FormProvider
+  initialValues={{ email: '', password: '' }}
+  onSubmit={handleSubmit}
+  validator={validator}
+  validationMode="blur"
+  revalidationMode="change"
+>
+  <EmailField />
+</FormProvider>
+```
+
+You can override that behavior per field:
+
+```tsx
+function EmailField() {
+  const { meta, registerProps } = useUncontrolledField('email', {
+    validationMode: 'change',
+  });
+
+  return (
+    <label>
+      Email
+      <input {...registerProps} type="email" />
+      {meta.showError ? <span>{meta.error}</span> : null}
+    </label>
+  );
+}
+
+function RoleField() {
+  return (
+    <Controller
+      name="role"
+      validationMode="submit"
+      render={({ field, fieldState }) => (
+        <>
+          <RoleSelect
+            onBlur={field.onBlur}
+            onChange={field.onChange}
+            value={field.value as string}
+          />
+          {fieldState.touched && fieldState.error ? <span>{fieldState.error}</span> : null}
+        </>
+      )}
+    />
+  );
+}
+```
+
+Available modes are `'change'`, `'blur'`, `'submit'`, and `'inherit'`.
+`'inherit'` means "use the current `FormProvider` defaults".
+
 ## Uncontrolled Field Principle
 
 Native fields should stay uncontrolled by default in VEAMS Form, while `FormStateHandler` remains the source of truth for values, errors, touched state, and submit state.
@@ -251,6 +308,7 @@ function LoginFeature() {
 ## Controlled Components
 
 Use `Controller` when a third-party field expects `value` and `onChange` instead of native uncontrolled props.
+It supports the same `validationMode` and `revalidationMode` overrides as `useUncontrolledField()`.
 
 ```tsx
 import { Controller, FormProvider } from '@veams/form/react';
@@ -322,3 +380,6 @@ const form = new FormStateHandler<LoginValues>({
   validator: toZodValidator(loginSchema),
 });
 ```
+
+If you work directly with `FormStateHandler`, `setFieldValue(name, value, { validate: false })` updates the value without rerunning the validator.
+The React bindings use that option internally when a field is configured to wait for blur or submit before validating.
