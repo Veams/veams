@@ -13,6 +13,18 @@
     "moduleResolution": "bundler",
     "noEmit": true,
     "paths": {
+      "@veams/form": [
+        "../packages/form/src/index.ts"
+      ],
+      "@veams/form/*": [
+        "../packages/form/src/*"
+      ],
+      "@veams/form/react": [
+        "../packages/form/src/react/index.ts"
+      ],
+      "@veams/form/react/*": [
+        "../packages/form/src/react/*"
+      ],
       "@veams/status-quo": [
         "../packages/status-quo/src/index.ts"
       ],

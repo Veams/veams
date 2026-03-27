@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@veams/css-animations": "file:../packages/css-animations",
+    "@veams/form": "file:../packages/form",
     "@veams/status-quo": "file:../packages/status-quo",
     "@veams/vent": "file:../packages/vent",
     "prism-react-renderer": "^2.4.1",

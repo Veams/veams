@@ -1108,9 +1108,127 @@ button {
   min-height: 10rem;
 }
 
+.example-form-stack {
+  display: grid;
+  gap: 1.4rem;
+}
+
+.example-form-field {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.example-form-field span {
+  color: var(--muted);
+  font-size: 1.2rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.example-form-field input {
+  width: 100%;
+  padding: 1rem 1.2rem;
+  border: 1px solid rgba(151, 168, 196, 0.38);
+  background: #fcfdff;
+  color: var(--ink);
+  font: inherit;
+}
+
+.example-form-field small,
+.example-form-checkbox small {
+  color: var(--muted);
+  font-size: 1.35rem;
+  font-weight: 300;
+  line-height: 1.5;
+}
+
+.example-form-checkbox {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+  padding: 1.2rem;
+  border: 1px solid rgba(151, 168, 196, 0.22);
+  background: #fbfcff;
+}
+
+.example-form-checkbox input {
+  margin-top: 0.4rem;
+}
+
+.example-form-checkbox span {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.example-form-checkbox strong {
+  color: var(--ink);
+  font-size: 1.45rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.example-form-field .example-form-error,
+.example-counter-card .example-form-error {
+  margin: 0;
+  color: #b42318;
+  font-size: 1.35rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.example-form-json {
+  margin: 0;
+  padding: 1.2rem 1.4rem;
+  overflow-x: auto;
+  border: 1px solid rgba(151, 168, 196, 0.18);
+  background: #f8fbff;
+  color: #1f2a44;
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  line-height: 1.6;
+}
+
+.example-form-banner {
+  margin: 0;
+  padding: 1rem 1.2rem;
+  border: 1px solid rgba(180, 35, 24, 0.22);
+  background: rgba(180, 35, 24, 0.08);
+  color: #b42318;
+  font-size: 1.4rem;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.example-form-banner.is-muted {
+  border-color: rgba(151, 168, 196, 0.22);
+  background: #f8fbff;
+  color: var(--ink);
+}
+
+.example-form-primary {
+  border-color: var(--accent) !important;
+  background: var(--accent) !important;
+  color: #ffffff !important;
+}
+
+.example-form-primary:hover,
+.example-form-primary:focus-visible {
+  background: color-mix(in srgb, var(--accent) 88%, #ffffff) !important;
+  color: #ffffff !important;
+}
+
+.example-form-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .example-field input:focus-visible,
 .example-field textarea:focus-visible,
-.example-chip-button:focus-visible {
+.example-chip-button:focus-visible,
+.example-form-field input:focus-visible,
+.example-form-checkbox input:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }

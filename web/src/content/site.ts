@@ -41,6 +41,11 @@ export type LiveExampleId =
   | 'status-quo-composition-checklist'
   | 'status-quo-provider-wizard'
   | 'status-quo-selector-profile'
+  | 'form-controlled-input'
+  | 'form-simple-form'
+  | 'form-nested-feature-form'
+  | 'form-feature-validation'
+  | 'form-validation-mode'
   | 'vent-release-bus'
   | 'css-animations-showcase';
 
@@ -1860,8 +1865,20 @@ function LoginForm() {
 
 const formValidationModesExample = `import { Controller, FormProvider, useUncontrolledField } from '@veams/form/react';
 
-function EmailField() {
-  const { meta, registerProps } = useUncontrolledField('email', {
+function ControlledRolePicker({ onBlur, onChange, value }) {
+  return (
+    <div onBlurCapture={onBlur}>
+      <button onClick={() => onChange('admin')} type="button">Admin</button>
+      <button onClick={() => onChange('editor')} type="button">Editor</button>
+      <button onClick={() => onChange('viewer')} type="button">Viewer</button>
+      <button onClick={() => onChange('')} type="button">Clear</button>
+      <p>{value || 'No role selected yet.'}</p>
+    </div>
+  );
+}
+
+function ChangeEmailField() {
+  const { meta, registerProps } = useUncontrolledField('changeEmail', {
     validationMode: 'change',
   });
 
@@ -1869,24 +1886,36 @@ function EmailField() {
     <label>
       Email
       <input {...registerProps} type="email" />
-      {meta.showError ? <span>{meta.error}</span> : null}
+      {meta.showError ? <p>{meta.error}</p> : null}
     </label>
   );
 }
 
-function RoleField() {
+function BlurNameField() {
+  const { meta, registerProps } = useUncontrolledField('blurName');
+
+  return (
+    <label>
+      Name
+      <input {...registerProps} />
+      {meta.showError ? <p>{meta.error}</p> : null}
+    </label>
+  );
+}
+
+function SubmitRoleField() {
   return (
     <Controller
-      name="role"
+      name="submitRole"
       validationMode="submit"
       render={({ field, fieldState }) => (
         <>
-          <RoleSelect
+          <ControlledRolePicker
             onBlur={field.onBlur}
             onChange={field.onChange}
             value={field.value as string}
           />
-          {fieldState.touched && fieldState.error ? <span>{fieldState.error}</span> : null}
+          {fieldState.touched && fieldState.error ? <p>{fieldState.error}</p> : null}
         </>
       )}
     />
@@ -1896,15 +1925,22 @@ function RoleField() {
 function AccountForm() {
   return (
     <FormProvider
-      initialValues={{ email: '', role: 'user' }}
+      initialValues={{ blurName: '', changeEmail: '', submitRole: '' }}
       onSubmit={handleSubmit}
-      validator={validator}
+      validator={(values) => ({
+        ...(values.blurName ? {} : { blurName: 'Name validates on blur.' }),
+        ...(/\\S+@\\S+\\.\\S+/.test(values.changeEmail)
+          ? {}
+          : { changeEmail: 'Email validates on first change.' }),
+        ...(values.submitRole ? {} : { submitRole: 'Role validates on submit.' }),
+      })}
       validationMode="blur"
       revalidationMode="change"
     >
-      <EmailField />
-      <RoleField />
-      <button type="submit">Save</button>
+      <BlurNameField />
+      <ChangeEmailField />
+      <SubmitRoleField />
+      <button type="submit">Run submit validation</button>
     </FormProvider>
   );
 }`;
@@ -2219,18 +2255,30 @@ function LoginFeature() {
 
 const formControllerExample = `import { Controller, FormProvider } from '@veams/form/react';
 
-function ControlledRoleSelect() {
+function ControlledRolePicker({ onBlur, onChange, value }) {
+  return (
+    <div onBlurCapture={onBlur}>
+      <button onClick={() => onChange('admin')} type="button">Admin</button>
+      <button onClick={() => onChange('editor')} type="button">Editor</button>
+      <button onClick={() => onChange('viewer')} type="button">Viewer</button>
+      <button onClick={() => onChange('')} type="button">Clear</button>
+      <p>{value || 'No role selected yet.'}</p>
+    </div>
+  );
+}
+
+function ControlledRoleField() {
   return (
     <Controller
       name="role"
       render={({ field, fieldState }) => (
         <>
-          <RoleSelect
+          <ControlledRolePicker
             onBlur={field.onBlur}
             onChange={field.onChange}
             value={field.value as string}
           />
-          {fieldState.touched && fieldState.error ? <span>{fieldState.error}</span> : null}
+          {fieldState.touched && fieldState.error ? <p>{fieldState.error}</p> : null}
         </>
       )}
     />
@@ -2240,11 +2288,14 @@ function ControlledRoleSelect() {
 function RoleForm() {
   return (
     <FormProvider
-      initialValues={{ role: 'user' }}
+      initialValues={{ role: '' }}
+      validator={(values) => ({
+        ...(values.role ? {} : { role: 'Choose one role before saving.' }),
+      })}
       onSubmit={(values) => saveRole(values.role)}
     >
-      <ControlledRoleSelect />
-      <button type="submit">Save</button>
+      <ControlledRoleField />
+      <button type="submit">Save role</button>
     </FormProvider>
   );
 }`;
@@ -2472,21 +2523,69 @@ function ProfileForm() {
   );
 }`;
 
-const formSimpleWorkingExample = `import { FormProvider, useUncontrolledField } from '@veams/form/react';
+const formSimpleWorkingExample = `import { useState } from 'react';
+import { FormProvider, useFormController, useFormMeta, useUncontrolledField } from '@veams/form/react';
 
-function TextField({ label, name, type = 'text' }: { label: string; name: string; type?: string }) {
+function wait(ms: number) {
+  return new Promise<void>((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+function TextField({ description, label, name, type = 'text' }: {
+  description: string;
+  label: string;
+  name: string;
+  type?: 'email' | 'password' | 'text';
+}) {
   const { meta, registerProps } = useUncontrolledField(name, { type });
 
   return (
     <label>
-      {label}
+      <span>{label}</span>
       <input {...registerProps} />
-      {meta.showError ? <span>{meta.error}</span> : null}
+      <small>{description}</small>
+      {meta.showError ? <p>{meta.error}</p> : null}
     </label>
   );
 }
 
+function LoginExampleActions() {
+  const controller = useFormController<{ email: string; password: string }>();
+  const form = useFormMeta<{ email: string; password: string }>();
+
+  return (
+    <>
+      <button
+        onClick={() => {
+          controller.setFieldValue('email', 'team@veams.dev');
+          controller.setFieldValue('password', 'docs-ship-fast');
+        }}
+        type="button"
+      >
+        Load demo values
+      </button>
+      <button
+        onClick={() => {
+          if (!controller.validateForm()) {
+            controller.touchAllFields();
+          }
+        }}
+        type="button"
+      >
+        Validate now
+      </button>
+      <button onClick={() => controller.resetForm()} type="button">
+        Reset
+      </button>
+      <span>Submitting: {String(form.isSubmitting)}</span>
+    </>
+  );
+}
+
 function LoginForm() {
+  const [lastSubmittedEmail, setLastSubmittedEmail] = useState<string | null>(null);
+
   return (
     <FormProvider
       initialValues={{
@@ -2494,16 +2593,29 @@ function LoginForm() {
         password: '',
       }}
       onSubmit={async (values) => {
-        await login(values);
+        await wait(320);
+        setLastSubmittedEmail(values.email);
       }}
       validator={(values) => ({
         ...(values.email ? {} : { email: 'Email is required' }),
-        ...(values.password ? {} : { password: 'Password is required' }),
+        ...(values.password.length >= 12 ? {} : { password: 'Use at least 12 characters' }),
       })}
     >
-      <TextField label="Email" name="email" type="email" />
-      <TextField label="Password" name="password" type="password" />
+      <TextField
+        description="Try blurring this field empty first."
+        label="Email"
+        name="email"
+        type="email"
+      />
+      <TextField
+        description="Needs at least twelve characters."
+        label="Password"
+        name="password"
+        type="password"
+      />
+      <LoginExampleActions />
       <button type="submit">Sign in</button>
+      <p>Last submit: {lastSubmittedEmail ?? 'none yet'}</p>
     </FormProvider>
   );
 }`;
@@ -2511,21 +2623,27 @@ function LoginForm() {
 const formNestedFeatureWorkingExample = `import { NativeStateHandler } from '@veams/status-quo';
 import { useStateFactory } from '@veams/status-quo/react';
 import { FormStateHandler } from '@veams/form';
-import { FormProvider, useUncontrolledField } from '@veams/form/react';
+import { FormProvider, useFormController, useFormMeta, useUncontrolledField } from '@veams/form/react';
 
 type ProfileValues = {
   profile: {
     email: string;
     name: string;
   };
+  settings: {
+    newsletter: boolean;
+  };
 };
 
 type FeatureState = {
-  isSaving: boolean;
+  lastSavedName: string;
+  saveCount: number;
+  status: 'idle' | 'saved';
 };
 
 type FeatureActions = {
   getFormHandler: () => FormStateHandler<ProfileValues>;
+  loadExampleProfile: () => void;
   saveProfile: (values: ProfileValues) => Promise<void>;
 };
 
@@ -2536,13 +2654,24 @@ class ProfileFeatureHandler extends NativeStateHandler<FeatureState, FeatureActi
         email: '',
         name: '',
       },
+      settings: {
+        newsletter: false,
+      },
     },
+    validator: (values) => ({
+      ...(values.profile.name ? {} : { 'profile.name': 'Name is required' }),
+      ...(values.profile.email.includes('@')
+        ? {}
+        : { 'profile.email': 'Enter a valid email address' }),
+    }),
   });
 
   constructor() {
     super({
       initialState: {
-        isSaving: false,
+        lastSavedName: 'Nobody yet',
+        saveCount: 0,
+        status: 'idle',
       },
     });
   }
@@ -2550,9 +2679,60 @@ class ProfileFeatureHandler extends NativeStateHandler<FeatureState, FeatureActi
   getActions(): FeatureActions {
     return {
       getFormHandler: () => this.formHandler,
-      saveProfile: async (_values) => undefined,
+      loadExampleProfile: () => {
+        this.formHandler.setFieldValue('profile.name', 'Mina Foster');
+        this.formHandler.setFieldValue('profile.email', 'mina@veams.dev');
+        this.formHandler.setFieldValue('settings.newsletter', true);
+      },
+      saveProfile: async (values) => {
+        this.setState({
+          lastSavedName: values.profile.name,
+          saveCount: this.getState().saveCount + 1,
+          status: 'saved',
+        });
+      },
     };
   }
+}
+
+function CheckboxField({ label, name }: { label: string; name: string }) {
+  const { registerProps } = useUncontrolledField(name, { type: 'checkbox' });
+
+  return (
+    <label>
+      <input {...registerProps} />
+      <span>{label}</span>
+    </label>
+  );
+}
+
+function ProfileSummary({
+  lastSavedName,
+  loadExampleProfile,
+  saveCount,
+}: {
+  lastSavedName: string;
+  loadExampleProfile: () => void;
+  saveCount: number;
+}) {
+  const controller = useFormController<ProfileValues>();
+  const form = useFormMeta<ProfileValues>();
+  const values = controller.getState().values;
+
+  return (
+    <>
+      <p>Saves: {saveCount}</p>
+      <p>Touched fields: {Object.keys(form.touched).length}</p>
+      <pre>{JSON.stringify(values, null, 2)}</pre>
+      <p>Last saved profile: {lastSavedName}</p>
+      <button onClick={loadExampleProfile} type="button">
+        Load demo profile
+      </button>
+      <button onClick={() => controller.resetForm()} type="button">
+        Reset values
+      </button>
+    </>
+  );
 }
 
 function ProfileFields() {
@@ -2561,14 +2741,15 @@ function ProfileFields() {
 
   return (
     <>
-      <input {...email.registerProps} placeholder="Email" />
       <input {...name.registerProps} placeholder="Name" />
+      <input {...email.registerProps} placeholder="Email" />
+      <CheckboxField label="Subscribe to release notes" name="settings.newsletter" />
     </>
   );
 }
 
 function ProfileFeatureForm() {
-  const [, actions] = useStateFactory(() => new ProfileFeatureHandler(), []);
+  const [state, actions] = useStateFactory(() => new ProfileFeatureHandler(), []);
 
   return (
     <FormProvider
@@ -2577,6 +2758,11 @@ function ProfileFeatureForm() {
     >
       <ProfileFields />
       <button type="submit">Save profile</button>
+      <ProfileSummary
+        lastSavedName={state.lastSavedName}
+        loadExampleProfile={actions.loadExampleProfile}
+        saveCount={state.saveCount}
+      />
     </FormProvider>
   );
 }`;
@@ -2584,7 +2770,7 @@ function ProfileFeatureForm() {
 const formFeatureValidationWorkingExample = `import { NativeStateHandler } from '@veams/status-quo';
 import { useStateFactory } from '@veams/status-quo/react';
 import { FormStateHandler } from '@veams/form';
-import { FormProvider, useUncontrolledField } from '@veams/form/react';
+import { FormProvider, useFormController, useFormMeta, useUncontrolledField } from '@veams/form/react';
 
 type RegisterValues = {
   account: {
@@ -2593,12 +2779,17 @@ type RegisterValues = {
   };
 };
 
+type FeatureState = {
+  attempts: number;
+  lastResult: string;
+};
+
 type FeatureActions = {
   getFormHandler: () => FormStateHandler<RegisterValues>;
   submit: (values: RegisterValues) => Promise<void>;
 };
 
-class RegisterFeatureHandler extends NativeStateHandler<object, FeatureActions> {
+class RegisterFeatureHandler extends NativeStateHandler<FeatureState, FeatureActions> {
   private readonly formHandler = new FormStateHandler<RegisterValues>({
     initialValues: {
       account: {
@@ -2615,31 +2806,111 @@ class RegisterFeatureHandler extends NativeStateHandler<object, FeatureActions> 
   });
 
   constructor() {
-    super({ initialState: {} });
+    super({
+      initialState: {
+        attempts: 0,
+        lastResult: 'Waiting for submission.',
+      },
+    });
   }
 
   getActions(): FeatureActions {
     return {
       getFormHandler: () => this.formHandler,
       submit: async (values) => {
-        try {
-          await registerUser(values);
-        } catch (error) {
-          if (isApiValidationError(error)) {
-            this.formHandler.setFieldError('account.email', error.fieldErrors.email);
-            this.formHandler.setFieldError('account.password', error.fieldErrors.password);
-            return;
-          }
+        this.setState({
+          attempts: this.getState().attempts + 1,
+          lastResult: 'Submitting request...',
+        });
 
-          throw error;
+        this.formHandler.setFieldError('account.email', undefined);
+        this.formHandler.setFieldError('account.password', undefined);
+        this.formHandler.setSubmitError(undefined);
+
+        if (values.account.email.endsWith('@taken.dev')) {
+          this.formHandler.setFieldError('account.email', 'This email is already taken.');
+          this.setState({ lastResult: 'Backend rejected the email address.' });
+          return;
         }
+
+        if (values.account.password.toLowerCase().includes('password')) {
+          this.formHandler.setFieldError(
+            'account.password',
+            'Choose something stronger than "password".'
+          );
+          this.setState({ lastResult: 'Backend rejected the password.' });
+          return;
+        }
+
+        if (values.account.email === 'ops@down.dev') {
+          this.formHandler.setSubmitError('Auth service temporarily unavailable.');
+          this.setState({ lastResult: 'Backend returned a form-level failure.' });
+          return;
+        }
+
+        this.setState({
+          lastResult: \`Created account for \${values.account.email}.\`,
+        });
       },
     };
   }
 }
 
+function ValidationScenarios() {
+  const controller = useFormController<RegisterValues>();
+  const form = useFormMeta<RegisterValues>();
+
+  return (
+    <>
+      {form.submitError ? <p>{form.submitError}</p> : null}
+      <button
+        onClick={() => {
+          controller.setFieldValue('account.email', 'alex@taken.dev');
+          controller.setFieldValue('account.password', 'steady-docs-123');
+        }}
+        type="button"
+      >
+        Try taken email
+      </button>
+      <button
+        onClick={() => {
+          controller.setFieldValue('account.email', 'alex@veams.dev');
+          controller.setFieldValue('account.password', 'password-password');
+        }}
+        type="button"
+      >
+        Try weak password
+      </button>
+      <button
+        onClick={() => {
+          controller.setFieldValue('account.email', 'ops@down.dev');
+          controller.setFieldValue('account.password', 'steady-docs-123');
+        }}
+        type="button"
+      >
+        Try service outage
+      </button>
+    </>
+  );
+}
+
+function RegisterSummary({ attempts, lastResult }: { attempts: number; lastResult: string }) {
+  const controller = useFormController<RegisterValues>();
+  const form = useFormMeta<RegisterValues>();
+  const values = controller.getState().values;
+
+  return (
+    <>
+      <p>Attempts: {attempts}</p>
+      <p>Errors: {Object.keys(form.errors).length}</p>
+      <pre>{JSON.stringify(values, null, 2)}</pre>
+      <p>{lastResult}</p>
+    </>
+  );
+}
+
 function RegisterForm() {
-  const [, actions] = useStateFactory(() => new RegisterFeatureHandler(), []);
+  const [state, actions] = useStateFactory(() => new RegisterFeatureHandler(), []);
   const email = useUncontrolledField('account.email');
   const password = useUncontrolledField('account.password', { type: 'password' });
 
@@ -2647,7 +2918,9 @@ function RegisterForm() {
     <FormProvider formHandlerInstance={actions.getFormHandler()} onSubmit={actions.submit}>
       <input {...email.registerProps} />
       <input {...password.registerProps} />
+      <ValidationScenarios />
       <button type="submit">Create account</button>
+      <RegisterSummary attempts={state.attempts} lastResult={state.lastResult} />
     </FormProvider>
   );
 }`;
@@ -6000,6 +6273,7 @@ export const docsPackages: DocsPackage[] = [
                   'Native fields register through `useUncontrolledField()`.',
                 ],
                 id: 'simple-form',
+                liveExample: 'form-simple-form',
                 paragraphs: [
                   'Start with a complete working form. Keep state local, wire fields directly, and validate synchronously before submit.',
                 ],
@@ -6018,6 +6292,36 @@ export const docsPackages: DocsPackage[] = [
               {
                 codeExamples: [
                   {
+                    code: formControllerExample,
+                    label: 'Working controlled input',
+                    language: 'tsx',
+                  },
+                ],
+                bullets: [
+                  'Use `Controller` for a widget that already expects `value`, `onChange`, and `onBlur`.',
+                  'Keep the controlled bridge narrow and local to that component.',
+                  'Field metadata still flows through `fieldState` for errors and touched UX.',
+                ],
+                id: 'controlled-input-example',
+                liveExample: 'form-controlled-input',
+                paragraphs: [
+                  'This example shows the deliberate escape hatch for third-party or custom widgets that cannot use native uncontrolled registration.',
+                ],
+                title: 'Controlled input',
+              },
+            ],
+            eyebrow: 'Examples',
+            id: 'example-controlled-input',
+            intro:
+              'Use `Controller` only when a component truly needs controlled props.',
+            summary: 'Custom controlled widget bridged into the form layer.',
+            title: 'Controlled input',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
                     code: formNestedFeatureWorkingExample,
                     label: 'Working nested feature form',
                     language: 'tsx',
@@ -6029,6 +6333,7 @@ export const docsPackages: DocsPackage[] = [
                   'Provider binds the existing handler without duplicate initial values.',
                 ],
                 id: 'nested-feature-form',
+                liveExample: 'form-nested-feature-form',
                 paragraphs: [
                   'When a form is only one part of a feature, keep ownership in the feature handler and keep the React layer focused on registration and rendering.',
                 ],
@@ -6058,6 +6363,7 @@ export const docsPackages: DocsPackage[] = [
                   'One feature action owns the submit lifecycle.',
                 ],
                 id: 'feature-form-validation',
+                liveExample: 'form-feature-validation',
                 paragraphs: [
                   'This pattern keeps validation explicit from keystroke to backend response: local validator first, API field errors second, one consistent error map.',
                 ],
@@ -6070,6 +6376,36 @@ export const docsPackages: DocsPackage[] = [
               'Combine local validator rules with backend error mapping in one feature-owned submit flow.',
             summary: 'Feature submit lifecycle with client and server validation.',
             title: 'Feature form with validation',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: formValidationModesExample,
+                    label: 'Working validation mode form',
+                    language: 'tsx',
+                  },
+                ],
+                bullets: [
+                  'The form default stays on `validationMode="blur"` and `revalidationMode="change"`.',
+                  'One field overrides to `change`, another waits until `submit`.',
+                  'The preview lets you see each timing model in one place.',
+                ],
+                id: 'validation-mode-example',
+                liveExample: 'form-validation-mode',
+                paragraphs: [
+                  'Validation timing lives in the React binding layer. This example makes the difference between inherited, change-first, and submit-only timing visible in one form.',
+                ],
+                title: 'Validation mode',
+              },
+            ],
+            eyebrow: 'Examples',
+            id: 'example-validation-mode',
+            intro:
+              'Use field-level validation timing overrides when different inputs need different UX.',
+            summary: 'One form that demonstrates blur, change, and submit validation timing.',
+            title: 'Validation mode',
           },
         ],
         title: 'Examples',
