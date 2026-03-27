@@ -82,6 +82,14 @@ export interface FormState<T extends FormValues> {
 export type ValidatorFn<T extends FormValues> = (values: T) => FormErrors<T>;
 
 /**
+ * Additional options for field value updates.
+ */
+export interface SetFieldValueOptions {
+  // Whether the value update should trigger validation.
+  validate?: boolean;
+}
+
+/**
  * Configuration options for the form state handler.
  */
 export interface FormStateHandlerOptions {
@@ -124,7 +132,11 @@ export interface FormActions<T extends FormValues> {
   // Updates the touched status of a specific field.
   setFieldTouched: (name: FormFieldName<T>, isTouched?: boolean) => void;
   // Updates the value of a specific field and triggers validation.
-  setFieldValue: <K extends FormFieldName<T>>(name: K, value: FormFieldValue<T, K>) => void;
+  setFieldValue: <K extends FormFieldName<T>>(
+    name: K,
+    value: FormFieldValue<T, K>,
+    options?: SetFieldValueOptions
+  ) => void;
   // Toggles the form's submitting status.
   setSubmitting: (isSubmitting: boolean) => void;
   // Marks all fields in the form as touched.
@@ -212,12 +224,16 @@ export class FormStateHandler<T extends FormValues> extends SignalStateHandler<
    * Updates a single field value using its dot-path name.
    * Triggers synchronous validation after the update.
    */
-  setFieldValue = <K extends FormFieldName<T>>(name: K, value: FormFieldValue<T, K>) => {
+  setFieldValue = <K extends FormFieldName<T>>(
+    name: K,
+    value: FormFieldValue<T, K>,
+    options?: SetFieldValueOptions
+  ) => {
     const currentState = this.getState();
     // Update the nested value while maintaining immutability.
     const nextValues = setValueAtPath(currentState.values, name, value);
-    // Re-run validation on the full value set.
-    const nextErrors = this.validateValues(nextValues);
+    const shouldValidate = options?.validate ?? true;
+    const nextErrors = shouldValidate ? this.validateValues(nextValues) : currentState.errors;
 
     this.setState(
       {

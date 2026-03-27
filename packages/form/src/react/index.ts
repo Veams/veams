@@ -15,4 +15,5 @@ export {
   type FormMeta,
   type FormProviderProps,
   type UseFieldOptions,
+  type ValidationMode,
 } from './react-form.js';

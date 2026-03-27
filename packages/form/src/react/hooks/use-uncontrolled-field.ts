@@ -1,11 +1,12 @@
 /**
  * Hook for wiring uncontrolled native fields to the form controller.
  */
-import { useEffect, useRef } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 
 import { type FormState, type FormValues } from '../../form.state.js';
 import { getValueAtPath } from '../../path-utils.js';
-import type { AnyFieldValues } from '../context.js';
+import { FormValidationConfigContext, type AnyFieldValues, type ValidationMode } from '../context.js';
+import { resolveValidationBehavior, shouldValidateFieldInteraction } from '../validation-mode.js';
 import { useFieldMeta, type FieldMeta } from './use-field-meta.js';
 import { useFormController } from './use-form-controller.js';
 
@@ -68,7 +69,9 @@ interface RegisterTextareaFieldProps {
  */
 interface InputFieldOptions {
   element?: 'input';
+  revalidationMode?: ValidationMode;
   type?: InputType;
+  validationMode?: ValidationMode;
   value?: string;
 }
 
@@ -78,6 +81,8 @@ interface InputFieldOptions {
 interface SelectFieldOptions {
   element: 'select';
   multiple?: boolean;
+  revalidationMode?: ValidationMode;
+  validationMode?: ValidationMode;
 }
 
 /**
@@ -85,6 +90,8 @@ interface SelectFieldOptions {
  */
 interface TextareaFieldOptions {
   element: 'textarea';
+  revalidationMode?: ValidationMode;
+  validationMode?: ValidationMode;
 }
 
 /**
@@ -150,6 +157,7 @@ export function useUncontrolledField(
 export function useUncontrolledField(name: string, options: UseFieldOptions = {}) {
   // Resolve the form controller from context.
   const controller = useFormController<AnyFieldValues>();
+  const validationConfig = useContext(FormValidationConfigContext);
   // Create a ref to the DOM element for imperative updates.
   const fieldRef = useRef<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null>(null);
   // Get field metadata (errors, touched status).
@@ -161,6 +169,10 @@ export function useUncontrolledField(name: string, options: UseFieldOptions = {}
   const inputType: InputType = isInputFieldOptions(options) ? (options.type ?? 'text') : 'text';
   const radioValue = isInputFieldOptions(options) ? options.value : undefined;
   const multiple = isSelectFieldOptions(options) && options.multiple === true;
+  const validationBehavior = resolveValidationBehavior(validationConfig, {
+    revalidationMode: options.revalidationMode,
+    validationMode: options.validationMode,
+  });
 
   /**
    * Effect hook that manages the imperative bridge from state handler to DOM.
@@ -233,7 +245,28 @@ export function useUncontrolledField(name: string, options: UseFieldOptions = {}
    * Common blur handler to mark the field as touched.
    */
   const handleBlur = () => {
-    controller.setFieldTouched(name, true);
+    if (!meta.touched) {
+      controller.setFieldTouched(name, true);
+    }
+
+    if (shouldValidateFieldInteraction('blur', meta.touched, validationBehavior)) {
+      controller.validateForm();
+    }
+  };
+
+  /**
+   * Common change handler to update the field value with the resolved validation timing.
+   */
+  const updateValue = (nextValue: unknown) => {
+    const shouldValidate = shouldValidateFieldInteraction('change', meta.touched, validationBehavior);
+
+    if (!meta.touched && validationBehavior.validationMode === 'change') {
+      controller.setFieldTouched(name, true);
+    }
+
+    controller.setFieldValue(name, nextValue, {
+      validate: shouldValidate,
+    });
   };
 
   // Construct props for SELECT elements.
@@ -248,11 +281,11 @@ export function useUncontrolledField(name: string, options: UseFieldOptions = {}
             .filter((option) => option.selected)
             .map((option) => option.value);
 
-          controller.setFieldValue(name, nextValue);
+          updateValue(nextValue);
           return;
         }
 
-        controller.setFieldValue(name, event.target.value);
+        updateValue(event.target.value);
       },
       ref: fieldRef as RefObject<HTMLSelectElement | null>,
     };
@@ -275,7 +308,7 @@ export function useUncontrolledField(name: string, options: UseFieldOptions = {}
       name,
       onBlur: handleBlur,
       onChange: (event) => {
-        controller.setFieldValue(name, event.target.value);
+        updateValue(event.target.value);
       },
       ref: fieldRef as RefObject<HTMLTextAreaElement | null>,
     };
@@ -295,7 +328,7 @@ export function useUncontrolledField(name: string, options: UseFieldOptions = {}
             ? radioValue
             : event.target.value;
 
-      controller.setFieldValue(name, nextValue);
+      updateValue(nextValue);
     },
     ref: fieldRef as RefObject<HTMLInputElement | null>,
     type: inputType,

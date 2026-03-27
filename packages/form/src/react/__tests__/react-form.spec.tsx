@@ -2,7 +2,15 @@ import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { FormStateHandler } from '../../form.state.js';
-import { Controller, FormProvider, useFormController, useUncontrolledField } from '../react-form.js';
+import {
+  Controller,
+  FormProvider,
+  useFormController,
+  useUncontrolledField,
+  type UseFieldOptions,
+} from '../react-form.js';
+
+import type { ChangeEvent } from 'react';
 
 declare global {
   // React 19 requires this flag in test environments that use manual act() calls.
@@ -10,8 +18,18 @@ declare global {
   var IS_REACT_ACT_ENVIRONMENT: boolean;
 }
 
-function EmailField() {
-  const { meta, registerProps } = useUncontrolledField('email');
+function EmailField({
+  onRegisterReady,
+  options,
+}: {
+  onRegisterReady?: (registerProps: {
+    onBlur: () => void;
+    onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  }) => void;
+  options?: UseFieldOptions;
+}) {
+  const { meta, registerProps } = useUncontrolledField('email', options);
+  onRegisterReady?.(registerProps);
 
   return (
     <label>
@@ -19,6 +37,42 @@ function EmailField() {
       <input {...registerProps} data-testid="email-input" />
       {meta.showError ? <span data-testid="email-error">{meta.error}</span> : null}
     </label>
+  );
+}
+
+function ControlledEmailField({
+  onFieldReady,
+  revalidationMode,
+  validationMode,
+}: {
+  onFieldReady?: (field: { onBlur: () => void; onChange: (value: unknown) => void }) => void;
+  revalidationMode?: 'blur' | 'change' | 'submit' | 'inherit';
+  validationMode?: 'blur' | 'change' | 'submit' | 'inherit';
+}) {
+  return (
+    <Controller
+      name="email"
+      revalidationMode={revalidationMode}
+      validationMode={validationMode}
+      render={({ field, fieldState }) => (
+        <>
+          {onFieldReady?.(field)}
+          <label>
+            Email
+            <input
+              data-testid="controlled-email-input"
+              name={field.name}
+              onBlur={field.onBlur}
+              onChange={(event) => field.onChange(event)}
+              value={String(field.value)}
+            />
+            {fieldState.touched && fieldState.error ? (
+              <span data-testid="controlled-email-error">{fieldState.error}</span>
+            ) : null}
+          </label>
+        </>
+      )}
+    />
   );
 }
 
@@ -186,6 +240,155 @@ describe('react-form', () => {
 
     expect(container.querySelector('#role-touched')?.textContent).toBe('true');
     expect(externalFormHandler.getState().values.role).toBe('admin');
+  });
+
+  it('should validate invalid fields on first blur by default', () => {
+    const handleRegisterReady = jest.fn<
+      void,
+      [{ onBlur: () => void; onChange: (event: ChangeEvent<HTMLInputElement>) => void }]
+    >();
+
+    act(() => {
+      root.render(
+        <FormProvider
+          initialValues={{ email: '' }}
+          onSubmit={jest.fn()}
+          validator={(values) => ({
+            ...(values.email ? {} : { email: 'Email is required' }),
+          })}
+        >
+          <EmailField onRegisterReady={handleRegisterReady} />
+        </FormProvider>
+      );
+    });
+
+    expect(container.querySelector('[data-testid="email-error"]')).toBeNull();
+
+    act(() => {
+      const [registerProps] = handleRegisterReady.mock.calls[
+        handleRegisterReady.mock.calls.length - 1
+      ] as [{ onBlur: () => void; onChange: (event: ChangeEvent<HTMLInputElement>) => void }];
+
+      registerProps.onBlur();
+    });
+
+    expect(container.querySelector('[data-testid="email-error"]')?.textContent).toBe(
+      'Email is required'
+    );
+  });
+
+  it('should revalidate touched fields on change by default', () => {
+    const handleRegisterReady = jest.fn<
+      void,
+      [{ onBlur: () => void; onChange: (event: ChangeEvent<HTMLInputElement>) => void }]
+    >();
+
+    act(() => {
+      root.render(
+        <FormProvider
+          initialValues={{ email: '' }}
+          onSubmit={jest.fn()}
+          validator={(values) => ({
+            ...(values.email ? {} : { email: 'Email is required' }),
+          })}
+        >
+          <EmailField onRegisterReady={handleRegisterReady} />
+        </FormProvider>
+      );
+    });
+
+    act(() => {
+      const [registerProps] = handleRegisterReady.mock.calls[
+        handleRegisterReady.mock.calls.length - 1
+      ] as [{ onBlur: () => void; onChange: (event: ChangeEvent<HTMLInputElement>) => void }];
+
+      registerProps.onBlur();
+    });
+
+    expect(container.querySelector('[data-testid="email-error"]')?.textContent).toBe(
+      'Email is required'
+    );
+
+    act(() => {
+      const [registerProps] = handleRegisterReady.mock.calls[
+        handleRegisterReady.mock.calls.length - 1
+      ] as [{ onBlur: () => void; onChange: (event: ChangeEvent<HTMLInputElement>) => void }];
+
+      registerProps.onChange({
+        target: { value: 'alice@example.com' },
+      } as unknown as ChangeEvent<HTMLInputElement>);
+    });
+
+    expect(container.querySelector('[data-testid="email-error"]')).toBeNull();
+  });
+
+  it('should allow fields to validate on first change', () => {
+    const handleRegisterReady = jest.fn<
+      void,
+      [{ onBlur: () => void; onChange: (event: ChangeEvent<HTMLInputElement>) => void }]
+    >();
+
+    act(() => {
+      root.render(
+        <FormProvider
+          initialValues={{ email: 'alice@example.com' }}
+          onSubmit={jest.fn()}
+          validator={(values) => ({
+            ...(values.email ? {} : { email: 'Email is required' }),
+          })}
+        >
+          <EmailField onRegisterReady={handleRegisterReady} options={{ validationMode: 'change' }} />
+        </FormProvider>
+      );
+    });
+
+    expect(container.querySelector('[data-testid="email-error"]')).toBeNull();
+
+    act(() => {
+      const [registerProps] = handleRegisterReady.mock.calls[
+        handleRegisterReady.mock.calls.length - 1
+      ] as [{ onBlur: () => void; onChange: (event: ChangeEvent<HTMLInputElement>) => void }];
+
+      registerProps.onChange({
+        target: { value: '' },
+      } as unknown as ChangeEvent<HTMLInputElement>);
+    });
+
+    expect(container.querySelector('[data-testid="email-error"]')?.textContent).toBe(
+      'Email is required'
+    );
+  });
+
+  it('should apply validation mode overrides to Controller fields', () => {
+    const handleFieldReady = jest.fn<void, [{ onBlur: () => void; onChange: (value: unknown) => void }]>();
+
+    act(() => {
+      root.render(
+        <FormProvider
+          initialValues={{ email: 'alice@example.com' }}
+          onSubmit={jest.fn()}
+          validator={(values) => ({
+            ...(values.email ? {} : { email: 'Email is required' }),
+          })}
+        >
+          <ControlledEmailField onFieldReady={handleFieldReady} validationMode="change" />
+        </FormProvider>
+      );
+    });
+
+    expect(container.querySelector('[data-testid="controlled-email-error"]')).toBeNull();
+
+    act(() => {
+      const [[field]] = handleFieldReady.mock.calls as [
+        [{ onBlur: () => void; onChange: (value: unknown) => void }],
+      ];
+
+      field.onChange('');
+    });
+
+    expect(container.querySelector('[data-testid="controlled-email-error"]')?.textContent).toBe(
+      'Email is required'
+    );
   });
 
   it('should clear stale submitError before a new submit attempt', () => {

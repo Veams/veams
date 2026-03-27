@@ -42,6 +42,20 @@ describe('FormStateHandler', () => {
     expect(handler.getState().isValid).toBe(false);
   });
 
+  it('should allow value updates without triggering validation', () => {
+    const handler = new FormStateHandler({
+      initialValues: { email: '' },
+      validator,
+    });
+
+    handler.validateForm();
+    handler.setFieldValue('email', 'hello@veams.org', { validate: false });
+
+    expect(handler.getState().values.email).toBe('hello@veams.org');
+    expect(handler.getState().errors.email).toBe('Email is required');
+    expect(handler.getState().isValid).toBe(false);
+  });
+
   it('should update nested values via dot-paths', () => {
     const handler = new FormStateHandler({
       initialValues: {

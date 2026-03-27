@@ -3,15 +3,22 @@
  * Provides the FormProvider and Controller for building interactive forms.
  */
 import { useStateSubscription } from '@veams/status-quo/react';
-import React, { useRef } from 'react';
+import React, { useContext, useRef } from 'react';
 
 import { FormStateHandler, type FormValues, type ValidatorFn } from '../form.state.js';
 import { getValueAtPath } from '../path-utils.js';
-import { FormContext, type AnyFieldValues } from './context.js';
+import {
+  FormContext,
+  FormValidationConfigContext,
+  defaultFormValidationConfig,
+  type AnyFieldValues,
+  type ValidationMode,
+} from './context.js';
 import { useFieldMeta, type FieldMeta } from './hooks/use-field-meta.js';
 import { useFormController } from './hooks/use-form-controller.js';
 import { useFormMeta, type FormMeta } from './hooks/use-form-meta.js';
 import { useUncontrolledField, type UseFieldOptions } from './hooks/use-uncontrolled-field.js';
+import { resolveValidationBehavior, shouldValidateFieldInteraction } from './validation-mode.js';
 
 import type { FormHTMLAttributes, ReactNode, SyntheticEvent } from 'react';
 
@@ -24,6 +31,10 @@ interface BaseFormProviderProps<T extends FormValues>
   children: ReactNode;
   // Callback triggered on successful form submission.
   onSubmit: (values: T, form: FormStateHandler<T>) => void | Promise<void>;
+  // When to validate a field before it has been touched.
+  validationMode?: Exclude<ValidationMode, 'inherit'>;
+  // When to revalidate a field after it has been touched.
+  revalidationMode?: Exclude<ValidationMode, 'inherit'>;
 }
 
 /**
@@ -86,6 +97,10 @@ export interface ControllerRenderProps {
 export interface ControllerProps {
   // Dot-notation path to the form field.
   name: string;
+  // Optional override for the field's initial validation timing.
+  validationMode?: ValidationMode;
+  // Optional override for the field's post-touch revalidation timing.
+  revalidationMode?: ValidationMode;
   // Render prop function to display the field.
   render: (props: ControllerRenderProps) => ReactNode;
 }
@@ -106,11 +121,15 @@ export function FormProvider<T extends FormValues>({
   initialValues,
   noValidate = true,
   onSubmit,
+  revalidationMode = defaultFormValidationConfig.revalidationMode,
+  validationMode = defaultFormValidationConfig.validationMode,
   validator,
   ...formProps
 }: BaseFormProviderProps<T> & {
   formHandlerInstance?: FormStateHandler<T>;
   initialValues?: T;
+  revalidationMode?: Exclude<ValidationMode, 'inherit'>;
+  validationMode?: Exclude<ValidationMode, 'inherit'>;
   validator?: ValidatorFn<T>;
 }) {
   // Reference to hold a locally created handler if needed.
@@ -136,6 +155,11 @@ export function FormProvider<T extends FormValues>({
   if (!controller) {
     throw new Error('FormProvider could not resolve a form controller.');
   }
+
+  const validationConfig = {
+    revalidationMode,
+    validationMode,
+  } as const;
 
   /**
    * Internal submit handler that wraps the user-provided onSubmit callback.
@@ -164,11 +188,13 @@ export function FormProvider<T extends FormValues>({
   };
 
   return (
-    <FormContext.Provider value={controller as unknown as FormStateHandler<AnyFieldValues>}>
-      <form {...formProps} noValidate={noValidate} onSubmit={(event) => void handleSubmit(event)}>
-        {children}
-      </form>
-    </FormContext.Provider>
+    <FormValidationConfigContext.Provider value={validationConfig}>
+      <FormContext.Provider value={controller as unknown as FormStateHandler<AnyFieldValues>}>
+        <form {...formProps} noValidate={noValidate} onSubmit={(event) => void handleSubmit(event)}>
+          {children}
+        </form>
+      </FormContext.Provider>
+    </FormValidationConfigContext.Provider>
   );
 }
 
@@ -176,16 +202,38 @@ export function FormProvider<T extends FormValues>({
  * Controller component for bridging third-party controlled components.
  * Subscribes to the specific field value and metadata.
  */
-export function Controller({ name, render }: ControllerProps) {
+export function Controller({
+  name,
+  render,
+  revalidationMode,
+  validationMode,
+}: ControllerProps) {
   const controller = useFormController<AnyFieldValues>();
+  const validationConfig = useContext(FormValidationConfigContext);
   // Subscribe to the specific field value from the form state.
   const [value] = useStateSubscription(controller, (state) => getFieldValue(state.values, name));
   // Retrieve current field metadata (errors, touched).
   const meta = useFieldMeta(name);
+  const validationBehavior = resolveValidationBehavior(validationConfig, {
+    revalidationMode,
+    validationMode,
+  });
 
   /**
    * Internal change handler that handles both raw values and DOM events.
    */
+  const updateValue = (nextValue: unknown) => {
+    const shouldValidate = shouldValidateFieldInteraction('change', meta.touched, validationBehavior);
+
+    if (!meta.touched && validationBehavior.validationMode === 'change') {
+      controller.setFieldTouched(name, true);
+    }
+
+    controller.setFieldValue(name, nextValue, {
+      validate: shouldValidate,
+    });
+  };
+
   const onChange = (input: unknown) => {
     // Check if the input is a DOM event.
     if (typeof input === 'object' && input !== null && 'target' in input) {
@@ -194,19 +242,25 @@ export function Controller({ name, render }: ControllerProps) {
       ).target;
       const nextValue = eventTarget.type === 'checkbox' ? eventTarget.checked : eventTarget.value;
 
-      controller.setFieldValue(name, nextValue);
+      updateValue(nextValue);
       return;
     }
 
     // Otherwise, treat it as a raw value update.
-    controller.setFieldValue(name, input);
+    updateValue(input);
   };
 
   return render({
     field: {
       name,
       onBlur: () => {
-        controller.setFieldTouched(name, true);
+        if (!meta.touched) {
+          controller.setFieldTouched(name, true);
+        }
+
+        if (shouldValidateFieldInteraction('blur', meta.touched, validationBehavior)) {
+          controller.validateForm();
+        }
       },
       onChange,
       value,
@@ -221,4 +275,4 @@ export function Controller({ name, render }: ControllerProps) {
 
 // Re-export core hooks for convenient access.
 export { useFieldMeta, useFormController, useFormMeta, useUncontrolledField };
-export type { FieldMeta, FormMeta, UseFieldOptions };
+export type { FieldMeta, FormMeta, UseFieldOptions, ValidationMode };
