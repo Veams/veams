@@ -114,7 +114,7 @@ export abstract class BaseStateHandler<S, A> implements StateSubscriptionHandler
    */
   setState(newState: Partial<S>, actionName = 'change') {
     // Merge current state with the new partial state.
-    const nextState = { ...this.getState(), ...newState };
+    const nextState = { ...structuredClone(this.getState()), ...structuredClone(newState) };
     // Update the underlying state value (implemented by subclasses).
     this.setStateValue(nextState);
     // Notify DevTools of the state change.
