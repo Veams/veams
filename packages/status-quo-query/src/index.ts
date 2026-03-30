@@ -1,9 +1,9 @@
 // Re-export all mutation-related types and functions.
-export * from './mutation';
+export * from './mutation.js';
 // Re-export all query-related types and functions.
-export * from './query';
+export * from './query.js';
 // Re-export all provider-related types and functions for cache management.
-export * from './provider';
+export * from './provider.js';
 // Re-export tracked dependency types used by the additive tracked facade.
 export type {
   TrackedDependencyRecord,

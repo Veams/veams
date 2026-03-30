@@ -12,12 +12,12 @@ import {
   type TrackedMutationServiceOptions,
   setupMutation,
   setupTrackedMutation,
-} from './mutation';
+} from './mutation.js';
 import { type CreateQuery, type CreateUntrackedQuery, setupQuery, setupTrackedQuery } from './query';
 import {
   createTrackingRegistry,
   type TrackedDependencyValue,
-} from './tracking';
+} from './tracking.js';
 
 /**
  * Mutation factory returned by the paired tracked helper.

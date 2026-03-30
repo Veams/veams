@@ -24,7 +24,7 @@ import {
   pickTrackedDependencies,
   resolveTrackedQueries,
   toTrackedDependencyEntries,
-} from './tracking';
+} from './tracking.js';
 
 // Re-export MutationStatus for consistent naming within the service.
 export type MutationStatus = TanstackMutationStatus;

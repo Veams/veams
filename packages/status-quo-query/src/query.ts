@@ -29,7 +29,7 @@ import {
   type TrackingRegistry,
   type TrackedQueryKey,
   extractTrackedDependencies,
-} from './tracking';
+} from './tracking.js';
 
 // Re-export FetchStatus and QueryStatus for internal naming consistency.
 export type QueryFetchStatus = FetchStatus;
