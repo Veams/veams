@@ -12,4 +12,4 @@ export type {
   TrackedMatchMode,
   TrackedQueryKey,
   TrackedQueryKeySegment,
-} from './tracking';
+} from './tracking.js';

@@ -13,7 +13,7 @@ import {
   setupMutation,
   setupTrackedMutation,
 } from './mutation.js';
-import { type CreateQuery, type CreateUntrackedQuery, setupQuery, setupTrackedQuery } from './query';
+import { type CreateQuery, type CreateUntrackedQuery, setupQuery, setupTrackedQuery } from './query.js';
 import {
   createTrackingRegistry,
   type TrackedDependencyValue,
