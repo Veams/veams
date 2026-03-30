@@ -1,6 +1,6 @@
 {
   "name": "@veams/status-quo-query",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "TanStack Query service layer for the VEAMS StatusQuo ecosystem.",
   "main": "dist/index.js",
   "module": "dist/index.js",
