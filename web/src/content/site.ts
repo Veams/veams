@@ -1240,6 +1240,71 @@ await trackedMutation.mutate({
   productName: 'Ada',
 });`;
 
+const statusQuoQueryReactiveDependenciesExample = `import { QueryClient } from '@tanstack/query-core';
+import {
+  setupQueryManager,
+  type QueryDependencyTuple,
+} from '@veams/status-quo-query';
+
+type User = {
+  companyId: string;
+  role: 'analyst' | 'viewer';
+};
+
+type Config = {
+  region: string;
+  companyProfileEnabled: boolean;
+};
+
+const queryClient = new QueryClient();
+const manager = setupQueryManager(queryClient);
+const userKey = ['user', { deps: { userId: '42' } }] as const;
+const configKey = ['config', { deps: { scope: 'global' } }] as const;
+
+const getUser = manager.createQuery(userKey, async () => ({
+  companyId: 'company-7',
+  role: 'analyst' as const,
+}));
+
+const getConfig = manager.createQuery(configKey, async () => ({
+  region: 'eu',
+  companyProfileEnabled: true,
+}));
+
+const companyProfileQuery = manager.createQuery(
+  ['company-profile', { deps: { companyId: 'pending', region: 'pending' }, view: { kind: 'profile' } }],
+  ({ queryKey }) => fetchCompanyProfile(queryKey[1].deps.companyId, queryKey[1].deps.region),
+  {
+    enabled: false,
+    dependsOn: <QueryDependencyTuple<[User, Config]>>[
+      [userKey, configKey],
+      ([userSnapshot, configSnapshot]) => {
+        const companyId = userSnapshot.data?.companyId;
+        const region = configSnapshot.data?.region;
+
+        if (!companyId || !region || !configSnapshot.data?.companyProfileEnabled) {
+          return { enabled: false };
+        }
+
+        return {
+          enabled: true,
+          queryKey: [
+            'company-profile',
+            {
+              deps: { companyId, region },
+              view: { kind: 'profile' },
+            },
+          ],
+        };
+      },
+    ],
+  }
+);
+
+await getUser.refetch();
+await getConfig.refetch();
+await companyProfileQuery.refetch();`;
+
 const statusQuoQueryTrackedPairExample = `import { QueryClient } from '@tanstack/query-core';
 import { setupQueryManager } from '@veams/status-quo-query';
 
@@ -1393,6 +1458,7 @@ const statusQuoQueryApiImports = `import {
   setupMutation,
   setupQuery,
   isQueryLoading,
+  QueryDependencyTuple,
   toQueryMetaState,
 } from '@veams/status-quo-query';`;
 
@@ -4662,7 +4728,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'shape',
                 paragraphs: [
-                  'Status Quo Query exists to align TanStack Query with the Status Quo mental model. Instead of pushing raw observer objects through your app, it gives you query and mutation handles that are easier to bridge into state handlers and other explicit state flows.',
+                  'Status Quo Query wraps TanStack Query in smaller query and mutation handles that fit the Status Quo model.',
                 ],
                 title: 'Bring query state into the same flow',
               },
@@ -4674,8 +4740,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'tracked-invalidation-benefits',
                 paragraphs: [
-                  'The newest addition is tracked invalidation. Instead of teaching every mutation which query keys it must remember to invalidate, the facade keeps a dependency registry behind the manager. Queries register themselves under named dependencies, and mutations invalidate by those same names.',
-                  'For developers this reduces repeated cache-key logic, makes invalidation intent explicit in the key shape, and lowers the chance that one dependent query is forgotten during a write flow.',
+                  'Tracked invalidation replaces repeated cache-key lists with named dependencies.',
+                  'Queries register under `deps`, and tracked mutations invalidate those same dependencies.',
                 ],
                 title: 'Tracked invalidation reduces cache bookkeeping',
               },
@@ -4683,7 +4749,7 @@ export const docsPackages: DocsPackage[] = [
                 featureCards: statusQuoQueryPhilosophyCards,
                 id: 'principles',
                 paragraphs: [
-                  'The wrapper stays useful when each layer keeps a narrow job: **snapshots are passive**, **commands are explicit**, and **broad management work has one clear home**.',
+                  'Keep snapshots passive, commands explicit, and broad coordination on the manager.',
                 ],
                 title: 'Principles in practice',
               },
@@ -4696,12 +4762,12 @@ export const docsPackages: DocsPackage[] = [
               'Tracked invalidation that maps domain dependencies instead of manual cache keys.',
             ],
             heroParagraphs: [
-              'Status Quo Query connects TanStack Query to the Status Quo way of working. Queries and mutations expose passive snapshots and explicit commands, and tracked invalidation lets the facade coordinate cache refreshes by named domain dependencies instead of repetitive manual key invalidation.',
+              'Status Quo Query gives TanStack Query a smaller service-layer surface: passive snapshots, explicit commands, and tracked invalidation by named dependencies.',
             ],
             id: 'overview',
             intro:
-              'Start by understanding how query handles, mutation handles, and query management line up with the Status Quo handler model.',
-            summary: 'TanStack Query, aligned with Status Quo.',
+              'Start with the query handle, mutation handle, and query manager.',
+            summary: 'TanStack Query with a smaller surface.',
             title: 'Overview',
           },
           {
@@ -4717,7 +4783,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'command-boundary',
                 paragraphs: [
-                  'Status Quo Query extends the core architecture by adding a dedicated service layer. This layer handles the complexities of data fetching and cache management while keeping the handler as the single source of truth for the UI.',
+                  'The service layer owns fetching and cache work. The handler stays the UI state boundary.',
                 ],
                 title: 'Service & Handler Integration',
               },
@@ -4732,7 +4798,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'query-management',
                 paragraphs: [
-                  'Cross-query coordination should not be scattered across multiple hooks. The Query Manager provides a centralized API for invalidation, manual state updates, and global query management.',
+                  'The Query Manager keeps cross-query work in one place: invalidation, manual updates, and cache-wide actions.',
                 ],
                 title: 'The Query Manager',
               },
@@ -4740,8 +4806,8 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Getting Started',
             id: 'concepts',
             intro:
-              'Status Quo Query treats TanStack Query as an engine and provides a structured service layer focused on explicit commands and passive snapshots.',
-            summary: 'Structure the service layer, simplify the view.',
+              'Treat TanStack Query as the engine and use this package as the service layer.',
+            summary: 'Service layer over TanStack Query.',
             title: 'Concepts',
           },
           {
@@ -4761,8 +4827,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'framework-support',
                 paragraphs: [
-                  'Status Quo Query is not tied to React. Keep it in the service and state handler layer, then let your UI framework consume snapshots and trigger commands.',
-                  'React examples in guides are integration examples only. They demonstrate one rendering layer, while the query manager itself remains framework-agnostic.',
+                  'This package is not tied to React.',
+                  'Use it in the service layer and let any UI consume snapshots and call commands.',
                 ],
                 title: 'Framework Support',
               },
@@ -4770,8 +4836,8 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Getting Started',
             id: 'framework-support',
             intro:
-              'Treat query and mutation handles as framework-neutral service objects, then consume them from your chosen UI layer.',
-            summary: 'Framework-neutral query manager.',
+              'Use the handles as framework-neutral service objects.',
+            summary: 'Framework-neutral query and mutation handles.',
             title: 'Framework Support',
           },
           {
@@ -4786,7 +4852,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'install',
                 paragraphs: [
-                  'Install the wrapper package plus `@tanstack/query-core`. The package stays focused on the service layer, so the core TanStack dependency remains explicit.',
+                  'Install this package and `@tanstack/query-core`.',
                 ],
                 title: 'Install the package',
               },
@@ -4798,7 +4864,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'entry-points',
                 paragraphs: [
-                  'The installation flow is really about choosing the entry point that matches how much of the package surface you want to expose at one time.',
+                  'Choose the entry point that matches how much surface you want to expose.',
                 ],
                 title: 'Choose an entry point',
               },
@@ -4806,8 +4872,8 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Getting Started',
             id: 'installation',
             intro:
-              'The package builds on a normal `QueryClient`, then lets you decide whether you want the combined query manager or the narrower factories.',
-            summary: 'Bring a QueryClient. Keep the rest simple.',
+              'Bring a `QueryClient`, then choose the manager or the narrower factories.',
+            summary: 'Bring a `QueryClient`.',
             title: 'Installation',
           },
           {
@@ -4822,8 +4888,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'first-flow',
                 paragraphs: [
-                  'A good quick start creates both a query and a mutation, because the package is about the service layer around both patterns rather than just one observer type.',
-                  'The tracked version is now the recommended starting point for most feature work. It keeps cache invalidation closer to domain dependencies and further away from hand-maintained key lists.',
+                  'Start with one tracked query and one tracked mutation.',
+                  'That is the default flow for most feature work.',
                 ],
                 title: 'Create the first end-to-end flow',
               },
@@ -4835,7 +4901,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'workflow',
                 paragraphs: [
-                  'The main habit change is simple: snapshots are read-only state, while commands stay on the thing that owns them.',
+                  'Read state from snapshots. Run commands on the handle.',
                 ],
                 title: 'Keep commands on the handle',
               },
@@ -4843,7 +4909,7 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Getting Started',
             id: 'quick-start',
             intro:
-              'Use the query manager for a first working flow, then split into lower-level factories only when the app structure really benefits from it.',
+              'Start with the query manager, then split to lower-level factories only when needed.',
             summary: 'One manager. One query. One mutation.',
             title: 'Quick Start',
           },
@@ -4875,9 +4941,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'scope-levels',
                 paragraphs: [
-                  'Understanding command scope is key to using Status Quo Query effectively. We distinguish between **Specific Scope** (The Handle) and **Global Scope** (The Manager).',
-                  'A **Handle** (Query or Mutation) is a local instance that already knows its key and logic. It is the cleanest way to trigger actions like `refetch()` or `mutate()` because you do not need to repeat keys or configuration.',
-                  'The **Query Manager** is your central command center. It is the right place for operations that do not have a natural single owner, such as clearing the entire cache on logout or updating a user list after a creation mutation elsewhere.',
+                  'Use the handle for one query or mutation.',
+                  'Use the manager for work that crosses query boundaries.',
                 ],
                 title: 'Specific vs. Global Control',
               },
@@ -4885,8 +4950,8 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Guides',
             id: 'command-scope',
             intro:
-              'Choose the right tool for the task: use focused handles for local data and the query manager for broad system coordination.',
-            summary: 'Understand when to use specific handles or the global manager.',
+              'Use the smaller owner first, then move to the manager when scope gets broader.',
+            summary: 'Handle for local actions. Manager for broad actions.',
             title: 'Global vs. Specific Control',
           },
           {
@@ -4901,8 +4966,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'invalidate-example',
                 paragraphs: [
-                  'Invalidation is where the handle/manager split becomes practical. Exact-key invalidation belongs on the query handle, while broader key filters and direct state updates belong on the query manager.',
-                  'Tracked invalidation adds a third path: let the manager invalidate exact matching queries automatically by dependency name after a tracked mutation.',
+                  'Exact invalidation belongs on the query handle.',
+                  'Broader invalidation and manual cache updates belong on the manager.',
                 ],
                 title: 'Coordinate invalidation and state updates',
               },
@@ -4915,7 +4980,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'invalidate-guidelines',
                 paragraphs: [
-                  'Use the narrower command first. Reach for the broad manager methods when the behavior truly crosses query boundaries.',
+                  'Start narrow. Use the manager only when the behavior crosses query boundaries.',
                 ],
                 title: 'Keep invalidation deliberate',
               },
@@ -4923,9 +4988,59 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Guides',
             id: 'invalidation',
             intro:
-              'Invalidation is best when the API makes scope obvious. The wrapper does that by putting exact-key behavior on the handle and broader filters on the query manager.',
-            summary: 'Make management scope obvious.',
+              'This API keeps invalidation scope visible.',
+            summary: 'Exact on the handle. Broad on the manager.',
             title: 'Invalidation',
+          },
+          {
+            blocks: [
+              {
+                bullets: [
+                  'Use `dependsOn` when one query should derive its own key from other cache entries.',
+                  'The derivation callback can change only `queryKey` and `enabled`.',
+                  'The downstream handle stays the same `QueryService`; the reactivity is internal.',
+                ],
+                id: 'reactive-dependencies-shape',
+                paragraphs: [
+                  'Use this when a query needs upstream data before it can run.',
+                  'The query watches the cache, derives its own key, and enables itself when ready.',
+                ],
+                title: 'Let the downstream query derive itself',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: statusQuoQueryReactiveDependenciesExample,
+                    label: 'Tracked reactive dependency flow',
+                    language: 'ts',
+                  },
+                ],
+                id: 'reactive-dependencies-example',
+                paragraphs: [
+                  'Here `companyProfile` waits for `user` and `config`, then switches to the final key and runs.',
+                ],
+                title: 'Build the dependency graph in the query options',
+              },
+              {
+                bullets: [
+                  'Keep the base key valid even before the sources resolve. For tracked queries that means the placeholder key must still end in `{ deps, view? }`.',
+                  'Treat `dependsOn` as query-level orchestration, not as a place to mutate retry policies, selectors, or lifecycle callbacks.',
+                  'Watchers start on first `subscribe(...)` or `refetch()` and stop again after the last unsubscribe.',
+                  'Exact invalidation follows the current derived key, not the original placeholder key.',
+                ],
+                id: 'reactive-dependencies-guidelines',
+                paragraphs: [
+                  'Keep the base key honest, put gating in `enabled`, and keep the derived state narrow.',
+                ],
+                title: 'Operational rules',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'reactive-dependencies',
+            intro:
+              'Use `dependsOn` when one query should wait for other queries and then derive its own key.',
+            summary: 'Derive one query from other queries.',
+            title: 'Reactive Query Dependencies',
           },
           {
             blocks: [
@@ -4939,7 +5054,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'unsafe-example',
                 paragraphs: [
-                  'The package includes escape hatches because TanStack Query is broad and some advanced workflows will need the raw client or observer result. The important part is that these APIs are clearly marked as unsafe.',
+                  'These escape hatches are there for advanced cases. They are intentionally marked as unsafe.',
                 ],
                 title: 'Use escape hatches deliberately',
               },
@@ -4952,7 +5067,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'unsafe-guidelines',
                 paragraphs: [
-                  'The package keeps these methods available so you are not boxed in, but the naming is there to discourage casual overuse.',
+                  'Stay on the smaller facade unless you truly need raw TanStack access.',
                 ],
                 title: 'Keep the small facade as the default',
               },
@@ -4960,8 +5075,8 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Guides',
             id: 'escape-hatches',
             intro:
-              'Escape hatches are healthy when they are explicit. Use them when you truly need raw TanStack behavior, not as the first integration step.',
-            summary: 'Stay small. Escape when you must.',
+              'Use escape hatches only when the facade is not enough.',
+            summary: 'Stay small unless you need raw access.',
             title: 'Escape Hatches',
           },
           {
@@ -4976,7 +5091,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'entry-points',
                 paragraphs: [
-                  'Use the root package when you want the whole service layer in one import. The public surface is intentionally small enough that most integrations do not need anything narrower.',
+                  'Use the root package when you want the full surface from one import.',
                 ],
                 title: 'Entry points',
               },
@@ -4988,7 +5103,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'create-mutation',
                 paragraphs: [
-                  'Use `createMutation` for the default dependency-tracked write workflow. It keeps invalidation close to domain keys instead of scattering exact cache keys across mutations.',
+                  'Use `createMutation` for the default tracked write flow.',
                 ],
                 title: 'createMutation',
               },
@@ -5000,7 +5115,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'create-untracked-mutation',
                 paragraphs: [
-                  'Reach for `createUntrackedMutation` when the write should stay fully manual and should not participate in dependency-based invalidation.',
+                  'Use `createUntrackedMutation` when invalidation stays fully manual.',
                 ],
                 title: 'createUntrackedMutation',
               },
@@ -5012,7 +5127,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'create-mutation-options',
                 paragraphs: [
-                  'Use `createMutation` when the write should invalidate queries by named dependencies instead of forcing callers to remember exact cache keys manually.',
+                  'These options control when tracked invalidation runs and how dependencies are read.',
                 ],
                 title: 'createMutation Options',
               },
@@ -5020,23 +5135,25 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   '`createQuery(queryKey, queryFn, options?)` accepts one tracked query key, one query function, and optional observer options.',
                   '`queryKey` must end with an object segment that contains `deps` and may contain `view`.',
+                  '`options.dependsOn?` lets the query derive `queryKey` and `enabled` from upstream query snapshots.',
                   'Returns a query handle with `getSnapshot()`, `subscribe(listener)`, `refetch(options?)`, `invalidate(options?)`, and `unsafe_getResult()`.',
                 ],
                 id: 'create-query',
                 paragraphs: [
-                  'Use `createQuery` for the default dependency-tracked read workflow. It registers itself under named dependencies so tracked mutations can find it later.',
+                  'Use `createQuery` for the default tracked read flow.',
                 ],
                 title: 'createQuery',
               },
               {
                 bullets: [
                   '`createUntrackedQuery(queryKey, queryFn, options?)` keeps the plain query handle without dependency registration.',
+                  '`options.dependsOn?` is still available here when the query should derive its own `queryKey` and `enabled` state without joining the tracked registry.',
                   'Use it when the query should not participate in tracked invalidation, or when you want a very small TanStack wrapper only.',
                   'Returns the same query handle shape as `createQuery(...)`, but does not require a `{ deps, view? }` key segment.',
                 ],
                 id: 'create-untracked-query',
                 paragraphs: [
-                  'Reach for `createUntrackedQuery` when the cache entry should stay completely manual and independent from the tracked registry.',
+                  'Use `createUntrackedQuery` when the query should stay outside the tracked registry.',
                 ],
                 title: 'createUntrackedQuery',
               },
@@ -5048,7 +5165,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'create-query-and-mutation',
                 paragraphs: [
-                  'This helper is the most ergonomic tracked entry point. It keeps dependency names in one place and removes the need to repeat `dependencyKeys` on every tracked mutation in the same flow.',
+                  'This is the shortest tracked setup when queries and mutations share the same dependency names.',
                 ],
                 title: 'createQueryAndMutation',
               },
@@ -5060,7 +5177,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'tracked-matching-examples',
                 paragraphs: [
-                  'Match strategy controls invalidation breadth. Keep it narrow with `intersection`, or broaden it intentionally with `union` when one mutation needs to fan out across a larger cache slice.',
+                  'Use `intersection` for narrow invalidation and `union` when one mutation should fan out wider.',
                 ],
                 title: 'Tracked Match Modes',
               },
@@ -5072,9 +5189,33 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'tracked-options-examples',
                 paragraphs: [
-                  'These options define when tracked invalidation runs and how dependency values are derived from mutation variables.',
+                  'These options control timing and dependency resolution.',
                 ],
                 title: 'Tracked mutation options',
+              },
+              {
+                bullets: [
+                  '`QueryDependencyTuple<[...sources]>` defines the ordered source keys plus the `deriveOptions(...)` callback for `dependsOn`.',
+                  'The callback receives `QueryServiceSnapshot` values in the same order as the declared source keys.',
+                  'It may return only `queryKey` and `enabled` for the downstream query.',
+                ],
+                id: 'query-dependency-tuple',
+                paragraphs: [
+                  'Use `QueryDependencyTuple` to keep source keys and derived state typed together.',
+                ],
+                title: 'QueryDependencyTuple',
+              },
+              {
+                bullets: [
+                  '`QueryServiceOptions` is TanStack `QueryObserverOptions` without `queryFn` and `queryKey`, because those are passed directly to the factory.',
+                  'It also adds `dependsOn?` for declarative reactive query dependencies.',
+                  'The runtime derivation path is intentionally narrow: `dependsOn` may change only `queryKey` and `enabled`.',
+                ],
+                id: 'query-service-options',
+                paragraphs: [
+                  'Keep long-lived query policy in the base options. Use `dependsOn` only for key derivation and gating.',
+                ],
+                title: 'QueryServiceOptions',
               },
               {
                 bullets: [
@@ -5084,7 +5225,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'is-query-loading',
                 paragraphs: [
-                  'This helper exists to keep the common loading check small and repeatable instead of spreading status comparisons across components.',
+                  'Use this helper when you only need the initial loading check.',
                 ],
                 title: 'isQueryLoading',
               },
@@ -5096,7 +5237,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'mutation-snapshot',
                 paragraphs: [
-                  'Use `MutationServiceSnapshot` as the read model for rendering mutation state without leaking imperative commands into view code.',
+                  'Use `MutationServiceSnapshot` as the read model for mutation state.',
                 ],
                 title: 'MutationServiceSnapshot',
               },
@@ -5108,7 +5249,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'query-manager',
                 paragraphs: [
-                  'Use `QueryManager` when an operation crosses handle boundaries or when integration code needs one centralized surface for creation, tracked invalidation, and cache management.',
+                  'Use `QueryManager` when work crosses handle boundaries.',
                 ],
                 title: 'QueryManager',
               },
@@ -5120,7 +5261,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'query-snapshot',
                 paragraphs: [
-                  'Use `QueryServiceSnapshot` as the rendering surface when the UI needs current query state in a stable, framework-neutral shape.',
+                  'Use `QueryServiceSnapshot` as the read model for query state.',
                 ],
                 title: 'QueryServiceSnapshot',
               },
@@ -5132,7 +5273,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'setup-mutation',
                 paragraphs: [
-                  'Use `setupMutation` when your integration only needs mutation handles and not the broader query manager facade.',
+                  'Use `setupMutation` when you only need mutation handles.',
                 ],
                 title: 'setupMutation',
               },
@@ -5140,11 +5281,11 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   '`setupQuery(queryClient)` binds one TanStack `QueryClient` to the query factory.',
                   'The only parameter is the `queryClient` instance that should own cache coordination and observer lifecycle.',
-                  'Returns the `createQuery` factory for focused query-only integrations.',
+                  'Returns the `createQuery` factory for focused query-only integrations, including `dependsOn`-driven query flows.',
                 ],
                 id: 'setup-query',
                 paragraphs: [
-                  'Use `setupQuery` when you only need per-query handles and want the dependency on one `QueryClient` to stay explicit.',
+                  'Use `setupQuery` when you only need query handles.',
                 ],
                 title: 'setupQuery',
               },
@@ -5156,7 +5297,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'setup-manager',
                 paragraphs: [
-                  'Use `setupQueryManager` when one runtime boundary should own query creation, mutation creation, and cache-level management from the same entry point.',
+                  'Use `setupQueryManager` when one place should own both factories and cache management.',
                 ],
                 title: 'setupQueryManager',
               },
@@ -5168,7 +5309,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'to-query-meta-state',
                 paragraphs: [
-                  'This helper narrows the full query snapshot to the smallest state surface needed for meta checks such as loading or idle state.',
+                  'Use this helper when UI code needs only query meta state.',
                 ],
                 title: 'toQueryMetaState',
               },
@@ -5176,8 +5317,8 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Guides',
             id: 'api',
             intro:
-              'The public surface is split into query handles, mutation handles, and one query manager for broader management.',
-            summary: 'Everything you can call, in one place.',
+              'The public surface is split into query handles, mutation handles, and the query manager.',
+            summary: 'Everything you can call.',
             title: 'API Reference',
           },
           {
@@ -5190,7 +5331,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'faq-deps-vs-view',
                 paragraphs: [
-                  'A common question is whether `view` should participate in automatic invalidation. The short answer is no: it still shapes cache identity, but it is intentionally excluded from tracked matching.',
+                  '`view` still shapes cache identity, but tracked invalidation ignores it on purpose.',
                 ],
                 title: 'Why `view` is not tracked',
               },
@@ -5202,7 +5343,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'faq-narrow-vs-broad',
                 paragraphs: [
-                  'The default behavior favors correctness across related list variants. Narrow invalidation stays available as an explicit manual escape hatch when you need it.',
+                  'The default favors correctness across related list variants. Narrow invalidation stays available when you need it.',
                 ],
                 title: 'When to stay broad and when to narrow',
               },
@@ -5210,8 +5351,8 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Guides',
             id: 'faq',
             intro:
-              'These edge cases come up quickly once you start using `deps` and `view` deliberately. The key is to separate cache identity from invalidation semantics.',
-            summary: 'Other facts about usage.',
+              'These questions usually come from the split between cache identity and invalidation semantics.',
+            summary: 'Common edge cases.',
             title: 'FAQ',
           },
         ],
@@ -5232,15 +5373,15 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'user-flow',
                 paragraphs: [
-                  'This example shows the main package story: one query manager, one query handle, one mutation handle, and commands that stay on the owning handle.',
+                  'One query manager, one query, one mutation.',
                 ],
                 title: 'User workflow example',
               },
             ],
             eyebrow: 'Examples',
             id: 'example-user-workflow',
-            intro: 'Start with a complete query and mutation flow around one query manager.',
-            summary: 'Query and mutation handles in one working flow.',
+            intro: 'Start with one complete query and mutation flow.',
+            summary: 'One working flow around one manager.',
             title: 'User workflow example',
           },
           {
@@ -5255,7 +5396,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'manager-follow-up',
                 paragraphs: [
-                  'A realistic example usually ends with some state coordination after a mutation. That is why the query manager exists alongside the narrower handles.',
+                  'Use the manager for follow-up work after a mutation.',
                 ],
                 title: 'Manager follow-up example',
               },
@@ -5263,8 +5404,8 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Examples',
             id: 'example-manager-follow-up',
             intro:
-              'Use manager commands after mutations when workflows require coordinated follow-up behavior.',
-            summary: 'Manager management after a mutation.',
+              'Use manager commands when a mutation needs broader follow-up.',
+            summary: 'Manager follow-up after a mutation.',
             title: 'Manager follow-up example',
           },
           {
@@ -5279,16 +5420,40 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'tracked-pair-example',
                 paragraphs: [
-                  'This is the shortest tracked setup that still shows the full value: declare dependency names once, register the query with `deps`, and let the paired mutation invalidate automatically by reading the same keys from the mutation variables.',
+                  'Declare dependency names once and reuse them across the tracked query and mutation.',
                 ],
                 title: 'Paired tracked workflow',
               },
             ],
             eyebrow: 'Examples',
             id: 'example-tracked-pair',
-            intro: 'Use the paired helper when one feature flow shares the same dependency names.',
-            summary: 'Declare dependency keys once, reuse them across tracked queries and mutations.',
+            intro: 'Use the paired helper when one flow shares the same dependency names.',
+            summary: 'Declare dependency keys once.',
             title: 'Paired tracked workflow',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: statusQuoQueryReactiveDependenciesExample,
+                    label: 'Reactive tracked dependency example',
+                    language: 'ts',
+                  },
+                ],
+                id: 'reactive-dependency-example',
+                paragraphs: [
+                  'Two upstream queries resolve first. The downstream query derives its final key from them.',
+                ],
+                title: 'Reactive dependency example',
+              },
+            ],
+            eyebrow: 'Examples',
+            id: 'example-reactive-dependencies',
+            intro:
+              'Use `dependsOn` when a query should read upstream cache state before it runs.',
+            summary: 'A downstream query derived from upstream cache state.',
+            title: 'Reactive dependency example',
           },
           {
             blocks: [
@@ -5307,15 +5472,15 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'tracked-match-mode-examples',
                 paragraphs: [
-                  'These two examples show the same tracked setup with different invalidation breadth. `intersection` keeps the fan-out narrow, while `union` deliberately expands it.',
+                  '`intersection` stays narrow. `union` expands invalidation.',
                 ],
                 title: 'Tracked match mode examples',
               },
             ],
             eyebrow: 'Examples',
             id: 'example-tracked-match-modes',
-            intro: 'Choose match mode based on how broad the mutation impact really is.',
-            summary: 'Compare `intersection` and `union` with concrete tracked queries.',
+            intro: 'Choose match mode based on how broad the mutation impact is.',
+            summary: 'Compare `intersection` and `union`.',
             title: 'Tracked match mode examples',
           },
           {
@@ -5335,15 +5500,15 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'tracked-option-examples',
                 paragraphs: [
-                  'Use these patterns when tracked invalidation needs custom timing or when mutation variables do not expose the dependency values in the default shape.',
+                  'Use these patterns when timing or dependency resolution needs to change.',
                 ],
                 title: 'Tracked option examples',
               },
             ],
             eyebrow: 'Examples',
             id: 'example-tracked-options',
-            intro: 'Adjust invalidation timing or dependency resolution when the default flow is not enough.',
-            summary: 'Examples for `invalidateOn` and `resolveDependencies`.',
+            intro: 'Adjust timing or dependency resolution when the default flow is not enough.',
+            summary: 'Examples for tracked options.',
             title: 'Tracked option examples',
           },
         ],
@@ -5681,7 +5846,7 @@ export const docsPackages: DocsPackage[] = [
                 featureCards: formOverviewCards,
                 id: 'ownership-map',
                 paragraphs: [
-                  'Use this as the mental model: feature state owns form state, and the React layer only binds inputs to that existing controller.',
+                  'Feature state owns form state. React only binds inputs to that controller.',
                 ],
                 title: 'Ownership map',
               },
@@ -5693,7 +5858,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'shape',
                 paragraphs: [
-                  'The package is deliberately split in the same way as Status Quo itself. The root gives you a typed `FormStateHandler` with validation, touched state, and submit state. The React entrypoint only handles binding that controller into native form elements or controlled components.',
+                  'The root package gives you `FormStateHandler`. The React entrypoint only handles field bindings.',
                 ],
                 title: 'Keep the form model generic',
               },
@@ -5705,7 +5870,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'why',
                 paragraphs: [
-                  'This keeps form concerns in one coherent object instead of scattering them across local component state, event handlers, and one-off helpers.',
+                  'Keep values, errors, touched state, and submit state in one place.',
                 ],
                 title: 'One handler for the full form lifecycle',
               },
@@ -5717,12 +5882,12 @@ export const docsPackages: DocsPackage[] = [
               'React helpers for uncontrolled native fields and controlled third-party inputs.',
             ],
             heroParagraphs: [
-              'VEAMS Form builds on Status Quo to give forms the same explicit ownership model as the rest of the state layer. Keep the form controller generic, then opt into the React bindings only where the view needs them.',
+              'VEAMS Form keeps form ownership explicit: one generic controller, optional React bindings at the view layer.',
             ],
             id: 'overview',
             intro:
-              'Start with the package split: generic form state at the root, React-only wiring under `@veams/form/react`.',
-            summary: 'Explicit form state, clean React wiring.',
+              'Start with the package split: generic form state at the root, React bindings under `@veams/form/react`.',
+            summary: 'Explicit form state with optional React wiring.',
             title: 'Overview',
           },
           {
@@ -5738,8 +5903,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'form-engine',
                 paragraphs: [
-                  'Following the Status Quo philosophy, the `FormStateHandler` is the central engine of the package. It exists entirely outside the React lifecycle, owning the source of truth for all form data and validation states.',
-                  'This framework-agnostic core makes your form logic portable and testable. You can define complex validation rules and state transitions once and rely on the handler to maintain a consistent state snapshot, regardless of how or where it is rendered.',
+                  '`FormStateHandler` is the core engine. It owns values, errors, touched state, and submit state outside React.',
+                  'That keeps form logic portable and easy to test.',
                 ],
                 title: 'The FormStateHandler Engine',
               },
@@ -5754,9 +5919,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'react-bindings',
                 paragraphs: [
-                  'The React layer provides the "glue" that connects the generic engine to the browser. Registration happens through hooks like `useUncontrolledField()`, which creates a stable bridge between DOM elements and the handler.',
-                  'To keep render performance high, the UI does not render current values from state snapshots. Instead, only metadata (like validation errors or touched state) flows back via snapshots to trigger UI updates, while the DOM element itself maintains the value.',
-                  'When programmatic updates are needed, the bridge hook uses a `ref` to imperatively sync the DOM with the handler state, bypassing the React re-render cycle for input values.',
+                  'The React layer connects the controller to the DOM through hooks like `useUncontrolledField()`.',
+                  'Native inputs stay uncontrolled by default, so React rerenders metadata instead of every typed value.',
                 ],
                 title: 'React Integration & Performance',
               },
@@ -5768,7 +5932,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'form-principles',
                 paragraphs: [
-                  'These principles keep form management predictable and ensure that your UI stays performant even with complex validation rules.',
+                  'These rules keep forms predictable and fast.',
                 ],
                 title: 'Key Principles',
               },
@@ -5776,8 +5940,8 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Getting Started',
             id: 'concepts',
             intro:
-              'Status Quo Form separates the generic state engine from the React view bindings for maximum performance and portability.',
-            summary: 'Generic engine, optimized React bindings.',
+              'The package separates the generic form engine from the React bindings.',
+            summary: 'Generic engine with optimized React bindings.',
             title: 'Concepts',
           },
           {
@@ -5802,8 +5966,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'framework-support',
                 paragraphs: [
-                  'VEAMS Form is not bound to React. Keep validation, errors, touched state, and submit state in `FormStateHandler`, then add React bindings only where the view needs them.',
-                  'Using React in docs examples is a teaching choice, not a runtime requirement. The form controller API remains portable outside React.',
+                  'VEAMS Form is not tied to React.',
+                  'Keep form logic in `FormStateHandler`, then add React bindings only at the view boundary.',
                 ],
                 title: 'Framework Support',
               },
@@ -5811,8 +5975,8 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Getting Started',
             id: 'framework-support',
             intro:
-              'Model form state in the framework-agnostic root package, then opt into React bindings only at the view boundary.',
-            summary: 'Framework-neutral form model, optional React binding.',
+              'Model form state in the root package, then add React bindings only where needed.',
+            summary: 'Framework-neutral form model with optional React bindings.',
             title: 'Framework Support',
           },
           {
@@ -5827,7 +5991,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'install',
                 paragraphs: [
-                  'Install the form package alongside Status Quo. Add React when you want the provider, field hooks, and controller bindings.',
+                  'Install the form package. Add React when you need the provider and field hooks.',
                 ],
                 title: 'Install the package',
               },
@@ -5839,7 +6003,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'entry-points',
                 paragraphs: [
-                  'The main setup choice is which layer should own the controller lifecycle: the form provider itself or a higher-level feature handler.',
+                  'The main setup choice is who owns the controller lifecycle.',
                 ],
                 title: 'Choose the owning layer',
               },
@@ -5847,8 +6011,8 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Getting Started',
             id: 'installation',
             intro:
-              'Install the generic core first, then opt into the React subpath when the UI needs it.',
-            summary: 'Small install surface, clear entry points.',
+              'Install the core first, then add the React subpath when the UI needs it.',
+            summary: 'Small install surface.',
             title: 'Installation',
           },
           {
@@ -5863,7 +6027,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'generic-handler',
                 paragraphs: [
-                  'You do not have to subclass anything to get a useful form controller. The built-in handler already owns values, errors, touched state, and submit state.',
+                  'You can use the built-in handler directly.',
                 ],
                 title: 'Create the form controller',
               },
@@ -5883,8 +6047,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'react-layer',
                 paragraphs: [
-                  'The fast path for a plain React form is the provider plus uncontrolled field registration. That keeps render churn low while still syncing the DOM to the shared form snapshot.',
-                  'That default timing keeps initial render quiet, shows errors on first leave, and clears them live while the user corrects the field.',
+                  'The default React path is `FormProvider` plus uncontrolled field registration.',
+                  'That keeps render churn low and gives you blur-first validation with change revalidation.',
                 ],
                 title: 'Bind it into React',
               },
@@ -5892,7 +6056,7 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Getting Started',
             id: 'quick-start',
             intro:
-              'Start with one plain `FormStateHandler`, then bind it into React only where the UI needs it.',
+              'Start with one `FormStateHandler`, then bind it into React where needed.',
             summary: 'One form handler, one provider, one clean flow.',
             title: 'Quick Start',
           },
@@ -5919,7 +6083,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'feature-owned',
                 paragraphs: [
-                  'This is the pattern that matches the referenced login implementation. The feature handler owns both UI state and form state, while the provider simply binds the existing controller into React.',
+                  'Let the feature handler own the form when the form is only one part of the screen state.',
                 ],
                 title: 'Let the feature own the form',
               },
@@ -5927,8 +6091,8 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Guides',
             id: 'feature-owned',
             intro:
-              'When a form is part of a richer screen flow, keep the controller inside the feature handler and pass it down explicitly.',
-            summary: 'The feature owns the workflow, not the view.',
+              'Keep the controller in the feature handler when the form is part of a larger workflow.',
+            summary: 'The feature owns the workflow.',
             title: 'Feature-Owned Forms',
           },
           {
@@ -5948,8 +6112,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'validator-basics',
                 paragraphs: [
-                  'A validator in `FormStateHandler` is a pure function over the full value snapshot. That design is deliberate: it allows single-field updates and full-submit validation to run the same business rules and produce the same error shape.',
-                  'By default, `setFieldValue()` and `validateForm()` use the same validator and produce the same error shape. React field bindings can intentionally defer validation by calling `setFieldValue(name, value, { validate: false })` until blur or submit.',
+                  'A validator is a pure function over the full value snapshot.',
+                  'Use the same validator for field updates and full-submit checks.',
                 ],
                 title: 'Model validation as one typed function',
               },
@@ -5969,8 +6133,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'validator-submit-cycle',
                 paragraphs: [
-                  'Client and server validation should not compete. The clean split is: local validator for synchronous checks, server field responses mapped with `setFieldError()`, and generic backend failures mapped with `setSubmitError()`.',
-                  'This keeps the submit cycle explicit and debuggable: validate, touch, submit, map remote field errors or form-level failures, and retry with corrected values.',
+                  'Split validation clearly: local rules in the validator, backend field errors in `setFieldError()`, and form-level failures in `setSubmitError()`.',
+                  'That keeps the submit cycle explicit.',
                 ],
                 title: 'Compose client and server validation',
               },
@@ -5988,8 +6152,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'validator-zod-adapter',
                 paragraphs: [
-                  'When your project already has a schema layer, connect it to forms through one narrow adapter that returns the standard form error map.',
-                  'That keeps validation behavior consistent across forms while still giving each feature room to customize how schema issues are translated into field-level messages.',
+                  'Use one narrow adapter when a project already has a schema layer.',
+                  'That keeps the form API on the normal validator contract.',
                 ],
                 title: 'Integrate schema validation without coupling',
               },
@@ -6003,8 +6167,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'validator-zod-adapter-reference',
                 paragraphs: [
-                  'Need custom issue mapping or schema wrappers? Use this tiny adapter reference as a starting point.',
-                  'The package currently ships a Zod adapter because it is the most requested schema integration in current usage. Adapters for other schema libraries are welcome through PRs as long as the integration keeps the package dependency-free.',
+                  'Need custom issue mapping or schema wrappers? Start from this tiny adapter.',
+                  'The package currently ships a Zod adapter only.',
                 ],
                 title: 'Adapter Reference',
               },
@@ -6012,8 +6176,8 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Guides',
             id: 'validators',
             intro:
-              'Use one typed validator as the source of truth for field and submit checks, then layer server errors through explicit field updates.',
-            summary: 'Predictable validation, from keypress to submit.',
+              'Use one typed validator as the source of truth, then layer server errors through explicit updates.',
+            summary: 'Predictable validation from input to submit.',
             title: 'Validators',
           },
           {
@@ -6027,8 +6191,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'uncontrolled-principle',
                 paragraphs: [
-                  'The default form path is intentionally uncontrolled for native fields. The form handler still owns values, errors, touched state, and submit state, while React primarily binds DOM events and metadata to that handler.',
-                  'This keeps field components small and avoids turning every native input into a controlled component without a concrete need.',
+                  'Native fields stay uncontrolled by default.',
+                  'The controller still owns values, errors, touched state, and submit state.',
                 ],
                 title: 'Prefer uncontrolled fields by default',
               },
@@ -6047,7 +6211,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'controller',
                 paragraphs: [
-                  'The package supports both native uncontrolled inputs and controlled third-party components, but the two paths stay explicit so each integration makes its tradeoff visible.',
+                  'Use `Controller` only when a widget truly needs controlled props.',
                 ],
                 title: 'Bridge controlled components on purpose',
               },
@@ -6055,8 +6219,8 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Guides',
             id: 'controlled-fields',
             intro:
-              'Controlled components should be the explicit exception for widgets that need them, not the default for every field.',
-            summary: 'Stay uncontrolled by default. Control when required.',
+              'Controlled components should be the exception, not the default.',
+            summary: 'Stay uncontrolled by default.',
             title: 'Controlled Fields',
           },
           {
@@ -6081,8 +6245,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'nested-fields',
                 paragraphs: [
-                  'Nested forms work by addressing fields through dot-path names. This keeps the API flat at the call site while values stay nested in state.',
-                  'The same path convention is used by `setFieldValue()`, field registration hooks, touched state, and error maps, so nested fields behave consistently across state and view.',
+                  'Nested forms use dot-path field names.',
+                  'The same path format works across values, errors, touched state, and field hooks.',
                 ],
                 title: 'Nested object fields with dot-paths',
               },
@@ -6090,7 +6254,7 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Guides',
             id: 'advanced-nested-fields',
             intro:
-              'Use dot-path field names to model nested object forms without flattening your state shape.',
+              'Use dot-path field names for nested object forms.',
             summary: 'Nested values, same API surface.',
             title: 'Advanced Nested Fields',
           },
@@ -6106,7 +6270,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'entry-points',
                 paragraphs: [
-                  'The public surface is intentionally small. One root entrypoint for generic state and one React subpath for view bindings.',
+                  'The public surface is small: one root entrypoint and one React subpath.',
                 ],
                 title: 'Entry points',
               },
@@ -6119,7 +6283,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'controller-api',
                 paragraphs: [
-                  'This is the narrow controlled-component bridge. It exists so controlled widgets stay explicit instead of turning the whole form API into a controlled model.',
+                  'This is the narrow bridge for controlled widgets.',
                 ],
                 title: 'Controller',
               },
@@ -6132,7 +6296,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'form-provider-api',
                 paragraphs: [
-                  'Use `FormProvider` to own or bridge one controller instance into a React subtree. The API stays explicit about whether React owns the controller lifecycle or just hosts it.',
+                  'Use `FormProvider` to own or bridge one controller into a React subtree.',
                 ],
                 title: 'FormProvider',
               },
@@ -6151,7 +6315,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'validation-timing-api',
                 paragraphs: [
-                  'Validation timing belongs in the React binding layer, not in `setFieldTouched()`. That keeps the core form state API explicit while still allowing form-level defaults and per-field overrides in UI code.',
+                  'Validation timing lives in the React binding layer, not in the core handler API.',
                 ],
                 title: 'Validation Timing',
               },
@@ -6178,8 +6342,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'form-state-handler-api',
                 paragraphs: [
-                  'This is the generic root controller. It owns the full form lifecycle and remains usable outside React.',
-                  'The important distinction in this API is between field validation state and form-level submit state. Field rules flow through `errors` and `isValid`; backend-wide failures flow through `submitError`. That split keeps rendering, submit logic, and debugging much easier to reason about.',
+                  'This is the generic root controller for the full form lifecycle.',
+                  'Keep field validation state in `errors` and `isValid`, and form-level failures in `submitError`.',
                 ],
                 title: 'FormStateHandler',
               },
@@ -6191,7 +6355,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'to-zod-validator-api',
                 paragraphs: [
-                  'The adapter keeps schema integration narrow. The rest of the form API continues to work with plain validator functions and typed field-error maps.',
+                  'The adapter keeps schema integration narrow.',
                 ],
                 title: 'toZodValidator',
               },
@@ -6203,7 +6367,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'use-field-meta-api',
                 paragraphs: [
-                  'This hook is the smallest read surface in the React layer. It keeps metadata subscriptions narrow and easy to reason about.',
+                  'This is the smallest read surface in the React layer.',
                 ],
                 title: 'useFieldMeta',
               },
@@ -6215,7 +6379,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'use-form-controller-api',
                 paragraphs: [
-                  'Use this hook when a component needs direct access to the controller itself rather than one of the higher-level field hooks.',
+                  'Use this hook when a component needs the controller itself.',
                 ],
                 title: 'useFormController',
               },
@@ -6227,7 +6391,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'use-form-meta-api',
                 paragraphs: [
-                  'This hook is the broad read surface in the React layer. It is intentionally suited to form-level UI rather than per-field rendering.',
+                  'This is the broad read surface for form-level UI.',
                 ],
                 title: 'useFormMeta',
               },
@@ -6239,7 +6403,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'use-uncontrolled-field-api',
                 paragraphs: [
-                  'This is the default field hook for native inputs. It keeps the DOM in charge of the live value while the form controller owns validation, touched state, and submit state.',
+                  'This is the default field hook for native inputs.',
                 ],
                 title: 'useUncontrolledField',
               },
@@ -6247,8 +6411,8 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Guides',
             id: 'api-reference',
             intro:
-              'The package API is split by responsibility: generic form state at the root, React bindings under the subpath.',
-            summary: 'Everything public, without hidden layers.',
+              'The API is split by responsibility: generic form state at the root, React bindings under the subpath.',
+            summary: 'Everything public.',
             title: 'API Reference',
           },
         ],
@@ -6275,7 +6439,7 @@ export const docsPackages: DocsPackage[] = [
                 id: 'simple-form',
                 liveExample: 'form-simple-form',
                 paragraphs: [
-                  'Start with a complete working form. Keep state local, wire fields directly, and validate synchronously before submit.',
+                  'Start with one complete local form.',
                 ],
                 title: 'Simple form',
               },
@@ -6283,8 +6447,8 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Examples',
             id: 'example-simple-form',
             intro:
-              'Start with a complete local form before introducing feature-level orchestration.',
-            summary: 'Working local form with validator and native fields.',
+              'Start with a complete local form before adding feature-level orchestration.',
+            summary: 'Local form with validator and native fields.',
             title: 'Simple form',
           },
           {
@@ -6305,7 +6469,7 @@ export const docsPackages: DocsPackage[] = [
                 id: 'controlled-input-example',
                 liveExample: 'form-controlled-input',
                 paragraphs: [
-                  'This example shows the deliberate escape hatch for third-party or custom widgets that cannot use native uncontrolled registration.',
+                  'Use this escape hatch for widgets that cannot use native uncontrolled registration.',
                 ],
                 title: 'Controlled input',
               },
@@ -6314,7 +6478,7 @@ export const docsPackages: DocsPackage[] = [
             id: 'example-controlled-input',
             intro:
               'Use `Controller` only when a component truly needs controlled props.',
-            summary: 'Custom controlled widget bridged into the form layer.',
+            summary: 'Controlled widget bridged into the form layer.',
             title: 'Controlled input',
           },
           {
@@ -6335,7 +6499,7 @@ export const docsPackages: DocsPackage[] = [
                 id: 'nested-feature-form',
                 liveExample: 'form-nested-feature-form',
                 paragraphs: [
-                  'When a form is only one part of a feature, keep ownership in the feature handler and keep the React layer focused on registration and rendering.',
+                  'Keep ownership in the feature handler when the form is only one part of the feature.',
                 ],
                 title: 'Nested feature form',
               },
@@ -6343,7 +6507,7 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Examples',
             id: 'example-nested-feature-form',
             intro:
-              'When form state is part of a larger feature, keep ownership in the feature handler.',
+              'Keep ownership in the feature handler when the form is part of a larger feature.',
             summary: 'Nested values with dot-path fields in a feature-owned form.',
             title: 'Nested feature form',
           },
@@ -6365,7 +6529,7 @@ export const docsPackages: DocsPackage[] = [
                 id: 'feature-form-validation',
                 liveExample: 'form-feature-validation',
                 paragraphs: [
-                  'This pattern keeps validation explicit from keystroke to backend response: local validator first, API field errors second, one consistent error map.',
+                  'This pattern combines local validation with backend error mapping.',
                 ],
                 title: 'Feature form with validation',
               },
@@ -6373,7 +6537,7 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Examples',
             id: 'example-feature-form-validation',
             intro:
-              'Combine local validator rules with backend error mapping in one feature-owned submit flow.',
+              'Combine local validation with backend error mapping in one submit flow.',
             summary: 'Feature submit lifecycle with client and server validation.',
             title: 'Feature form with validation',
           },
@@ -6395,7 +6559,7 @@ export const docsPackages: DocsPackage[] = [
                 id: 'validation-mode-example',
                 liveExample: 'form-validation-mode',
                 paragraphs: [
-                  'Validation timing lives in the React binding layer. This example makes the difference between inherited, change-first, and submit-only timing visible in one form.',
+                  'This example shows inherited, change-first, and submit-only timing in one form.',
                 ],
                 title: 'Validation mode',
               },
@@ -6403,8 +6567,8 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Examples',
             id: 'example-validation-mode',
             intro:
-              'Use field-level validation timing overrides when different inputs need different UX.',
-            summary: 'One form that demonstrates blur, change, and submit validation timing.',
+              'Use field-level validation timing overrides when inputs need different UX.',
+            summary: 'Blur, change, and submit validation timing in one form.',
             title: 'Validation mode',
           },
         ],
