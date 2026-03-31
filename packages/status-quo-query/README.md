@@ -31,6 +31,7 @@ Root exports:
 - `MutationService`
 - `QueryServiceSnapshot`
 - `MutationServiceSnapshot`
+- `QueryDependencyTuple`
 - `QueryServiceOptions`
 - `MutationServiceOptions`
 - `TrackedMutationServiceOptions`
@@ -393,6 +394,96 @@ Standalone tracked mutations need either:
 - `dependencyKeys`
 - or `resolveDependencies`
 
+### Reactive Query Dependencies
+
+Use `dependsOn` when a query needs data from other queries before it can run.
+
+`dependsOn` accepts a `QueryDependencyTuple`:
+
+- an ordered list of source query keys to observe
+- a `deriveOptions(...)` callback that returns only `queryKey` and/or `enabled`
+
+The watcher starts on the first `subscribe(...)` or `refetch()`, reads the current cache immediately, and stops after the last unsubscribe.
+
+Untracked example:
+
+```ts
+import { QueryClient } from '@tanstack/query-core';
+import { setupQuery, type QueryDependencyTuple } from '@veams/status-quo-query';
+
+type User = { companyId: string };
+type Config = { region: string; companyProfileEnabled: boolean };
+
+const queryClient = new QueryClient();
+const createQuery = setupQuery(queryClient);
+const userKey = ['user', 42] as const;
+const configKey = ['config', 'global'] as const;
+
+const companyProfileQuery = createQuery(
+  ['company-profile', { companyId: undefined as string | undefined, region: undefined as string | undefined }],
+  ({ queryKey }) => fetchCompanyProfile(queryKey[1].companyId!, queryKey[1].region!),
+  {
+    enabled: false,
+    dependsOn: <QueryDependencyTuple<[User, Config]>>[
+      [userKey, configKey],
+      ([userSnapshot, configSnapshot]) => {
+        if (!userSnapshot.data?.companyId || !configSnapshot.data?.region) {
+          return { enabled: false };
+        }
+
+        return {
+          enabled: configSnapshot.data.companyProfileEnabled,
+          queryKey: [
+            'company-profile',
+            {
+              companyId: userSnapshot.data.companyId,
+              region: configSnapshot.data.region,
+            },
+          ],
+        };
+      },
+    ],
+  }
+);
+```
+
+Tracked example:
+
+```ts
+import { QueryClient } from '@tanstack/query-core';
+import { setupQueryManager } from '@veams/status-quo-query';
+
+const queryClient = new QueryClient();
+const manager = setupQueryManager(queryClient);
+const selectionKey = ['selection'] as const;
+
+const productQuery = manager.createQuery(
+  ['product', { deps: { applicationId: 'pending' }, view: { page: 0 } }],
+  ({ queryKey }) => fetchProduct(queryKey[1].deps.applicationId),
+  {
+    enabled: false,
+    dependsOn: [
+      [selectionKey],
+      ([selectionSnapshot]) =>
+        selectionSnapshot.data?.applicationId
+          ? {
+              enabled: true,
+              queryKey: [
+                'product',
+                {
+                  deps: { applicationId: selectionSnapshot.data.applicationId },
+                  view: { page: 1 },
+                },
+              ],
+            }
+          : { enabled: false },
+    ],
+  }
+);
+```
+
+For tracked queries, keep the placeholder key valid too. The initial key and every derived key must still end with `{ deps, view? }`.
+
 ## FAQ
 
 ### Is `view` still part of the TanStack cache key?
@@ -474,7 +565,7 @@ Tracked queries embed dependency metadata into the final query-key segment:
 
 Only `deps` participates in automatic invalidation tracking. `view` is optional and is treated as normal query-key data.
 
-`createQuery(queryKey, queryFn, options?)` returns the same `QueryService<TData, TError>` shape as `createUntrackedQuery(...)`, but it registers the query hash under every `deps` entry and re-registers on `refetch()` or the first `subscribe(...)` if TanStack has removed the cache entry in the meantime.
+`createQuery(queryKey, queryFn, options?)` returns the same `QueryService<TData, TError>` shape as `createUntrackedQuery(...)`, but it registers the query hash under every `deps` entry, re-registers on `refetch()` or the first `subscribe(...)` if TanStack has removed the cache entry in the meantime, and keeps the registry in sync when `dependsOn` derives a new tracked key at runtime.
 
 `createMutation(mutationFn, options?)` returns the same `MutationService<TData, TError, TVariables, TOnMutateResult>` shape as `createUntrackedMutation(...)`, but adds:
 
@@ -514,6 +605,12 @@ Creates a `createUntrackedQuery` factory bound to a `QueryClient`.
 `createUntrackedQuery(queryKey, queryFn, options?)` returns `QueryService<TData, TError>`.
 
 `QueryServiceOptions` is based on TanStack `QueryObserverOptions`, without `queryKey` and `queryFn` because those are provided directly to `createUntrackedQuery`.
+
+It also adds:
+
+- `dependsOn?: QueryDependencyTuple<[...sources]>`
+
+`dependsOn` observes the listed source keys through TanStack `QueriesObserver` and lets the downstream query derive only `queryKey` and `enabled`. The public `QueryService` API does not change when this option is used.
 
 `QueryService` methods:
 

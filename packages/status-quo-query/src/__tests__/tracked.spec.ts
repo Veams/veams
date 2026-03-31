@@ -3,6 +3,11 @@ import { QueryClient } from '@tanstack/query-core';
 import { setupQueryManager } from '../provider';
 
 describe('Tracked Query Invalidation', () => {
+  async function flushTasks() {
+    await Promise.resolve();
+    await Promise.resolve();
+  }
+
   it('registers tracked queries from deps and ignores view data during invalidation', async () => {
     const queryClient = new QueryClient({
       defaultOptions: { mutations: { retry: 0 }, queries: { retry: 0 } },
@@ -272,5 +277,127 @@ describe('Tracked Query Invalidation', () => {
     unsubscribe();
 
     expect(invalidateQueriesSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('moves tracked registrations to the derived key when dependsOn updates the query', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { mutations: { retry: 0 }, queries: { retry: 0 } },
+    });
+    const manager = setupQueryManager(queryClient);
+    const invalidateQueriesSpy = jest.spyOn(queryClient, 'invalidateQueries');
+    const selectionKey = ['selection'] as const;
+
+    queryClient.setQueryData(selectionKey, { applicationId: 'app-1' });
+
+    const query = manager.createQuery(
+      ['product', { deps: { applicationId: 'pending' }, view: { page: 0 } }],
+      jest.fn().mockResolvedValue('product'),
+      {
+        enabled: false,
+        dependsOn: [
+          [selectionKey],
+          ([selectionSnapshot]) =>
+            selectionSnapshot.data?.applicationId
+              ? {
+                  enabled: true,
+                  queryKey: [
+                    'product',
+                    {
+                      deps: { applicationId: selectionSnapshot.data.applicationId },
+                      view: { page: 1 },
+                    },
+                  ],
+                }
+              : { enabled: false },
+        ],
+      }
+    );
+
+    const mutation = manager.createMutation(jest.fn().mockResolvedValue({ ok: true as const }), {
+      dependencyKeys: ['applicationId'],
+    });
+
+    await query.refetch();
+    await mutation.mutate({ applicationId: 'pending' });
+
+    expect(invalidateQueriesSpy).toHaveBeenCalledTimes(0);
+
+    await mutation.mutate({ applicationId: 'app-1' });
+
+    expect(invalidateQueriesSpy).toHaveBeenCalledWith({
+      exact: true,
+      queryKey: ['product', { deps: { applicationId: 'app-1' }, view: { page: 1 } }],
+    });
+  });
+
+  it('re-registers the latest derived tracked key after cache removal and a later refetch', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { mutations: { retry: 0 }, queries: { retry: 0 } },
+    });
+    const manager = setupQueryManager(queryClient);
+    const invalidateQueriesSpy = jest.spyOn(queryClient, 'invalidateQueries');
+    const selectionKey = ['selection'] as const;
+    const initialDerivedKey = [
+      'product',
+      { deps: { applicationId: 'app-1' }, view: { page: 1 } },
+    ] as const;
+    const latestDerivedKey = [
+      'product',
+      { deps: { applicationId: 'app-2' }, view: { page: 1 } },
+    ] as const;
+
+    queryClient.setQueryData(selectionKey, { applicationId: 'app-1' });
+
+    const query = manager.createQuery(
+      ['product', { deps: { applicationId: 'pending' }, view: { page: 0 } }],
+      jest.fn().mockResolvedValue('product'),
+      {
+        enabled: false,
+        dependsOn: [
+          [selectionKey],
+          ([selectionSnapshot]) =>
+            selectionSnapshot.data?.applicationId
+              ? {
+                  enabled: true,
+                  queryKey: [
+                    'product',
+                    {
+                      deps: { applicationId: selectionSnapshot.data.applicationId },
+                      view: { page: 1 },
+                    },
+                  ],
+                }
+              : { enabled: false },
+        ],
+      }
+    );
+
+    const mutation = manager.createMutation(jest.fn().mockResolvedValue({ ok: true as const }), {
+      dependencyKeys: ['applicationId'],
+    });
+
+    await query.refetch();
+    queryClient.removeQueries({ exact: true, queryKey: initialDerivedKey });
+    queryClient.setQueryData(selectionKey, { applicationId: 'app-2' });
+    await flushTasks();
+
+    invalidateQueriesSpy.mockClear();
+
+    await mutation.mutate({ applicationId: 'app-2' });
+    expect(invalidateQueriesSpy).toHaveBeenCalledTimes(0);
+
+    await query.refetch();
+    await mutation.mutate({ applicationId: 'app-2' });
+
+    expect(invalidateQueriesSpy).toHaveBeenCalledWith({
+      exact: true,
+      queryKey: latestDerivedKey,
+    });
+
+    invalidateQueriesSpy.mockClear();
+
+    await mutation.mutate({ applicationId: 'pending' });
+
+    expect(invalidateQueriesSpy).toHaveBeenCalledTimes(0);
   });
 });
