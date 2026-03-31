@@ -10,12 +10,21 @@ describe('Query Manager API', () => {
     const cancelQueriesSpy = jest.spyOn(queryClient, 'cancelQueries');
     const resetQueriesSpy = jest.spyOn(queryClient, 'resetQueries');
     const removeQueriesSpy = jest.spyOn(queryClient, 'removeQueries');
+    const fetchUser = jest.fn().mockResolvedValue({ id: 7 });
+    const fetchQuerySpy = jest.spyOn(queryClient, 'fetchQuery');
     const manager = setupQueryManager(queryClient);
 
     manager.setQueryData<{ id: number }>(['user', 42], { id: 42 });
 
     expect(manager.getQueryData<{ id: number }>(['user', 42])).toEqual({ id: 42 });
     expect(manager.unsafe_getClient()).toBe(queryClient);
+    await expect(
+      manager.fetchQuery({
+        queryKey: ['user', 7],
+        queryFn: fetchUser,
+        staleTime: 60_000,
+      })
+    ).resolves.toEqual({ id: 7 });
 
     await manager.invalidateQueries({ queryKey: ['user'] });
     await manager.refetchQueries({ queryKey: ['user'] });
@@ -23,6 +32,11 @@ describe('Query Manager API', () => {
     await manager.resetQueries({ queryKey: ['user'] });
     manager.removeQueries({ queryKey: ['user'] });
 
+    expect(fetchQuerySpy).toHaveBeenCalledWith({
+      queryKey: ['user', 7],
+      queryFn: fetchUser,
+      staleTime: 60_000,
+    });
     expect(invalidateQueriesSpy).toHaveBeenCalledWith({ queryKey: ['user'] });
     expect(refetchQueriesSpy).toHaveBeenCalledWith({ queryKey: ['user'] });
     expect(cancelQueriesSpy).toHaveBeenCalledWith({ queryKey: ['user'] });

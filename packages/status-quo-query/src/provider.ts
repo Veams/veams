@@ -66,6 +66,8 @@ export interface QueryManager {
   createQueryAndMutation: CreateQueryAndMutation;
   // Cancels active queries for the specified filters.
   cancelQueries: QueryClient['cancelQueries'];
+  // Fetches one query through the shared QueryClient and returns the resolved data.
+  fetchQuery: QueryClient['fetchQuery'];
   // Synchronously retrieves a snapshot of the current query data.
   getQueryData: QueryClient['getQueryData'];
   // Marks queries as invalid to trigger a refetch if they are active.
@@ -149,6 +151,8 @@ export function setupQueryManager(queryClient: QueryClient): QueryManager {
     },
     // Proxy for canceling queries with this client context.
     cancelQueries: queryClient.cancelQueries.bind(queryClient),
+    // Proxy for fetching one query with this client context.
+    fetchQuery: queryClient.fetchQuery.bind(queryClient),
     // Proxy for retrieving query data with this client context.
     getQueryData: queryClient.getQueryData.bind(queryClient),
     // Proxy for invalidating queries with this client context.

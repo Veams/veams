@@ -4948,7 +4948,7 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   '`unsafe_getResult()` exposes the raw observer result for one handle.',
                   '`unsafe_getClient()` exposes the raw `QueryClient`.',
-                  'Prefer the smaller facade until it is genuinely insufficient.',
+                  'Prefer the smaller facade until it is genuinely insufficient, including `manager.fetchQuery(...)` for one-off reads.',
                 ],
                 id: 'unsafe-guidelines',
                 paragraphs: [
@@ -5104,7 +5104,7 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   '`QueryManager` groups the broad management API around one `QueryClient`.',
                   'Factory methods are `createQuery(queryKey, queryFn, options?)`, `createMutation(mutationFn, options?)`, `createQueryAndMutation(dependencyKeys)`, `createUntrackedQuery(queryKey, queryFn, options?)`, and `createUntrackedMutation(mutationFn, options?)`.',
-                  'Management methods are `cancelQueries(filters?, options?)`, `getQueryData(queryKey)`, `invalidateQueries(filters?, options?)`, `refetchQueries(filters?, options?)`, `removeQueries(filters?)`, `resetQueries(filters?, options?)`, `setQueryData(queryKey, updater)`, and `unsafe_getClient()`.',
+                  'Management methods are `cancelQueries(filters?, options?)`, `fetchQuery(options)`, `getQueryData(queryKey)`, `invalidateQueries(filters?, options?)`, `refetchQueries(filters?, options?)`, `removeQueries(filters?)`, `resetQueries(filters?, options?)`, `setQueryData(queryKey, updater)`, and `unsafe_getClient()`.',
                 ],
                 id: 'query-manager',
                 paragraphs: [

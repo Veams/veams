@@ -453,6 +453,7 @@ Returns `QueryManager` with:
 - `createUntrackedQuery(queryKey, queryFn, options?)`
 - `createUntrackedMutation(mutationFn, options?)`
 - `cancelQueries(...)`
+- `fetchQuery(...)`
 - `getQueryData(...)`
 - `invalidateQueries(...)`
 - `refetchQueries(...)`
@@ -461,7 +462,7 @@ Returns `QueryManager` with:
 - `setQueryData(...)`
 - `unsafe_getClient()`
 
-All manager methods forward directly to the corresponding `QueryClient` methods. `unsafe_getClient()` returns the raw TanStack client as an explicit escape hatch.
+All manager methods forward directly to the corresponding `QueryClient` methods. `fetchQuery(...)` covers the common one-off read path without dropping to the raw client, while `unsafe_getClient()` remains the explicit escape hatch for unsupported TanStack APIs.
 
 ### Tracked Queries and Mutations
 
