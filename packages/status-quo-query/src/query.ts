@@ -120,6 +120,7 @@ export type QueryDependencyTuple<
  */
 export interface CreateUntrackedQuery {
   <
+    TSources extends readonly unknown[] = [],
     TQueryFnData = unknown,
     TError = Error,
     TData = TQueryFnData,
@@ -131,7 +132,7 @@ export interface CreateUntrackedQuery {
     // The asynchronous function that performs the data fetch.
     queryFn: QueryFunction<TQueryFnData, TQueryKey>,
     // Optional configuration for behavior like staleness, retry, and refetching.
-    options?: QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey>
+    options?: QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TSources>
   ): QueryService<TData, TError>;
 }
 
@@ -145,6 +146,7 @@ export interface CreateUntrackedQuery {
 export interface CreateQuery {
   <
     TDeps extends TrackedDependencyRecord,
+    TSources extends readonly unknown[] = [],
     TQueryFnData = unknown,
     TError = Error,
     TData = TQueryFnData,
@@ -153,7 +155,7 @@ export interface CreateQuery {
   >(
     queryKey: TQueryKey,
     queryFn: QueryFunction<TQueryFnData, TQueryKey>,
-    options?: QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey>
+    options?: QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TSources>
   ): QueryService<TData, TError>;
 }
 
@@ -166,11 +168,12 @@ export type QueryServiceOptions<
   TData = TQueryFnData,
   TQueryData = TQueryFnData,
   TQueryKey extends QueryKey = QueryKey,
+  TSources extends readonly unknown[] = [],
 > = Omit<
   QueryObserverOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey>,
   'queryFn' | 'queryKey'
 > & {
-  dependsOn?: QueryDependencyTuple<any[], TQueryKey>;
+  dependsOn?: QueryDependencyTuple<TSources, TQueryKey>;
 };
 
 /**
@@ -200,6 +203,7 @@ export function isQueryLoading(query: QueryMetaState): boolean {
 export function setupQuery(queryClient: QueryClient): CreateUntrackedQuery {
   // Returns the actual factory function for creating individual query services.
   return function createQuery<
+    TSources extends readonly unknown[] = [],
     TQueryFnData = unknown,
     TError = Error,
     TData = TQueryFnData,
@@ -208,7 +212,7 @@ export function setupQuery(queryClient: QueryClient): CreateUntrackedQuery {
   >(
     queryKey: TQueryKey,
     queryFn: QueryFunction<TQueryFnData, TQueryKey>,
-    options?: QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey>
+    options?: QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TSources>
   ): QueryService<TData, TError> {
     const { dependsOn, runtimeOptions } = splitQueryServiceOptions(options);
     const service = createQueryService(queryClient, queryKey, queryFn, runtimeOptions);
@@ -237,6 +241,7 @@ export function setupTrackedQuery(
 ): CreateQuery {
   return function createQuery<
     TDeps extends TrackedDependencyRecord,
+    TSources extends readonly unknown[] = [],
     TQueryFnData = unknown,
     TError = Error,
     TData = TQueryFnData,
@@ -245,7 +250,7 @@ export function setupTrackedQuery(
   >(
     queryKey: TQueryKey,
     queryFn: QueryFunction<TQueryFnData, TQueryKey>,
-    options?: QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey>
+    options?: QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TSources>
   ): QueryService<TData, TError> {
     const { dependsOn, runtimeOptions } = splitQueryServiceOptions(options);
     // Reuse the same core query service implementation as the untracked API.
@@ -423,6 +428,7 @@ function createQueryService<
 }
 
 function bindQueryDependencies<
+  TSources extends readonly unknown[] = [],
   TQueryFnData = unknown,
   TError = Error,
   TData = TQueryFnData,
@@ -434,7 +440,7 @@ function bindQueryDependencies<
     typeof createQueryService<TQueryFnData, TError, TData, TQueryData, TQueryKey>
   >,
   queryKey: TQueryKey,
-  dependsOn: QueryDependencyTuple<any[], TQueryKey>
+  dependsOn: QueryDependencyTuple<TSources, TQueryKey>
 ): QueryService<TData, TError> {
   const dependencyController = createDependencyController(
     queryClient,
@@ -471,6 +477,7 @@ function bindQueryDependencies<
 }
 
 function createDependencyController<
+  TSources extends readonly unknown[] = [],
   TQueryFnData = unknown,
   TError = Error,
   TData = TQueryFnData,
@@ -480,7 +487,7 @@ function createDependencyController<
   queryClient: QueryClient,
   baseQueryKey: TQueryKey,
   setDerivedState: (derivedOptions: QueryDependencyDerivedOptions<TQueryKey>) => void,
-  dependsOn: QueryDependencyTuple<any[], TQueryKey>
+  dependsOn: QueryDependencyTuple<TSources, TQueryKey>
 ) {
   const [sourceKeys, deriveOptions] = dependsOn;
   let queriesObserver: QueriesObserver | undefined;
@@ -541,10 +548,11 @@ function splitQueryServiceOptions<
   TData = TQueryFnData,
   TQueryData = TQueryFnData,
   TQueryKey extends QueryKey = QueryKey,
+  TSources extends readonly unknown[] = [],
 >(
-  options?: QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey>
+  options?: QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TSources>
 ): {
-  dependsOn?: QueryDependencyTuple<any[], TQueryKey>;
+  dependsOn?: QueryDependencyTuple<TSources, TQueryKey>;
   runtimeOptions: QueryServiceRuntimeOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey> | undefined;
 } {
   if (options === undefined) {
