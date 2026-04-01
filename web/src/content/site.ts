@@ -1258,15 +1258,13 @@ type Config = {
 
 const queryClient = new QueryClient();
 const manager = setupQueryManager(queryClient);
-const userKey = ['user', { deps: { userId: '42' } }] as const;
-const configKey = ['config', { deps: { scope: 'global' } }] as const;
 
-const getUser = manager.createQuery(userKey, async () => ({
+const userQuery = manager.createQuery(['user', { deps: { userId: '42' } }] as const, async () => ({
   companyId: 'company-7',
   role: 'analyst' as const,
 }));
 
-const getConfig = manager.createQuery(configKey, async () => ({
+const configQuery = manager.createQuery(['config', { deps: { scope: 'global' } }] as const, async () => ({
   region: 'eu',
   companyProfileEnabled: true,
 }));
@@ -1277,7 +1275,7 @@ const companyProfileQuery = manager.createQuery(
   {
     enabled: false,
     dependsOn: <QueryDependencyTuple<[User, Config]>>[
-      [userKey, configKey],
+      [userQuery, configQuery],
       ([userSnapshot, configSnapshot]) => {
         const companyId = userSnapshot.data?.companyId;
         const region = configSnapshot.data?.region;
@@ -1301,8 +1299,6 @@ const companyProfileQuery = manager.createQuery(
   }
 );
 
-await getUser.refetch();
-await getConfig.refetch();
 await companyProfileQuery.refetch();`;
 
 const statusQuoQueryTrackedPairExample = `import { QueryClient } from '@tanstack/query-core';
@@ -4996,14 +4992,14 @@ export const docsPackages: DocsPackage[] = [
             blocks: [
               {
                 bullets: [
-                  'Use `dependsOn` when one query should derive its own key from other cache entries.',
+                  'Use `dependsOn` when one query should derive its own key from other query services.',
                   'The derivation callback can change only `queryKey` and `enabled`.',
                   'The downstream handle stays the same `QueryService`; the reactivity is internal.',
                 ],
                 id: 'reactive-dependencies-shape',
                 paragraphs: [
                   'Use this when a query needs upstream data before it can run.',
-                  'The query watches the cache, derives its own key, and enables itself when ready.',
+                  'The query watches source services, derives its own key, and enables itself when ready.',
                 ],
                 title: 'Let the downstream query derive itself',
               },
@@ -5017,7 +5013,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'reactive-dependencies-example',
                 paragraphs: [
-                  'Here `companyProfile` waits for `user` and `config`, then switches to the final key and runs.',
+                  'Here `companyProfile` depends on `userQuery` and `configQuery`, then switches to the final key and runs.',
                 ],
                 title: 'Build the dependency graph in the query options',
               },
@@ -5026,6 +5022,7 @@ export const docsPackages: DocsPackage[] = [
                   'Keep the base key valid even before the sources resolve. For tracked queries that means the placeholder key must still end in `{ deps, view? }`.',
                   'Treat `dependsOn` as query-level orchestration, not as a place to mutate retry policies, selectors, or lifecycle callbacks.',
                   'Watchers start on first `subscribe(...)` or `refetch()` and stop again after the last unsubscribe.',
+                  'A downstream `refetch()` refetches its source services first, then refetches itself.',
                   'Exact invalidation follows the current derived key, not the original placeholder key.',
                 ],
                 id: 'reactive-dependencies-guidelines',
@@ -5135,7 +5132,7 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   '`createQuery(queryKey, queryFn, options?)` accepts one tracked query key, one query function, and optional observer options.',
                   '`queryKey` must end with an object segment that contains `deps` and may contain `view`.',
-                  '`options.dependsOn?` lets the query derive `queryKey` and `enabled` from upstream query snapshots.',
+                  '`options.dependsOn?` lets the query derive `queryKey` and `enabled` from upstream source-service snapshots.',
                   'Returns a query handle with `getSnapshot()`, `subscribe(listener)`, `refetch(options?)`, `invalidate(options?)`, and `unsafe_getResult()`.',
                 ],
                 id: 'create-query',
@@ -5147,7 +5144,7 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   '`createUntrackedQuery(queryKey, queryFn, options?)` keeps the plain query handle without dependency registration.',
-                  '`options.dependsOn?` is still available here when the query should derive its own `queryKey` and `enabled` state without joining the tracked registry.',
+                  '`options.dependsOn?` is still available here when the query should derive its own `queryKey` and `enabled` state from source services without joining the tracked registry.',
                   'Use it when the query should not participate in tracked invalidation, or when you want a very small TanStack wrapper only.',
                   'Returns the same query handle shape as `createQuery(...)`, but does not require a `{ deps, view? }` key segment.',
                 ],
@@ -5195,13 +5192,13 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  '`QueryDependencyTuple<[...sources]>` defines the ordered source keys plus the `deriveOptions(...)` callback for `dependsOn`.',
-                  'The callback receives `QueryServiceSnapshot` values in the same order as the declared source keys.',
+                  '`QueryDependencyTuple<[...sources]>` defines the ordered source services plus the `deriveOptions(...)` callback for `dependsOn`.',
+                  'The callback receives `QueryServiceSnapshot` values in the same order as the declared source services.',
                   'It may return only `queryKey` and `enabled` for the downstream query.',
                 ],
                 id: 'query-dependency-tuple',
                 paragraphs: [
-                  'Use `QueryDependencyTuple` to keep source keys and derived state typed together.',
+                  'Use `QueryDependencyTuple` to keep source services and derived state typed together.',
                 ],
                 title: 'QueryDependencyTuple',
               },
@@ -5209,7 +5206,7 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   '`QueryServiceOptions` is TanStack `QueryObserverOptions` without `queryFn` and `queryKey`, because those are passed directly to the factory.',
                   'It also adds `dependsOn?` for declarative reactive query dependencies.',
-                  'The runtime derivation path is intentionally narrow: `dependsOn` may change only `queryKey` and `enabled`.',
+                  'The runtime derivation path is intentionally narrow: `dependsOn` may change only `queryKey` and `enabled`, and downstream `refetch()` will refetch the declared source services first.',
                 ],
                 id: 'query-service-options',
                 paragraphs: [
@@ -5443,7 +5440,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'reactive-dependency-example',
                 paragraphs: [
-                  'Two upstream queries resolve first. The downstream query derives its final key from them.',
+                  'Two source query services resolve first. The downstream query derives its final key from them.',
                 ],
                 title: 'Reactive dependency example',
               },
@@ -5451,8 +5448,8 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Examples',
             id: 'example-reactive-dependencies',
             intro:
-              'Use `dependsOn` when a query should read upstream cache state before it runs.',
-            summary: 'A downstream query derived from upstream cache state.',
+              'Use `dependsOn` when a query should read upstream query services before it runs.',
+            summary: 'A downstream query derived from upstream services.',
             title: 'Reactive dependency example',
           },
           {
