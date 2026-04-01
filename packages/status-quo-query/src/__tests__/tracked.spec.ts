@@ -286,6 +286,11 @@ describe('Tracked Query Invalidation', () => {
     const manager = setupQueryManager(queryClient);
     const invalidateQueriesSpy = jest.spyOn(queryClient, 'invalidateQueries');
     const selectionKey = ['selection'] as const;
+    const selectionQuery = manager.createUntrackedQuery(
+      selectionKey,
+      jest.fn().mockResolvedValue({ applicationId: 'app-1' }),
+      { enabled: false }
+    );
 
     queryClient.setQueryData(selectionKey, { applicationId: 'app-1' });
 
@@ -295,7 +300,7 @@ describe('Tracked Query Invalidation', () => {
       {
         enabled: false,
         dependsOn: [
-          [selectionKey],
+          [selectionQuery],
           ([selectionSnapshot]) =>
             selectionSnapshot.data?.applicationId
               ? {
@@ -337,6 +342,14 @@ describe('Tracked Query Invalidation', () => {
     const manager = setupQueryManager(queryClient);
     const invalidateQueriesSpy = jest.spyOn(queryClient, 'invalidateQueries');
     const selectionKey = ['selection'] as const;
+    const selectionQuery = manager.createUntrackedQuery(
+      selectionKey,
+      jest
+        .fn()
+        .mockResolvedValueOnce({ applicationId: 'app-1' })
+        .mockResolvedValueOnce({ applicationId: 'app-2' }),
+      { enabled: false }
+    );
     const initialDerivedKey = [
       'product',
       { deps: { applicationId: 'app-1' }, view: { page: 1 } },
@@ -354,7 +367,7 @@ describe('Tracked Query Invalidation', () => {
       {
         enabled: false,
         dependsOn: [
-          [selectionKey],
+          [selectionQuery],
           ([selectionSnapshot]) =>
             selectionSnapshot.data?.applicationId
               ? {

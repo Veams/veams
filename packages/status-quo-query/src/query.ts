@@ -13,7 +13,6 @@ import {
   type QueryKey,
   // Import QueryObserver to monitor and manage individual queries.
   QueryObserver,
-  QueriesObserver,
   type QueryOptions,
   // Import configuration options for the query observer.
   type QueryObserverOptions,
@@ -109,7 +108,7 @@ export type QueryDependencyTuple<
   TSources extends readonly unknown[],
   TQueryKey extends QueryKey = QueryKey,
 > = readonly [
-  sourceKeys: { readonly [K in keyof TSources]: QueryKey },
+  sources: { readonly [K in keyof TSources]: QueryService<TSources[K], Error> },
   deriveOptions: (
     sourceSnapshots: { readonly [K in keyof TSources]: QueryServiceSnapshot<TSources[K], Error> }
   ) => QueryDependencyDerivedOptions<TQueryKey>,
@@ -221,7 +220,7 @@ export function setupQuery(queryClient: QueryClient): CreateUntrackedQuery {
       return service.service;
     }
 
-    return bindQueryDependencies(queryClient, service, queryKey, dependsOn);
+    return bindQueryDependencies(service, queryKey, dependsOn);
   };
 }
 
@@ -281,7 +280,6 @@ export function setupTrackedQuery(
 
     const dependencyController = dependsOn
       ? createDependencyController(
-          queryClient,
           queryKey,
           applyTrackedDerivedState,
           dependsOn
@@ -307,7 +305,7 @@ export function setupTrackedQuery(
     return {
       ...service.service,
       refetch: async (refetchOptions) => {
-        dependencyController?.evaluateOnce();
+        await dependencyController?.evaluateForRefetch();
         // Refetch is one of the two explicit reactivation paths agreed on in the design.
         ensureRegistered();
         return service.service.refetch(refetchOptions);
@@ -435,7 +433,6 @@ function bindQueryDependencies<
   TQueryData = TQueryFnData,
   TQueryKey extends QueryKey = QueryKey,
 >(
-  queryClient: QueryClient,
   queryService: ReturnType<
     typeof createQueryService<TQueryFnData, TError, TData, TQueryData, TQueryKey>
   >,
@@ -443,7 +440,6 @@ function bindQueryDependencies<
   dependsOn: QueryDependencyTuple<TSources, TQueryKey>
 ): QueryService<TData, TError> {
   const dependencyController = createDependencyController(
-    queryClient,
     queryKey,
     queryService.setDerivedState,
     dependsOn
@@ -453,7 +449,7 @@ function bindQueryDependencies<
   return {
     ...queryService.service,
     refetch: async (refetchOptions) => {
-      dependencyController.evaluateOnce();
+      await dependencyController.evaluateForRefetch();
       return queryService.service.refetch(refetchOptions);
     },
     subscribe: (listener) => {
@@ -484,19 +480,17 @@ function createDependencyController<
   TQueryData = TQueryFnData,
   TQueryKey extends QueryKey = QueryKey,
 >(
-  queryClient: QueryClient,
   baseQueryKey: TQueryKey,
   setDerivedState: (derivedOptions: QueryDependencyDerivedOptions<TQueryKey>) => void,
   dependsOn: QueryDependencyTuple<TSources, TQueryKey>
 ) {
-  const [sourceKeys, deriveOptions] = dependsOn;
-  let queriesObserver: QueriesObserver | undefined;
-  let unsubscribe: (() => void) | undefined;
+  const [sources, deriveOptions] = dependsOn;
+  let isActive = false;
+  let scheduledEvaluation = false;
+  let sourceUnsubscribers: Array<() => void> = [];
 
-  const evaluateBinding = (results: QueryObserverResult[]) => {
-    const snapshots = results.map((result) =>
-      toQueryServiceSnapshot(result)
-    ) as Parameters<typeof deriveOptions>[0];
+  const evaluateBinding = () => {
+    const snapshots = sources.map((source) => source.getSnapshot()) as Parameters<typeof deriveOptions>[0];
     const derivedOptions = deriveOptions(snapshots);
 
     setDerivedState({
@@ -505,39 +499,58 @@ function createDependencyController<
     });
   };
 
-  const createObserver = () =>
-    new QueriesObserver(
-      queryClient,
-      sourceKeys.map((sourceKey) => ({
-        enabled: false,
-        queryKey: sourceKey,
-      }))
-    );
+  const scheduleEvaluate = () => {
+    if (scheduledEvaluation) {
+      return;
+    }
+
+    scheduledEvaluation = true;
+
+    queueMicrotask(() => {
+      scheduledEvaluation = false;
+
+      if (!isActive) {
+        return;
+      }
+
+      evaluateBinding();
+    });
+  };
 
   return {
     activate: () => {
-      if (queriesObserver) {
+      if (isActive) {
         return;
       }
 
-      queriesObserver = createObserver();
-      evaluateBinding(queriesObserver.getCurrentResult());
-      unsubscribe = queriesObserver.subscribe(evaluateBinding);
+      isActive = true;
+      sourceUnsubscribers = sources.map((source) =>
+        source.subscribe(() => {
+          scheduleEvaluate();
+        })
+      );
+      evaluateBinding();
     },
     deactivate: () => {
-      unsubscribe?.();
-      unsubscribe = undefined;
-      queriesObserver = undefined;
+      isActive = false;
+      sourceUnsubscribers.forEach((unsubscribe) => {
+        unsubscribe();
+      });
+      sourceUnsubscribers = [];
     },
-    evaluateOnce: () => {
-      if (queriesObserver) {
-        evaluateBinding(queriesObserver.getCurrentResult());
+    evaluateForRefetch: async () => {
+      await Promise.all(
+        sources.map(async (source) => {
+          await source.refetch();
+        })
+      );
+
+      if (isActive) {
+        scheduleEvaluate();
         return;
       }
 
-      const transientObserver = createObserver();
-      evaluateBinding(transientObserver.getCurrentResult());
-      transientObserver.destroy();
+      evaluateBinding();
     },
   };
 }

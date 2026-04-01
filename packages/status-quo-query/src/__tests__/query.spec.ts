@@ -68,6 +68,12 @@ describe('Query Service', () => {
     const createQuery = setupQuery(queryClient);
     const userKey = ['user', 42] as const;
     const configKey = ['config', 'global'] as const;
+    const userQuery = createQuery(userKey, jest.fn().mockResolvedValue({ companyId: 'company-1' }), {
+      enabled: false,
+    });
+    const configQuery = createQuery(configKey, jest.fn().mockResolvedValue({ region: 'eu' }), {
+      enabled: false,
+    });
     const queryFn = jest
       .fn()
       .mockImplementation(({ queryKey }) => `${queryKey[1].companyId}:${queryKey[1].region}`);
@@ -78,7 +84,7 @@ describe('Query Service', () => {
       {
         enabled: false,
         dependsOn: [
-          [userKey, configKey],
+          [userQuery, configQuery],
           ([userSnapshot, configSnapshot]) => {
             if (!userSnapshot.data?.companyId || !configSnapshot.data?.region) {
               return { enabled: false };
@@ -120,13 +126,13 @@ describe('Query Service', () => {
     unsubscribe();
   });
 
-  it('uses warm upstream cache data when dependsOn is evaluated on first refetch', async () => {
+  it('uses source query data when dependsOn is evaluated on first refetch', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 0 } } });
     const createQuery = setupQuery(queryClient);
     const selectionKey = ['selection'] as const;
+    const selectionQueryFn = jest.fn().mockResolvedValue({ id: 'item-2' });
+    const selectionQuery = createQuery(selectionKey, selectionQueryFn, { enabled: false });
     const queryFn = jest.fn().mockImplementation(async ({ queryKey }) => queryKey[1].id);
-
-    queryClient.setQueryData(selectionKey, { id: 'item-2' });
 
     const service = createQuery(
       ['details', { id: undefined as string | undefined }],
@@ -134,7 +140,7 @@ describe('Query Service', () => {
       {
         enabled: false,
         dependsOn: [
-          [selectionKey],
+          [selectionQuery],
           ([selectionSnapshot]) =>
             selectionSnapshot.data?.id
               ? {
@@ -149,6 +155,7 @@ describe('Query Service', () => {
     const result = await service.refetch();
 
     expect(result.data).toBe('item-2');
+    expect(selectionQueryFn).toHaveBeenCalledTimes(1);
     expect(queryFn).toHaveBeenCalledWith(
       expect.objectContaining({
         queryKey: ['details', { id: 'item-2' }],
@@ -159,12 +166,13 @@ describe('Query Service', () => {
   it('preserves source snapshot tuple order in dependsOn', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 0 } } });
     const createQuery = setupQuery(queryClient);
-    const firstKey = ['source', 'first'] as const;
-    const secondKey = ['source', 'second'] as const;
+    const firstQuery = createQuery(['source', 'first'] as const, jest.fn().mockResolvedValue({ label: 'first' }), {
+      enabled: false,
+    });
+    const secondQuery = createQuery(['source', 'second'] as const, jest.fn().mockResolvedValue({ label: 'second' }), {
+      enabled: false,
+    });
     const observedOrders: Array<[string | undefined, string | undefined]> = [];
-
-    queryClient.setQueryData(firstKey, { label: 'first' });
-    queryClient.setQueryData(secondKey, { label: 'second' });
 
     const service = createQuery(
       ['ordered', { left: undefined as string | undefined, right: undefined as string | undefined }],
@@ -172,7 +180,7 @@ describe('Query Service', () => {
       {
         enabled: false,
         dependsOn: [
-          [firstKey, secondKey],
+          [firstQuery, secondQuery],
           ([firstSnapshot, secondSnapshot]) => {
             observedOrders.push([firstSnapshot.data?.label, secondSnapshot.data?.label]);
 
@@ -201,6 +209,9 @@ describe('Query Service', () => {
     const invalidateQueriesSpy = jest.spyOn(queryClient, 'invalidateQueries');
     const createQuery = setupQuery(queryClient);
     const selectionKey = ['selection'] as const;
+    const selectionQuery = createQuery(selectionKey, jest.fn().mockResolvedValue({ id: 'item-3' }), {
+      enabled: false,
+    });
 
     queryClient.setQueryData(selectionKey, { id: 'item-3' });
 
@@ -210,7 +221,7 @@ describe('Query Service', () => {
       {
         enabled: false,
         dependsOn: [
-          [selectionKey],
+          [selectionQuery],
           ([selectionSnapshot]) =>
             selectionSnapshot.data?.id
               ? {
@@ -240,6 +251,13 @@ describe('Query Service', () => {
     const invalidateQueriesSpy = jest.spyOn(queryClient, 'invalidateQueries');
     const createQuery = setupQuery(queryClient);
     const selectionKey = ['selection'] as const;
+    const selectionQuery = createQuery(
+      selectionKey,
+      jest.fn().mockResolvedValue({ id: 'item-2' }),
+      {
+        enabled: false,
+      }
+    );
     const queryFn = jest.fn().mockImplementation(async ({ queryKey }) => queryKey[1].id);
 
     queryClient.setQueryData(selectionKey, { id: 'item-1' });
@@ -250,7 +268,7 @@ describe('Query Service', () => {
       {
         enabled: false,
         dependsOn: [
-          [selectionKey],
+          [selectionQuery],
           ([selectionSnapshot]) =>
             selectionSnapshot.data?.id
               ? {

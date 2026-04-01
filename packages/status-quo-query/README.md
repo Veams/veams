@@ -400,10 +400,10 @@ Use `dependsOn` when a query needs data from other queries before it can run.
 
 `dependsOn` accepts a `QueryDependencyTuple`:
 
-- an ordered list of source query keys to observe
+- an ordered list of source query services
 - a `deriveOptions(...)` callback that returns only `queryKey` and/or `enabled`
 
-The watcher starts on the first `subscribe(...)` or `refetch()`, reads the current cache immediately, and stops after the last unsubscribe.
+The watcher starts on the first `subscribe(...)` or `refetch()`, reads the current source snapshots immediately, and stops after the last unsubscribe. A downstream `refetch()` refetches all source services first, then refetches the derived query.
 
 Untracked example:
 
@@ -416,8 +416,8 @@ type Config = { region: string; companyProfileEnabled: boolean };
 
 const queryClient = new QueryClient();
 const createQuery = setupQuery(queryClient);
-const userKey = ['user', 42] as const;
-const configKey = ['config', 'global'] as const;
+const userQuery = createQuery(['user', 42] as const, () => fetchUser(42), { enabled: false });
+const configQuery = createQuery(['config', 'global'] as const, fetchConfig, { enabled: false });
 
 const companyProfileQuery = createQuery(
   ['company-profile', { companyId: undefined as string | undefined, region: undefined as string | undefined }],
@@ -425,7 +425,7 @@ const companyProfileQuery = createQuery(
   {
     enabled: false,
     dependsOn: <QueryDependencyTuple<[User, Config]>>[
-      [userKey, configKey],
+      [userQuery, configQuery],
       ([userSnapshot, configSnapshot]) => {
         if (!userSnapshot.data?.companyId || !configSnapshot.data?.region) {
           return { enabled: false };
@@ -455,7 +455,11 @@ import { setupQueryManager } from '@veams/status-quo-query';
 
 const queryClient = new QueryClient();
 const manager = setupQueryManager(queryClient);
-const selectionKey = ['selection'] as const;
+const selectionQuery = manager.createUntrackedQuery(
+  ['selection'] as const,
+  fetchSelection,
+  { enabled: false }
+);
 
 const productQuery = manager.createQuery(
   ['product', { deps: { applicationId: 'pending' }, view: { page: 0 } }],
@@ -463,7 +467,7 @@ const productQuery = manager.createQuery(
   {
     enabled: false,
     dependsOn: [
-      [selectionKey],
+      [selectionQuery],
       ([selectionSnapshot]) =>
         selectionSnapshot.data?.applicationId
           ? {
@@ -610,7 +614,7 @@ It also adds:
 
 - `dependsOn?: QueryDependencyTuple<[...sources]>`
 
-`dependsOn` observes the listed source keys through TanStack `QueriesObserver` and lets the downstream query derive only `queryKey` and `enabled`. The public `QueryService` API does not change when this option is used.
+`dependsOn` observes the listed source query services and lets the downstream query derive only `queryKey` and `enabled`. Source services are activated while the downstream query is active, and downstream `refetch()` refetches the sources first. The public `QueryService` API does not change when this option is used.
 
 `QueryService` methods:
 
