@@ -1371,6 +1371,84 @@ import { setupQueryManager } from '@veams/status-quo-query';
 const queryClient = new QueryClient();
 const manager = setupQueryManager(queryClient);`;
 
+const statusQuoQueryRegistryExample = `import { QueryClient } from '@tanstack/query-core';
+import {
+  createQueryRegistry,
+  setupQueryManager,
+  type QueryService,
+} from '@veams/status-quo-query';
+
+type Branch = {
+  id: string;
+  name: string;
+};
+
+type CompanyBranchParams = {
+  branchId: string;
+};
+
+const queryClient = new QueryClient();
+const manager = setupQueryManager(queryClient);
+
+const createCompanyBranchKey = (params: CompanyBranchParams) =>
+  ['company-branch', { deps: { branchId: params.branchId } }] as const;
+
+const companyBranchQueries = createQueryRegistry('companyBranch', createCompanyBranchKey);
+
+const fetchCompanyBranch = async (branchId: string): Promise<Branch> => ({
+  id: branchId,
+  name: 'North Hub',
+});
+
+export function getCompanyBranch(params: CompanyBranchParams): QueryService<Branch, Error> {
+  return companyBranchQueries.resolve(params, (queryKey) =>
+    manager.createQuery(queryKey, () => fetchCompanyBranch(queryKey[1].deps.branchId), {
+      retry: 0,
+      staleTime: 60_000,
+    })
+  );
+}`;
+
+const statusQuoQueryKeyShapeExample = `import type { TrackedQueryKey } from '@veams/status-quo-query';
+
+const productListKey: TrackedQueryKey<{
+  applicationId: string;
+  categoryId: string;
+}> = [
+  'products',
+  {
+    deps: {
+      applicationId: 'app-1',
+      categoryId: 'hardware',
+    },
+    view: {
+      page: 2,
+      search: 'adapter',
+      sort: 'price-desc',
+    },
+  },
+] as const;
+
+const productDetailKey: TrackedQueryKey<{
+  applicationId: string;
+  productId: string;
+}> = [
+  'product',
+  {
+    deps: {
+      applicationId: 'app-1',
+      productId: 'product-42',
+    },
+  },
+] as const;
+
+// deps:
+// domain identity used for tracked invalidation
+//
+// view:
+// presentation variant kept in the cache key,
+// but ignored by tracked invalidation`;
+
 const statusQuoApiImports = `import {
   NativeStateHandler,
   ObservableStateHandler,
@@ -1450,6 +1528,7 @@ const statusQuoFrameworkReactImports = `import {
 } from '@veams/status-quo/react';`;
 
 const statusQuoQueryApiImports = `import {
+  createQueryRegistry,
   setupQueryManager,
   setupMutation,
   setupQuery,
@@ -4953,6 +5032,71 @@ export const docsPackages: DocsPackage[] = [
           {
             blocks: [
               {
+                bullets: [
+                  '`deps` describes the domain identity that tracked invalidation should match.',
+                  '`view` describes presentation variants like pagination, sorting, filters, or search.',
+                  'Both belong to the TanStack query key, but only `deps` participates in tracked invalidation.',
+                  'Use `TrackedQueryKey<TDeps>` when you want to type the full tracked key shape explicitly.',
+                ],
+                id: 'query-key-concept',
+                paragraphs: [
+                  'Tracked query keys separate domain identity from UI variation.',
+                  'That split keeps invalidation meaningful without collapsing every list view into one cache entry.',
+                ],
+                title: 'Separate domain identity from view state',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: statusQuoQueryKeyShapeExample,
+                    label: 'Key structure with deps and view',
+                    language: 'ts',
+                  },
+                ],
+                id: 'query-key-structure',
+                paragraphs: [
+                  'The final key segment is an object containing `deps` and optionally `view`.',
+                  'List queries often use both. Detail queries often need only `deps`.',
+                  '`TrackedQueryKey<TDeps>` is the public type to document or annotate that structure.',
+                ],
+                title: 'Shape the key deliberately',
+              },
+              {
+                bullets: [
+                  'Put values in `deps` when a mutation should be able to target them as domain dependencies.',
+                  'Put values in `view` when they only describe how the same domain data is presented.',
+                  'If a value changes list membership or invalidation scope by domain rule, move it into `deps` intentionally.',
+                  'Keep the structure stable across one feature area so queries and mutations speak the same dependency language.',
+                ],
+                id: 'query-key-rules',
+                paragraphs: [
+                  'Treat `deps` as the invalidation contract and `view` as the cache-identity variant layer.',
+                ],
+                title: 'Decision rules',
+              },
+              {
+                bullets: [
+                  'Two keys with the same `deps` but different `view` are different cache entries.',
+                  'Tracked mutations ignore `view` on purpose, because UI variants usually should refresh together.',
+                  'When you need one exact variant only, use `query.invalidate()` or manager-level exact invalidation for that full key.',
+                ],
+                id: 'query-key-effects',
+                paragraphs: [
+                  'The split gives you broad domain invalidation by default while preserving precise cache identity.',
+                ],
+                title: 'How the split behaves at runtime',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'query-key-management',
+            intro:
+              'Use `deps` for tracked domain identity and `view` for presentation variants inside the query key.',
+            summary: 'How to structure tracked query keys.',
+            title: 'Query Key Management',
+          },
+          {
+            blocks: [
+              {
                 codeExamples: [
                   {
                     code: statusQuoQueryInvalidateExample,
@@ -4987,6 +5131,59 @@ export const docsPackages: DocsPackage[] = [
               'This API keeps invalidation scope visible.',
             summary: 'Exact on the handle. Broad on the manager.',
             title: 'Invalidation',
+          },
+          {
+            blocks: [
+              {
+                callout:
+                  'A query registry memoizes `QueryService` handles by query key. TanStack Query still owns the underlying data cache.',
+                bullets: [
+                  'Use a registry when a long-lived service should return the same `QueryService` handle for equivalent params.',
+                  'Create the registry once per service lifetime, then call `resolve(params, create)` inside the service methods.',
+                  'Keep the manager outside the registry. The registry owns key derivation and handle reuse, not query construction.',
+                ],
+                id: 'query-registry-purpose',
+                paragraphs: [
+                  'Without a registry, repeated `manager.createQuery(...)` calls create fresh service handles even when the query key is equivalent.',
+                  'The registry closes that gap by memoizing the handle behind a stable query-key hash.',
+                ],
+                title: 'Memoize the service handle, not the data cache',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: statusQuoQueryRegistryExample,
+                    label: 'Reuse one query handle per parameter set',
+                    language: 'ts',
+                  },
+                ],
+                id: 'query-registry-example',
+                paragraphs: [
+                  'This keeps the service API simple: call `resolve(...)`, get the existing handle when present, or create it once when missing.',
+                ],
+                title: 'Use the registry inside a long-lived service',
+              },
+              {
+                bullets: [
+                  '`createQueryRegistry(name, createKey)` defines one registry around one key factory.',
+                  '`resolve(params, create)` returns the existing handle for the generated key or creates it exactly once.',
+                  '`getKey(params)` exposes the generated query key for inspection or composition.',
+                  '`clear()` is mainly useful for tests or explicit service teardown.',
+                  'Hashing follows TanStack Query key semantics, so equivalent object keys resolve to the same handle even when property order differs.',
+                ],
+                id: 'query-registry-guidelines',
+                paragraphs: [
+                  'Keep the registry at the service boundary and treat it as handle memoization, not as a replacement for TanStack cache behavior.',
+                ],
+                title: 'Operational rules',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'query-registry',
+            intro:
+              'Use a query registry when service methods should reuse the same query handle for equivalent params.',
+            summary: 'Memoize query handles by key.',
+            title: 'Query Registry',
           },
           {
             blocks: [
@@ -5091,6 +5288,30 @@ export const docsPackages: DocsPackage[] = [
                   'Use the root package when you want the full surface from one import.',
                 ],
                 title: 'Entry points',
+              },
+              {
+                bullets: [
+                  '`createQueryRegistry(name, createKey)` creates a registry that memoizes query handles by the generated query key.',
+                  'Returns a `QueryRegistry` with `name`, `getKey(params)`, `resolve(params, create)`, and `clear()`.',
+                  'Use it when one long-lived service should keep query-service identity stable across repeated calls with equivalent params.',
+                ],
+                id: 'create-query-registry',
+                paragraphs: [
+                  'This helper memoizes `QueryService` handles, not TanStack query data.',
+                ],
+                title: 'createQueryRegistry',
+              },
+              {
+                bullets: [
+                  '`TrackedQueryKey<TDeps>` describes a tracked query key whose final segment is `{ deps, view? }`.',
+                  '`TDeps` is the typed dependency record for the `deps` object.',
+                  'Use it when you want to annotate exported key factories, constants, or shared query-key helpers.',
+                ],
+                id: 'tracked-query-key',
+                paragraphs: [
+                  'This is the public key-shape type for tracked queries.',
+                ],
+                title: 'TrackedQueryKey',
               },
               {
                 bullets: [

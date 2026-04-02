@@ -32,6 +32,13 @@
         "default": "./dist/provider.js"
       },
       "require": "./dist/provider.js"
+    },
+    "./query-registry": {
+      "import": {
+        "types": "./dist/query-registry.d.ts",
+        "default": "./dist/query-registry.js"
+      },
+      "require": "./dist/query-registry.js"
     }
   },
   "types": "dist/index.d.ts",
