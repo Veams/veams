@@ -1458,42 +1458,58 @@ import { setupQueryManager } from '@veams/status-quo-query';
 const queryClient = new QueryClient();
 const manager = setupQueryManager(queryClient);`;
 
-const statusQuoQueryRegistryExample = `import { QueryClient } from '@tanstack/query-core';
-import {
-  createQueryRegistry,
-  setupQueryManager,
-  type QueryService,
-} from '@veams/status-quo-query';
+const statusQuoQueryServiceGuideExample = `import type { QueryService, QueryServiceSnapshot } from '@veams/status-quo-query';
 
-type Branch = {
+type Company = {
   id: string;
   name: string;
 };
 
-type CompanyBranchParams = {
-  branchId: string;
-};
+// Shared key factories keep the live handle path and snapshot path aligned.
+const companiesQueryKey = ['companies'] as const;
+const companyByIdQueryKey = (companyId: string) => ['company', companyId] as const;
 
-const queryClient = new QueryClient();
-const manager = setupQueryManager(queryClient);
+export interface CompanyService {
+  getCompanies: () => QueryService<Company[], Error>;
+  getCompanyById: (companyId: string) => QueryService<Company, Error>;
+  getCompanyByIdSnapshot: (companyId: string) => QueryServiceSnapshot<Company, Error>;
+}
 
-const createCompanyBranchKey = (params: CompanyBranchParams) =>
-  ['company-branch', { deps: { branchId: params.branchId } }] as const;
+export function createCompanyService(): CompanyService {
+  const manager = getQueryManager();
 
-const companyBranchQueries = createQueryRegistry('companyBranch', createCompanyBranchKey);
+  return {
+    // Return a fresh query handle when callers need commands or subscriptions.
+    getCompanies() {
+      return manager.createUntrackedQuery(companiesQueryKey, fetchCompanies, {
+        staleTime: companyStaleTime,
+      });
+    },
+    // Parameterized query handles are cheap and map directly to the final query key.
+    getCompanyById(companyId) {
+      const queryKey = companyByIdQueryKey(companyId);
 
-const fetchCompanyBranch = async (branchId: string): Promise<Branch> => ({
-  id: branchId,
-  name: 'North Hub',
-});
+      return manager.createUntrackedQuery(queryKey, () => fetchCompanyById(companyId), {
+        staleTime: companyStaleTime,
+      });
+    },
+    // Snapshot-only reads should use the manager cache APIs instead of building another handle.
+    getCompanyByIdSnapshot(companyId) {
+      const queryKey = companyByIdQueryKey(companyId);
+      const state = manager.getQueryState(queryKey);
 
-export function getCompanyBranch(params: CompanyBranchParams): QueryService<Branch, Error> {
-  return companyBranchQueries.resolve(params, (queryKey) =>
-    manager.createQuery(queryKey, () => fetchCompanyBranch(queryKey[1].deps.branchId), {
-      retry: 0,
-      staleTime: 60_000,
-    })
-  );
+      return {
+        data: manager.getQueryData(queryKey),
+        error: (state?.error as Error | null | undefined) ?? null,
+        fetchStatus: state?.fetchStatus ?? 'idle',
+        status: state?.status ?? 'pending',
+        isError: state?.status === 'error',
+        isFetching: state?.fetchStatus === 'fetching',
+        isPending: state?.status === 'pending',
+        isSuccess: state?.status === 'success',
+      };
+    },
+  };
 }`;
 
 const statusQuoQueryKeyShapeExample = `import type { TrackedQueryKey } from '@veams/status-quo-query';
@@ -1615,7 +1631,6 @@ const statusQuoFrameworkReactImports = `import {
 } from '@veams/status-quo/react';`;
 
 const statusQuoQueryApiImports = `import {
-  createQueryRegistry,
   setupQueryManager,
   setupMutation,
   setupQuery,
@@ -5091,6 +5106,58 @@ export const docsPackages: DocsPackage[] = [
           {
             blocks: [
               {
+                callout:
+                  'Do not memoize `QueryService` handles in a package-level registry.',
+                bullets: [
+                  'Return fresh query handles from methods that expose `refetch()`, `subscribe(...)`, or `invalidate()`.',
+                  'Read cache state directly from `QueryManager` in snapshot-only methods through `getQueryData(...)` and `getQueryState(...)`.',
+                  'Keep a stable query handle only when one service instance intentionally owns one long-lived subscription source.',
+                ],
+                id: 'service-writing-purpose',
+                paragraphs: [
+                  'TanStack already deduplicates cached queries by `queryKey`.',
+                  'A `QueryService` is a handle over that cached state, closer to a TanStack `QueryObserver` than to the cache entry itself.',
+                ],
+                title: 'Treat query services as handles',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: statusQuoQueryServiceGuideExample,
+                    label: 'Use fresh handles and direct cache reads',
+                    language: 'ts',
+                  },
+                ],
+                id: 'service-writing-example',
+                paragraphs: [
+                  'In this example, `getQueryManager()` is your application-level accessor for the shared `QueryManager`.',
+                ],
+                title: 'Write singleton-friendly services',
+              },
+              {
+                bullets: [
+                  'Singleton services should own query definitions, not cached `QueryService` instances.',
+                  'Parameterized methods work naturally when each call builds a fresh handle from the final query key.',
+                  'Snapshot-only methods should avoid allocating a fresh observer wrapper just to read status and data.',
+                  'This keeps service state small and avoids rebuilding a global query-handle registry by params.',
+                ],
+                id: 'service-writing-guidelines',
+                paragraphs: [
+                  'Use service-level handle caching only when the service API intentionally exposes one stable subscribable source.',
+                ],
+                title: 'Operational rules',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'service-writing',
+            intro:
+              'Write services around query definitions and cache reads instead of a registry of query handles.',
+            summary: 'Fresh handles for live work. Direct cache reads for snapshots.',
+            title: 'How to Write a Service',
+          },
+          {
+            blocks: [
+              {
                 bullets: [
                   'Use the **Handle** when you are acting on one specific data source (e.g., refetching a single profile).',
                   'Use the **Manager** for cross-cutting concerns (e.g., invalidating all user-related data).',
@@ -5272,59 +5339,6 @@ export const docsPackages: DocsPackage[] = [
           {
             blocks: [
               {
-                callout:
-                  'A query registry memoizes `QueryService` handles by query key. TanStack Query still owns the underlying data cache.',
-                bullets: [
-                  'Use a registry when a long-lived service should return the same `QueryService` handle for equivalent params.',
-                  'Create the registry once per service lifetime, then call `resolve(params, create)` inside the service methods.',
-                  'Keep the manager outside the registry. The registry owns key derivation and handle reuse, not query construction.',
-                ],
-                id: 'query-registry-purpose',
-                paragraphs: [
-                  'Without a registry, repeated `manager.createQuery(...)` calls create fresh service handles even when the query key is equivalent.',
-                  'The registry closes that gap by memoizing the handle behind a stable query-key hash.',
-                ],
-                title: 'Memoize the service handle, not the data cache',
-              },
-              {
-                codeExamples: [
-                  {
-                    code: statusQuoQueryRegistryExample,
-                    label: 'Reuse one query handle per parameter set',
-                    language: 'ts',
-                  },
-                ],
-                id: 'query-registry-example',
-                paragraphs: [
-                  'This keeps the service API simple: call `resolve(...)`, get the existing handle when present, or create it once when missing.',
-                ],
-                title: 'Use the registry inside a long-lived service',
-              },
-              {
-                bullets: [
-                  '`createQueryRegistry(name, createKey)` defines one registry around one key factory.',
-                  '`resolve(params, create)` returns the existing handle for the generated key or creates it exactly once.',
-                  '`getKey(params)` exposes the generated query key for inspection or composition.',
-                  '`clear()` is mainly useful for tests or explicit service teardown.',
-                  'Hashing follows TanStack Query key semantics, so equivalent object keys resolve to the same handle even when property order differs.',
-                ],
-                id: 'query-registry-guidelines',
-                paragraphs: [
-                  'Keep the registry at the service boundary and treat it as handle memoization, not as a replacement for TanStack cache behavior.',
-                ],
-                title: 'Operational rules',
-              },
-            ],
-            eyebrow: 'Guides',
-            id: 'query-registry',
-            intro:
-              'Use a query registry when service methods should reuse the same query handle for equivalent params.',
-            summary: 'Memoize query handles by key.',
-            title: 'Query Registry',
-          },
-          {
-            blocks: [
-              {
                 bullets: [
                   'Use `dependsOn` when one query should derive its own key from other query services.',
                   'The derivation callback can change only `queryKey` and `enabled`.',
@@ -5425,18 +5439,6 @@ export const docsPackages: DocsPackage[] = [
                   'Use the root package when you want the full surface from one import.',
                 ],
                 title: 'Entry points',
-              },
-              {
-                bullets: [
-                  '`createQueryRegistry(name, createKey)` creates a registry that memoizes query handles by the generated query key.',
-                  'Returns a `QueryRegistry` with `name`, `getKey(params)`, `resolve(params, create)`, and `clear()`.',
-                  'Use it when one long-lived service should keep query-service identity stable across repeated calls with equivalent params.',
-                ],
-                id: 'create-query-registry',
-                paragraphs: [
-                  'This helper memoizes `QueryService` handles, not TanStack query data.',
-                ],
-                title: 'createQueryRegistry',
               },
               {
                 bullets: [
@@ -5600,7 +5602,7 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   '`QueryManager` groups the broad management API around one `QueryClient`.',
                   'Factory methods are `createQuery(queryKey, queryFn, options?)`, `createMutation(mutationFn, options?)`, `createQueryAndMutation(dependencyKeys)`, `createUntrackedQuery(queryKey, queryFn, options?)`, and `createUntrackedMutation(mutationFn, options?)`.',
-                  'Management methods are `cancelQueries(filters?, options?)`, `fetchQuery(options)`, `getQueryData(queryKey)`, `invalidateQueries(filters?, options?)`, `refetchQueries(filters?, options?)`, `removeQueries(filters?)`, `resetQueries(filters?, options?)`, `setQueryData(queryKey, updater)`, and `unsafe_getClient()`.',
+                  'Management methods are `cancelQueries(filters?, options?)`, `fetchQuery(options)`, `getQueryData(queryKey)`, `getQueryState(queryKey)`, `invalidateQueries(filters?, options?)`, `refetchQueries(filters?, options?)`, `removeQueries(filters?)`, `resetQueries(filters?, options?)`, `setQueryData(queryKey, updater)`, and `unsafe_getClient()`.',
                 ],
                 id: 'query-manager',
                 paragraphs: [
@@ -5660,7 +5662,7 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   '`setupQueryManager(queryClient)` binds one TanStack `QueryClient` to the full facade.',
                   'The only parameter is the `queryClient` instance that should back both factories and manager operations.',
-                  'Returns a `QueryManager` with both factories and cross-query management methods on one object.',
+                  'Returns a `QueryManager` with both factories plus management methods like `getQueryData(...)`, `getQueryState(...)`, and `invalidateQueries(...)` on one object.',
                 ],
                 id: 'setup-manager',
                 paragraphs: [

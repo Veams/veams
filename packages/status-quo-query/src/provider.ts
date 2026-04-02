@@ -70,6 +70,8 @@ export interface QueryManager {
   fetchQuery: QueryClient['fetchQuery'];
   // Synchronously retrieves a snapshot of the current query data.
   getQueryData: QueryClient['getQueryData'];
+  // Synchronously retrieves the raw TanStack query state for one query key.
+  getQueryState: QueryClient['getQueryState'];
   // Marks queries as invalid to trigger a refetch if they are active.
   invalidateQueries: QueryClient['invalidateQueries'];
   // Forces a refetch of queries matching the specified filters.
@@ -155,6 +157,8 @@ export function setupQueryManager(queryClient: QueryClient): QueryManager {
     fetchQuery: queryClient.fetchQuery.bind(queryClient),
     // Proxy for retrieving query data with this client context.
     getQueryData: queryClient.getQueryData.bind(queryClient),
+    // Proxy for retrieving raw query state with this client context.
+    getQueryState: queryClient.getQueryState.bind(queryClient),
     // Proxy for invalidating queries with this client context.
     invalidateQueries: queryClient.invalidateQueries.bind(queryClient),
     // Proxy for refetching queries with this client context.

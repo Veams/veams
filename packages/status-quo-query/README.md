@@ -650,6 +650,7 @@ Returns `QueryManager` with:
 - `cancelQueries(...)`
 - `fetchQuery(...)`
 - `getQueryData(...)`
+- `getQueryState(...)`
 - `invalidateQueries(...)`
 - `refetchQueries(...)`
 - `removeQueries(...)`
@@ -658,6 +659,80 @@ Returns `QueryManager` with:
 - `unsafe_getClient()`
 
 All manager methods forward directly to the corresponding `QueryClient` methods. `fetchQuery(...)` covers the common one-off read path without dropping to the raw client, while `unsafe_getClient()` remains the explicit escape hatch for unsupported TanStack APIs.
+
+### How to write a service
+
+Do not memoize `QueryService` handles in a package-level registry.
+
+TanStack already deduplicates cached queries by `queryKey`. A `QueryService` is a handle over that cached state, closer to a TanStack `QueryObserver` than to the cached query entry itself. Creating a fresh handle per service method call is fine when the caller wants a live query handle.
+
+Use this split in service code:
+
+- return fresh query handles from methods that expose `refetch()`, `subscribe(...)`, or `invalidate()`
+- read cache state directly from `QueryManager` in snapshot-only methods
+- keep stable query handles only when one service instance intentionally owns one long-lived subscription source
+
+Example:
+
+```ts
+import type { QueryService, QueryServiceSnapshot } from '@veams/status-quo-query';
+
+type Company = {
+  id: string;
+  name: string;
+};
+
+// Shared key factories keep the live handle path and snapshot path aligned.
+const companiesQueryKey = ['companies'] as const;
+const companyByIdQueryKey = (companyId: string) => ['company', companyId] as const;
+
+export interface CompanyService {
+  getCompanies: () => QueryService<Company[], Error>;
+  getCompanyById: (companyId: string) => QueryService<Company, Error>;
+  getCompanyByIdSnapshot: (companyId: string) => QueryServiceSnapshot<Company, Error>;
+}
+
+export function createCompanyService(): CompanyService {
+  const manager = getQueryManager();
+
+  return {
+    // Return a fresh query handle when callers need commands or subscriptions.
+    getCompanies() {
+      return manager.createUntrackedQuery(companiesQueryKey, fetchCompanies, {
+        staleTime: companyStaleTime,
+      });
+    },
+    // Parameterized query handles are cheap and map directly to the final query key.
+    getCompanyById(companyId) {
+      const queryKey = companyByIdQueryKey(companyId);
+
+      return manager.createUntrackedQuery(queryKey, () => fetchCompanyById(companyId), {
+        staleTime: companyStaleTime,
+      });
+    },
+    // Snapshot-only reads should use the manager cache APIs instead of building another handle.
+    getCompanyByIdSnapshot(companyId) {
+      const queryKey = companyByIdQueryKey(companyId);
+      const state = manager.getQueryState(queryKey);
+
+      return {
+        data: manager.getQueryData(queryKey),
+        error: (state?.error as Error | null | undefined) ?? null,
+        fetchStatus: state?.fetchStatus ?? 'idle',
+        status: state?.status ?? 'pending',
+        isError: state?.status === 'error',
+        isFetching: state?.fetchStatus === 'fetching',
+        isPending: state?.status === 'pending',
+        isSuccess: state?.status === 'success',
+      };
+    },
+  };
+}
+```
+
+In this example, `getQueryManager()` is your application-level accessor for the shared `QueryManager`.
+
+This keeps singleton services stateless with respect to query handles, supports parameterized service methods naturally, and avoids rebuilding a global query-handle registry.
 
 ### Tracked Queries and Mutations
 
