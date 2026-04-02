@@ -474,10 +474,6 @@ function bindQueryDependencies<
 
 function createDependencyController<
   TSources extends readonly unknown[] = [],
-  TQueryFnData = unknown,
-  TError = Error,
-  TData = TQueryFnData,
-  TQueryData = TQueryFnData,
   TQueryKey extends QueryKey = QueryKey,
 >(
   baseQueryKey: TQueryKey,

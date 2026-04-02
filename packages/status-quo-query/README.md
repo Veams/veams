@@ -8,6 +8,25 @@ TanStack Query service helpers with a small subscribable surface that fits natur
 npm install @veams/status-quo-query @tanstack/query-core
 ```
 
+React bindings are available through an optional peer dependency:
+
+```bash
+npm install react
+```
+
+## Mental Model
+
+Status Quo Query deliberately keeps the public surface small:
+
+- `QueryService<TData, TError>` is the read handle for one query.
+- `MutationService<TData, TError, TVariables>` is the write handle for one mutation.
+- snapshots are passive state objects returned from `getSnapshot()` and `subscribe(...)`.
+- commands stay on the handle: `refetch()`, `invalidate()`, `mutate()`, `reset()`.
+- `QueryManager` is the broader coordination layer for cross-query work.
+- `@veams/status-quo-query/react` is optional and adds one React subscription hook over the same handle shape.
+
+That keeps the package usable in service code, state handlers, and React components without changing the core query or mutation API.
+
 ## Package Exports
 
 Root exports:
@@ -49,6 +68,7 @@ Subpath exports:
 - `@veams/status-quo-query/provider`
 - `@veams/status-quo-query/query`
 - `@veams/status-quo-query/mutation`
+- `@veams/status-quo-query/react`
 
 ## Quickstart
 
@@ -108,6 +128,86 @@ const userQuery = manager.createUntrackedQuery(['user', 42], () => fetchUser(42)
 await userQuery.refetch();
 await userQuery.invalidate({ refetchType: 'none' });
 ```
+
+## React Bindings
+
+The React entrypoint exposes `useQuerySubscription(...)` and keeps `react` optional unless you
+import `@veams/status-quo-query/react`.
+
+```tsx
+import { useQuerySubscription } from '@veams/status-quo-query/react';
+import type { QueryService } from '@veams/status-quo-query';
+
+function ProductName({ query }: { query: QueryService<{ name: string }, Error> }) {
+  const snapshot = useQuerySubscription(query);
+
+  return <span>{snapshot.data?.name ?? 'loading'}</span>;
+}
+```
+
+Use the hook when a component should subscribe directly to a query service and render from its latest snapshot. Keep mapping at the component level:
+
+- read `data`, `status`, `fetchStatus`, and flags like `isPending` from the snapshot
+- call `query.refetch()` or `query.invalidate()` on the handle itself
+- derive view-specific values in the component instead of adding selector logic to the hook
+
+## Status Quo Integration
+
+The same query handle can also feed a `status-quo` handler through `bindSubscribable(...)`.
+
+```ts
+import { NativeStateHandler } from '@veams/status-quo';
+import {
+  toQueryMetaState,
+  type QueryMetaState,
+  type QueryService,
+} from '@veams/status-quo-query';
+
+type Product = {
+  id: string;
+  name: string;
+};
+
+type ProductCardState = {
+  product: Product | undefined;
+  query: QueryMetaState;
+};
+
+type ProductCardActions = {
+  refresh: () => Promise<void>;
+};
+
+export class ProductCardHandler extends NativeStateHandler<ProductCardState, ProductCardActions> {
+  constructor(private readonly productQuery: QueryService<Product, Error>) {
+    super({
+      initialState: {
+        product: productQuery.getSnapshot().data,
+        query: toQueryMetaState(productQuery.getSnapshot()),
+      },
+    });
+
+    this.bindSubscribable(productQuery, (snapshot) => {
+      this.setState(
+        {
+          product: snapshot.data,
+          query: toQueryMetaState(snapshot),
+        },
+        'query:update'
+      );
+    });
+  }
+
+  getActions(): ProductCardActions {
+    return {
+      refresh: async () => {
+        await this.productQuery.refetch();
+      },
+    };
+  }
+}
+```
+
+Use that approach when query state is only one input into a broader UI state model and the handler should remain the view-facing boundary.
 
 ## Why Tracked Invalidation
 

@@ -1301,6 +1301,93 @@ const companyProfileQuery = manager.createQuery(
 
 await companyProfileQuery.refetch();`;
 
+const statusQuoQueryReactSubscriptionExample = `import { QueryClient } from '@tanstack/query-core';
+import { setupQueryManager } from '@veams/status-quo-query';
+import { useQuerySubscription } from '@veams/status-quo-query/react';
+
+const queryClient = new QueryClient();
+const manager = setupQueryManager(queryClient);
+
+const companyQuery = manager.createUntrackedQuery(
+  ['company', 'company-7'] as const,
+  async () => ({ id: 'company-7', name: 'North Hub' }),
+  { enabled: false }
+);
+
+function CompanyHeader() {
+  const snapshot = useQuerySubscription(companyQuery);
+
+  if (snapshot.isPending) {
+    return <p>Loading company...</p>;
+  }
+
+  if (snapshot.isError) {
+    return <p>Could not load company.</p>;
+  }
+
+  return (
+    <header>
+      <h2>{snapshot.data?.name}</h2>
+      <button onClick={() => void companyQuery.refetch()} type="button">
+        Refresh
+      </button>
+    </header>
+  );
+}`;
+
+const statusQuoQueryStatusQuoBridgeExample = `import { NativeStateHandler } from '@veams/status-quo';
+import {
+  toQueryMetaState,
+  type QueryMetaState,
+  type QueryService,
+} from '@veams/status-quo-query';
+
+type Company = {
+  id: string;
+  name: string;
+};
+
+type CompanyCardState = {
+  company: Company | undefined;
+  query: QueryMetaState;
+};
+
+type CompanyCardActions = {
+  refresh: () => Promise<void>;
+};
+
+export class CompanyCardHandler extends NativeStateHandler<
+  CompanyCardState,
+  CompanyCardActions
+> {
+  constructor(private readonly companyQuery: QueryService<Company, Error>) {
+    super({
+      initialState: {
+        company: companyQuery.getSnapshot().data,
+        query: toQueryMetaState(companyQuery.getSnapshot()),
+      },
+    });
+
+    this.bindSubscribable(companyQuery, (snapshot) => {
+      this.setState(
+        {
+          company: snapshot.data,
+          query: toQueryMetaState(snapshot),
+        },
+        'query:update'
+      );
+    });
+  }
+
+  getActions(): CompanyCardActions {
+    return {
+      refresh: async () => {
+        await this.companyQuery.refetch();
+      },
+    };
+  }
+}`;
+
 const statusQuoQueryTrackedPairExample = `import { QueryClient } from '@tanstack/query-core';
 import { setupQueryManager } from '@veams/status-quo-query';
 
@@ -4894,16 +4981,22 @@ export const docsPackages: DocsPackage[] = [
                     label: 'Framework-agnostic service layer',
                     language: 'ts',
                   },
+                  {
+                    code: statusQuoQueryReactSubscriptionExample,
+                    label: 'Optional React subscription layer',
+                    language: 'tsx',
+                  },
                 ],
                 bullets: [
                   'Built on `@tanstack/query-core`, not on framework hooks.',
-                  'No component bindings in this package; it exposes subscribable handles and manager commands.',
-                  'React can be used around it, but the query/mutation API stays framework-neutral.',
+                  'The root package stays framework-neutral and exposes subscribable handles plus manager commands.',
+                  'Optional React bindings live in `@veams/status-quo-query/react` and expose `useQuerySubscription(...)`.',
+                  'The query and mutation API stays the same whether you consume it from services, handlers, or React components.',
                 ],
                 id: 'framework-support',
                 paragraphs: [
-                  'This package is not tied to React.',
-                  'Use it in the service layer and let any UI consume snapshots and call commands.',
+                  'The core package is not tied to React.',
+                  'Use the root entry point in services and handlers, then add the React subpath only where components need direct snapshot subscription.',
                 ],
                 title: 'Framework Support',
               },
@@ -4936,6 +5029,7 @@ export const docsPackages: DocsPackage[] = [
                   'Bring your own `QueryClient`.',
                   'Use `setupQueryManager(queryClient)` when you want the combined query manager.',
                   'Use `setupQuery` or `setupMutation` directly when you want a narrower entry point.',
+                  'Install `react` only when you also import `@veams/status-quo-query/react`.',
                 ],
                 id: 'entry-points',
                 paragraphs: [
@@ -5028,6 +5122,49 @@ export const docsPackages: DocsPackage[] = [
               'Use the smaller owner first, then move to the manager when scope gets broader.',
             summary: 'Handle for local actions. Manager for broad actions.',
             title: 'Global vs. Specific Control',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: statusQuoQueryReactSubscriptionExample,
+                    label: 'Subscribe directly inside React',
+                    language: 'tsx',
+                  },
+                  {
+                    code: statusQuoQueryStatusQuoBridgeExample,
+                    label: 'Bridge the same query into a Status Quo handler',
+                    language: 'ts',
+                  },
+                ],
+                id: 'react-and-handler-choices',
+                paragraphs: [
+                  'Use the React hook when a component should subscribe directly to a query service and render from its latest snapshot.',
+                  'Use a `status-quo` handler when query state is only one part of a broader view model and the handler should stay the UI boundary.',
+                ],
+                title: 'Choose the integration boundary deliberately',
+              },
+              {
+                bullets: [
+                  '`useQuerySubscription(query)` subscribes a component to the passive `QueryServiceSnapshot` of one query handle.',
+                  '`bindSubscribable(query, ...)` is the better seam when the query should feed a `status-quo` handler or another subscribable composition layer.',
+                  'Keep commands on the handle in both cases: call `refetch()` or `invalidate()` on the query service, not on the snapshot.',
+                  'Map the snapshot at the outer layer that actually owns presentation concerns: component or handler.',
+                ],
+                id: 'react-and-handler-rules',
+                paragraphs: [
+                  'The handle stays the same. Only the consuming boundary changes.',
+                ],
+                title: 'Hook for components, handler for broader UI state',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'react-and-status-quo',
+            intro:
+              'Use the React subpath for direct component reads, or bridge the same query service into a `status-quo` handler when the view model is broader.',
+            summary: 'Choose the right integration boundary.',
+            title: 'React and Status Quo Integration',
           },
           {
             blocks: [
@@ -5482,6 +5619,18 @@ export const docsPackages: DocsPackage[] = [
                   'Use `QueryServiceSnapshot` as the read model for query state.',
                 ],
                 title: 'QueryServiceSnapshot',
+              },
+              {
+                bullets: [
+                  '`useQuerySubscription(queryService)` lives in `@veams/status-quo-query/react`.',
+                  'It subscribes React directly to one `QueryService` and returns the latest `QueryServiceSnapshot`.',
+                  'Use it when a component should observe query state directly without introducing another handler boundary.',
+                ],
+                id: 'use-query-subscription',
+                paragraphs: [
+                  'This is the optional React integration layer over the same query handle shape.',
+                ],
+                title: 'useQuerySubscription',
               },
               {
                 bullets: [

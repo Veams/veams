@@ -6,8 +6,8 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 const packageRoot = fileURLToPath(new URL('.', import.meta.url));
-const sourceFiles = ['src/**/*.ts'];
-const testFiles = ['src/**/*.{spec,test}.ts', 'src/**/__tests__/**/*.ts'];
+const sourceFiles = ['src/**/*.{ts,tsx}'];
+const testFiles = ['src/**/*.{spec,test}.{ts,tsx}', 'src/**/__tests__/**/*.{ts,tsx}'];
 
 export default defineConfig(
   {
@@ -20,9 +20,13 @@ export default defineConfig(
     files: sourceFiles,
     languageOptions: {
       globals: {
+        ...globals.browser,
         ...globals.node,
       },
       parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
         project: './tsconfig.eslint.json',
         tsconfigRootDir: packageRoot,
       },
@@ -45,6 +49,13 @@ export default defineConfig(
       globals: {
         ...globals.jest,
       },
+    },
+    rules: {
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/require-await': 'off',
     },
   }
 );

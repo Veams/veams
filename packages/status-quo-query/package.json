@@ -12,6 +12,13 @@
       },
       "require": "./dist/index.js"
     },
+    "./react": {
+      "import": {
+        "types": "./dist/react/index.d.ts",
+        "default": "./dist/react/index.js"
+      },
+      "require": "./dist/react/index.js"
+    },
     "./mutation": {
       "import": {
         "types": "./dist/mutation.d.ts",
@@ -50,12 +57,18 @@
     "check:types": "tsc --skipLibCheck --noEmit",
     "compile": "npm-run-all bundle:ts",
     "lint": "npm run lint:ts",
-    "lint:ts": "eslint --fix \"src/**/*.ts\"",
+    "lint:ts": "eslint --fix \"src/**/*.{ts,tsx}\"",
     "test": "cross-env NODE_ENV=test jest --config jest.config.cjs",
     "release": "npm run build && release-it"
   },
   "peerDependencies": {
-    "@tanstack/query-core": ">=5.0.0"
+    "@tanstack/query-core": ">=5.0.0",
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@swc/core": "1.15.11",
@@ -63,9 +76,14 @@
     "@tanstack/query-core": "5.91.2",
     "@types/jest": "30.0.0",
     "@types/node": "25.2.3",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.0.0",
     "cross-env": "10.1.0",
     "jest": "30.3.0",
+    "jest-environment-jsdom": "30.3.0",
     "npm-run-all": "4.1.5",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
     "release-it": "19.2.4",
     "tslib": "2.8.1",
     "typescript": "5.9.3"

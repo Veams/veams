@@ -4,8 +4,10 @@
     "declaration": true,
     "declarationDir": "dist",
     "esModuleInterop": true,
+    "jsx": "react",
     "lib": [
-      "es2022"
+      "es2022",
+      "dom"
     ],
     "module": "es2022",
     "moduleResolution": "bundler",
@@ -19,7 +21,8 @@
     ]
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "src/**/*.tsx"
   ],
   "exclude": [
     "coverage",

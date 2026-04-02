@@ -1,5 +1,5 @@
 module.exports = {
-  extensionsToTreatAsEsm: ['.ts'],
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
   transformIgnorePatterns: [],
   transform: {
     '^.+\\.(t|j)sx?$': '@swc/jest',
@@ -18,5 +18,5 @@ module.exports = {
   testMatch: ['**/__tests__/**/?(*.)+(spec|test).[jt]s?(x)'],
   reporters: ['default'],
   moduleFileExtensions: ['mjs', 'js', 'ts', 'jsx', 'tsx'],
-  testEnvironment: 'node',
+  testEnvironment: 'jsdom',
 };
