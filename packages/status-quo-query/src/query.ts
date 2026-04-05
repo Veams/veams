@@ -36,9 +36,9 @@ export type QueryFetchStatus = FetchStatus;
 export type QueryStatus = TanstackQueryStatus;
 
 /**
- * Represents a stable snapshot of the query service's state.
+ * Represents a stable snapshot of one query handle's state.
  */
-export interface QueryServiceSnapshot<TData, TError> {
+export interface QueryHandleSnapshot<TData, TError> {
   // The data retrieved from a successful query.
   data: TData | undefined;
   // The error object if the query failed.
@@ -58,6 +58,14 @@ export interface QueryServiceSnapshot<TData, TError> {
 }
 
 /**
+ * Represents the lightweight data/error read model for one query handle.
+ */
+export interface QueryHandleData<TData, TError> {
+  data: TData | undefined;
+  error: TError | null;
+}
+
+/**
  * Defines a subset of query state containing only the status and fetch status.
  */
 export interface QueryMetaState {
@@ -66,15 +74,15 @@ export interface QueryMetaState {
 }
 
 /**
- * Defines the public API for a query service.
+ * Defines the public API for a query handle.
  */
-export interface QueryService<TData, TError> {
+export interface QueryHandle<TData, TError> {
   // Returns the current state snapshot of the query.
-  getSnapshot: () => QueryServiceSnapshot<TData, TError>;
+  getSnapshot: () => QueryHandleSnapshot<TData, TError>;
   // Subscribes a listener to state changes; returns an unsubscribe function.
-  subscribe: (listener: (snapshot: QueryServiceSnapshot<TData, TError>) => void) => () => void;
+  subscribe: (listener: (snapshot: QueryHandleSnapshot<TData, TError>) => void) => () => void;
   // Manually triggers a refetch of this query.
-  refetch: (options?: RefetchOptions) => Promise<QueryServiceSnapshot<TData, TError>>;
+  refetch: (options?: RefetchOptions) => Promise<QueryHandleSnapshot<TData, TError>>;
   // Marks this specific query as invalid in the cache to trigger a refetch if active.
   invalidate: (options?: QueryInvalidateOptions) => Promise<void>;
   // Escape hatch: provides direct access to the underlying Tanstack Query observer result.
@@ -93,14 +101,14 @@ type QueryDependencyDerivedOptions<TQueryKey extends QueryKey = QueryKey> = {
   queryKey?: TQueryKey;
 };
 
-type QueryServiceRuntimeOptions<
+type QueryHandleRuntimeOptions<
   TQueryFnData = unknown,
   TError = Error,
   TData = TQueryFnData,
   TQueryData = TQueryFnData,
   TQueryKey extends QueryKey = QueryKey,
 > = Omit<
-  QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey>,
+  QueryHandleOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey>,
   'dependsOn'
 >;
 
@@ -108,9 +116,9 @@ export type QueryDependencyTuple<
   TSources extends readonly unknown[],
   TQueryKey extends QueryKey = QueryKey,
 > = readonly [
-  sources: { readonly [K in keyof TSources]: QueryService<TSources[K], Error> },
+  sources: { readonly [K in keyof TSources]: QueryHandle<TSources[K], Error> },
   deriveOptions: (
-    sourceSnapshots: { readonly [K in keyof TSources]: QueryServiceSnapshot<TSources[K], Error> }
+    sourceSnapshots: { readonly [K in keyof TSources]: QueryHandleSnapshot<TSources[K], Error> }
   ) => QueryDependencyDerivedOptions<TQueryKey>,
 ];
 
@@ -131,15 +139,15 @@ export interface CreateUntrackedQuery {
     // The asynchronous function that performs the data fetch.
     queryFn: QueryFunction<TQueryFnData, TQueryKey>,
     // Optional configuration for behavior like staleness, retry, and refetching.
-    options?: QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TSources>
-  ): QueryService<TData, TError>;
+    options?: QueryHandleOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TSources>
+  ): QueryHandle<TData, TError>;
 }
 
 /**
  * Function signature for the default query factory that derives dependencies from the final
  * query-key segment.
  *
- * The tracked query handle deliberately stays API-compatible with the normal query service.
+ * The tracked query handle deliberately stays API-compatible with the normal query handle.
  * The only extra behavior is invisible: dependency registration and on-demand re-registration.
  */
 export interface CreateQuery {
@@ -154,14 +162,14 @@ export interface CreateQuery {
   >(
     queryKey: TQueryKey,
     queryFn: QueryFunction<TQueryFnData, TQueryKey>,
-    options?: QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TSources>
-  ): QueryService<TData, TError>;
+    options?: QueryHandleOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TSources>
+  ): QueryHandle<TData, TError>;
 }
 
 /**
- * Configuration options for creating a query service, excluding function and key.
+ * Configuration options for creating a query handle, excluding function and key.
  */
-export type QueryServiceOptions<
+export type QueryHandleOptions<
   TQueryFnData = unknown,
   TError = Error,
   TData = TQueryFnData,
@@ -179,12 +187,24 @@ export type QueryServiceOptions<
  * Extracts and maps status and fetchStatus to our QueryMetaState interface.
  */
 export function toQueryMetaState<TData, TError>(
-  snapshot: Pick<QueryServiceSnapshot<TData, TError>, 'fetchStatus' | 'status'>
+  snapshot: Pick<QueryHandleSnapshot<TData, TError>, 'fetchStatus' | 'status'>
 ): QueryMetaState {
   // Return a simplified state object for UI or other services.
   return {
     fetchStatus: snapshot.fetchStatus,
     status: snapshot.status,
+  };
+}
+
+/**
+ * Extracts only data and error from a query snapshot.
+ */
+export function toQueryHandleData<TData, TError>(
+  snapshot: Pick<QueryHandleSnapshot<TData, TError>, 'data' | 'error'>
+): QueryHandleData<TData, TError> {
+  return {
+    data: snapshot.data,
+    error: snapshot.error,
   };
 }
 
@@ -200,7 +220,7 @@ export function isQueryLoading(query: QueryMetaState): boolean {
  * Prepares the query factory by binding it to a specific QueryClient instance.
  */
 export function setupQuery(queryClient: QueryClient): CreateUntrackedQuery {
-  // Returns the actual factory function for creating individual query services.
+  // Returns the actual factory function for creating individual query handles.
   return function createQuery<
     TSources extends readonly unknown[] = [],
     TQueryFnData = unknown,
@@ -211,16 +231,16 @@ export function setupQuery(queryClient: QueryClient): CreateUntrackedQuery {
   >(
     queryKey: TQueryKey,
     queryFn: QueryFunction<TQueryFnData, TQueryKey>,
-    options?: QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TSources>
-  ): QueryService<TData, TError> {
-    const { dependsOn, runtimeOptions } = splitQueryServiceOptions(options);
-    const service = createQueryService(queryClient, queryKey, queryFn, runtimeOptions);
+    options?: QueryHandleOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TSources>
+  ): QueryHandle<TData, TError> {
+    const { dependsOn, runtimeOptions } = splitQueryHandleOptions(options);
+    const handle = createQueryHandle(queryClient, queryKey, queryFn, runtimeOptions);
 
     if (!dependsOn) {
-      return service.service;
+      return handle.handle;
     }
 
-    return bindQueryDependencies(service, queryKey, dependsOn);
+    return bindQueryDependencies(handle, queryKey, dependsOn);
   };
 }
 
@@ -249,33 +269,33 @@ export function setupTrackedQuery(
   >(
     queryKey: TQueryKey,
     queryFn: QueryFunction<TQueryFnData, TQueryKey>,
-    options?: QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TSources>
-  ): QueryService<TData, TError> {
-    const { dependsOn, runtimeOptions } = splitQueryServiceOptions(options);
-    // Reuse the same core query service implementation as the untracked API.
-    const service = createQueryService(queryClient, queryKey, queryFn, runtimeOptions);
+    options?: QueryHandleOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TSources>
+  ): QueryHandle<TData, TError> {
+    const { dependsOn, runtimeOptions } = splitQueryHandleOptions(options);
+    // Reuse the same core query-handle implementation as the untracked API.
+    const handle = createQueryHandle(queryClient, queryKey, queryFn, runtimeOptions);
     // We only need re-registration on the transition from zero to one subscribers.
     let subscriberCount = 0;
 
     // Register the current query hash immediately so future tracked mutations can find it.
     trackingRegistry.register(
-      service.observer.getCurrentQuery().queryHash,
-      extractTrackedDependencies(service.getCurrentQueryKey())
+      handle.observer.getCurrentQuery().queryHash,
+      extractTrackedDependencies(handle.getCurrentQueryKey())
     );
 
     const applyTrackedDerivedState = (derivedOptions: QueryDependencyDerivedOptions<TQueryKey>) => {
-      const previousQueryHash = service.observer.getCurrentQuery().queryHash;
+      const previousQueryHash = handle.observer.getCurrentQuery().queryHash;
 
-      service.setDerivedState(derivedOptions);
+      handle.setDerivedState(derivedOptions);
 
-      const nextQueryHash = service.observer.getCurrentQuery().queryHash;
+      const nextQueryHash = handle.observer.getCurrentQuery().queryHash;
 
       if (nextQueryHash === previousQueryHash) {
         return;
       }
 
       trackingRegistry.unregister(previousQueryHash);
-      trackingRegistry.register(nextQueryHash, extractTrackedDependencies(service.getCurrentQueryKey()));
+      trackingRegistry.register(nextQueryHash, extractTrackedDependencies(handle.getCurrentQueryKey()));
     };
 
     const dependencyController = dependsOn
@@ -291,9 +311,9 @@ export function setupTrackedQuery(
       // the same mechanism TanStack uses internally when a query gets recreated after GC.
       const liveQuery = queryClient.getQueryCache().build(
         queryClient,
-        service.getCurrentObserverOptions()
+        handle.getCurrentObserverOptions()
       );
-      const liveDependencies = extractTrackedDependencies(service.getCurrentQueryKey());
+      const liveDependencies = extractTrackedDependencies(handle.getCurrentQueryKey());
 
       // Re-register only when TanStack has recreated the query and the registry has already
       // cleaned up the previous hash. This keeps the edge-case handling cheap in the common case.
@@ -303,12 +323,12 @@ export function setupTrackedQuery(
     };
 
     return {
-      ...service.service,
+      ...handle.handle,
       refetch: async (refetchOptions) => {
         await dependencyController?.evaluateForRefetch();
         // Refetch is one of the two explicit reactivation paths agreed on in the design.
         ensureRegistered();
-        return service.service.refetch(refetchOptions);
+        return handle.handle.refetch(refetchOptions);
       },
       subscribe: (listener) => {
         // The first active subscriber is the other reactivation path. Re-running registration
@@ -320,7 +340,7 @@ export function setupTrackedQuery(
 
         subscriberCount += 1;
 
-        const unsubscribe = service.service.subscribe(listener);
+        const unsubscribe = handle.handle.subscribe(listener);
 
         return () => {
           // Keep the counter bounded so accidental double-unsubscribe cannot push it negative.
@@ -338,10 +358,10 @@ export function setupTrackedQuery(
 /**
  * Internal helper to transform a raw Tanstack query result into our public snapshot format.
  */
-function toQueryServiceSnapshot<TData, TError>(
+function toQueryHandleSnapshot<TData, TError>(
   result: QueryObserverResult<TData, TError>
-): QueryServiceSnapshot<TData, TError> {
-  // Extract and return the relevant fields for the UI or other services.
+): QueryHandleSnapshot<TData, TError> {
+  // Extract and return the relevant fields for the UI or other handle consumers.
   return {
     data: result.data,
     error: result.error,
@@ -354,7 +374,7 @@ function toQueryServiceSnapshot<TData, TError>(
   };
 }
 
-function createQueryService<
+function createQueryHandle<
   TQueryFnData = unknown,
   TError = Error,
   TData = TQueryFnData,
@@ -364,12 +384,12 @@ function createQueryService<
   queryClient: QueryClient,
   queryKey: TQueryKey,
   queryFn: QueryFunction<TQueryFnData, TQueryKey>,
-  options?: QueryServiceRuntimeOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey>
+  options?: QueryHandleRuntimeOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey>
 ): {
   // Expose the observer internally so tracked queries can access the current query hash.
   observer: QueryObserver<TQueryFnData, TError, TData, TQueryData, TQueryKey>;
-  // Preserve the public query-service shape for all callers.
-  service: QueryService<TData, TError>;
+  // Preserve the public query-handle shape for all callers.
+  handle: QueryHandle<TData, TError>;
   getCurrentObserverOptions: () => QueryOptions<TQueryFnData, TError, TQueryData, TQueryKey> &
     QueryObserverOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey>;
   getCurrentQueryKey: () => TQueryKey;
@@ -401,14 +421,14 @@ function createQueryService<
     getCurrentObserverOptions,
     getCurrentQueryKey: () => resolvedQueryKey,
     setDerivedState,
-    service: {
-      getSnapshot: () => toQueryServiceSnapshot(observer.getCurrentResult()),
+    handle: {
+      getSnapshot: () => toQueryHandleSnapshot(observer.getCurrentResult()),
       subscribe: (listener) =>
         observer.subscribe((result) => {
-          listener(toQueryServiceSnapshot(result));
+          listener(toQueryHandleSnapshot(result));
         }),
       refetch: async (refetchOptions) =>
-        toQueryServiceSnapshot(await observer.refetch(refetchOptions)),
+        toQueryHandleSnapshot(await observer.refetch(refetchOptions)),
       invalidate: (invalidateOptions) =>
         queryClient.invalidateQueries(
           {
@@ -433,24 +453,24 @@ function bindQueryDependencies<
   TQueryData = TQueryFnData,
   TQueryKey extends QueryKey = QueryKey,
 >(
-  queryService: ReturnType<
-    typeof createQueryService<TQueryFnData, TError, TData, TQueryData, TQueryKey>
+  queryHandle: ReturnType<
+    typeof createQueryHandle<TQueryFnData, TError, TData, TQueryData, TQueryKey>
   >,
   queryKey: TQueryKey,
   dependsOn: QueryDependencyTuple<TSources, TQueryKey>
-): QueryService<TData, TError> {
+): QueryHandle<TData, TError> {
   const dependencyController = createDependencyController(
     queryKey,
-    queryService.setDerivedState,
+    queryHandle.setDerivedState,
     dependsOn
   );
   let subscriberCount = 0;
 
   return {
-    ...queryService.service,
+    ...queryHandle.handle,
     refetch: async (refetchOptions) => {
       await dependencyController.evaluateForRefetch();
-      return queryService.service.refetch(refetchOptions);
+      return queryHandle.handle.refetch(refetchOptions);
     },
     subscribe: (listener) => {
       if (subscriberCount === 0) {
@@ -459,7 +479,7 @@ function bindQueryDependencies<
 
       subscriberCount += 1;
 
-      const unsubscribe = queryService.service.subscribe(listener);
+      const unsubscribe = queryHandle.handle.subscribe(listener);
 
       return () => {
         subscriberCount = Math.max(0, subscriberCount - 1);
@@ -551,7 +571,7 @@ function createDependencyController<
   };
 }
 
-function splitQueryServiceOptions<
+function splitQueryHandleOptions<
   TQueryFnData = unknown,
   TError = Error,
   TData = TQueryFnData,
@@ -559,10 +579,10 @@ function splitQueryServiceOptions<
   TQueryKey extends QueryKey = QueryKey,
   TSources extends readonly unknown[] = [],
 >(
-  options?: QueryServiceOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TSources>
+  options?: QueryHandleOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TSources>
 ): {
   dependsOn?: QueryDependencyTuple<TSources, TQueryKey>;
-  runtimeOptions: QueryServiceRuntimeOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey> | undefined;
+  runtimeOptions: QueryHandleRuntimeOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey> | undefined;
 } {
   if (options === undefined) {
     return {
@@ -588,7 +608,7 @@ function toQueryOptions<
 >(
   queryKey: TQueryKey,
   queryFn: QueryFunction<TQueryFnData, TQueryKey>,
-  options?: QueryServiceRuntimeOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey>
+  options?: QueryHandleRuntimeOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey>
 ): QueryOptions<TQueryFnData, TError, TQueryData, TQueryKey> &
   QueryObserverOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey> {
   // Centralize option assembly so both normal queries and tracked queries build observers and

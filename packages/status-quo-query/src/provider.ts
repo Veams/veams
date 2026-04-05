@@ -56,9 +56,9 @@ export interface CreateQueryAndMutation {
 export interface QueryManager {
   // Factory for creating a dependency-tracked mutation service within the context of this provider.
   createMutation: CreateMutation;
-  // Factory for creating a dependency-tracked query service within the context of this provider.
+  // Factory for creating a dependency-tracked query handle within the context of this provider.
   createQuery: CreateQuery;
-  // Factory for creating an untracked query service within the context of this provider.
+  // Factory for creating an untracked query handle within the context of this provider.
   createUntrackedQuery: CreateUntrackedQuery;
   // Factory for creating an untracked mutation service within the context of this provider.
   createUntrackedMutation: CreateUntrackedMutation;

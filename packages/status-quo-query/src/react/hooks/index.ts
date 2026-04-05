@@ -1,1 +1,1 @@
-export { useQuerySubscription } from './use-query-subscription.js';
+export { useQueryHandle } from './use-query-handle.js';

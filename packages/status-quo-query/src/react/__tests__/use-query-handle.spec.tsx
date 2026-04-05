@@ -3,15 +3,15 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient } from '@tanstack/query-core';
 
 import { setupQuery } from '../../query.js';
-import { useQuerySubscription } from '../hooks/use-query-subscription.js';
+import { useQueryHandle } from '../hooks/use-query-handle.js';
 
-import type { QueryService, QueryServiceSnapshot } from '../../query.js';
+import type { QueryHandle, QueryHandleSnapshot } from '../../query.js';
 
 declare global {
   var IS_REACT_ACT_ENVIRONMENT: boolean;
 }
 
-describe('useQuerySubscription', () => {
+describe('useQueryHandle', () => {
   let container: HTMLDivElement;
 
   beforeAll(() => {
@@ -36,7 +36,7 @@ describe('useQuerySubscription', () => {
     const renderStates: Array<string | undefined> = [];
 
     const Consumer = () => {
-      const snapshot = useQuerySubscription(query);
+      const snapshot = useQueryHandle(query);
       renderStates.push(snapshot.data?.name);
 
       return <span>{snapshot.data?.name ?? 'pending'}</span>;
@@ -63,7 +63,7 @@ describe('useQuerySubscription', () => {
     });
   });
   it('cleans up the store subscription on unmount', async () => {
-    const snapshot: QueryServiceSnapshot<{ name: string }, Error> = {
+    const snapshot: QueryHandleSnapshot<{ name: string }, Error> = {
       data: { name: 'Ada' },
       error: null,
       fetchStatus: 'idle',
@@ -74,7 +74,7 @@ describe('useQuerySubscription', () => {
       isSuccess: true,
     };
     const unsubscribe = jest.fn();
-    const query: QueryService<{ name: string }, Error> = {
+    const query: QueryHandle<{ name: string }, Error> = {
       getSnapshot: () => snapshot,
       subscribe: jest.fn(() => unsubscribe),
       refetch: jest.fn(async () => snapshot),
@@ -85,7 +85,7 @@ describe('useQuerySubscription', () => {
     const root = createRoot(container);
 
     const Consumer = () => {
-      useQuerySubscription(query);
+      useQueryHandle(query);
       return <span>ready</span>;
     };
 

@@ -1,1 +1,1 @@
-export { useQuerySubscription } from './hooks/index.js';
+export { useQueryHandle } from './hooks/index.js';

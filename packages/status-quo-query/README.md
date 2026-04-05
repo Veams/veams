@@ -18,14 +18,14 @@ npm install react
 
 Status Quo Query deliberately keeps the public surface small:
 
-- `QueryService<TData, TError>` is the read handle for one query.
+- `QueryHandle<TData, TError>` is the read handle for one query.
 - `MutationService<TData, TError, TVariables>` is the write handle for one mutation.
 - snapshots are passive state objects returned from `getSnapshot()` and `subscribe(...)`.
 - commands stay on the handle: `refetch()`, `invalidate()`, `mutate()`, `reset()`.
 - `QueryManager` is the broader coordination layer for cross-query work.
 - `@veams/status-quo-query/react` is optional and adds one React subscription hook over the same handle shape.
 
-That keeps the package usable in service code, state handlers, and React components without changing the core query or mutation API.
+That keeps the package usable in service code, query handlers, state handlers, and React components without changing the core query or mutation API.
 
 ## Package Exports
 
@@ -35,6 +35,7 @@ Root exports:
 - `setupQuery`
 - `setupMutation`
 - `isQueryLoading`
+- `toQueryHandleData`
 - `toQueryMetaState`
 - `QueryFetchStatus`
 - `QueryStatus`
@@ -46,12 +47,13 @@ Root exports:
 - `CreateMutationWithDefaults`
 - `CreateUntrackedQuery`
 - `CreateUntrackedMutation`
-- `QueryService`
+- `QueryHandle`
+- `QueryHandleData`
 - `MutationService`
-- `QueryServiceSnapshot`
+- `QueryHandleSnapshot`
 - `MutationServiceSnapshot`
 - `QueryDependencyTuple`
-- `QueryServiceOptions`
+- `QueryHandleOptions`
 - `MutationServiceOptions`
 - `TrackedMutationServiceOptions`
 - `QueryInvalidateOptions`
@@ -131,21 +133,21 @@ await userQuery.invalidate({ refetchType: 'none' });
 
 ## React Bindings
 
-The React entrypoint exposes `useQuerySubscription(...)` and keeps `react` optional unless you
+The React entrypoint exposes `useQueryHandle(...)` and keeps `react` optional unless you
 import `@veams/status-quo-query/react`.
 
 ```tsx
-import { useQuerySubscription } from '@veams/status-quo-query/react';
-import type { QueryService } from '@veams/status-quo-query';
+import { useQueryHandle } from '@veams/status-quo-query/react';
+import type { QueryHandle } from '@veams/status-quo-query';
 
-function ProductName({ query }: { query: QueryService<{ name: string }, Error> }) {
-  const snapshot = useQuerySubscription(query);
+function ProductName({ query }: { query: QueryHandle<{ name: string }, Error> }) {
+  const snapshot = useQueryHandle(query);
 
   return <span>{snapshot.data?.name ?? 'loading'}</span>;
 }
 ```
 
-Use the hook when a component should subscribe directly to a query service and render from its latest snapshot. Keep mapping at the component level:
+Use the hook when a component should subscribe directly to a query handle and render from its latest snapshot. Keep mapping at the component level:
 
 - read `data`, `status`, `fetchStatus`, and flags like `isPending` from the snapshot
 - call `query.refetch()` or `query.invalidate()` on the handle itself
@@ -160,7 +162,7 @@ import { NativeStateHandler } from '@veams/status-quo';
 import {
   toQueryMetaState,
   type QueryMetaState,
-  type QueryService,
+  type QueryHandle,
 } from '@veams/status-quo-query';
 
 type Product = {
@@ -178,7 +180,7 @@ type ProductCardActions = {
 };
 
 export class ProductCardHandler extends NativeStateHandler<ProductCardState, ProductCardActions> {
-  constructor(private readonly productQuery: QueryService<Product, Error>) {
+  constructor(private readonly productQuery: QueryHandle<Product, Error>) {
     super({
       initialState: {
         product: productQuery.getSnapshot().data,
@@ -500,7 +502,7 @@ Use `dependsOn` when a query needs data from other queries before it can run.
 
 `dependsOn` accepts a `QueryDependencyTuple`:
 
-- an ordered list of source query services
+- an ordered list of source query handles
 - a `deriveOptions(...)` callback that returns only `queryKey` and/or `enabled`
 
 The watcher starts on the first `subscribe(...)` or `refetch()`, reads the current source snapshots immediately, and stops after the last unsubscribe. A downstream `refetch()` refetches all source services first, then refetches the derived query.
@@ -662,20 +664,24 @@ All manager methods forward directly to the corresponding `QueryClient` methods.
 
 ### How to write a service
 
-Do not memoize `QueryService` handles in a package-level registry.
+Do not memoize `QueryHandle` instances in a package-level registry.
 
-TanStack already deduplicates cached queries by `queryKey`. A `QueryService` is a handle over that cached state, closer to a TanStack `QueryObserver` than to the cached query entry itself. Creating a fresh handle per service method call is fine when the caller wants a live query handle.
+TanStack already deduplicates cached queries by `queryKey`. A `QueryHandle` is a handle over that cached state, closer to a TanStack `QueryObserver` than to the cached query entry itself. Creating a fresh handle per service method call is fine when the caller wants a live query handle.
 
-Use this split in service code:
+Use this split in a query handler:
 
 - return fresh query handles from methods that expose `refetch()`, `subscribe(...)`, or `invalidate()`
-- read cache state directly from `QueryManager` in snapshot-only methods
-- keep stable query handles only when one service instance intentionally owns one long-lived subscription source
+- read cache state directly from `QueryManager` in state-only methods
+- add smaller data-only methods when callers do not need fetch metadata
 
 Example:
 
 ```ts
-import type { QueryService, QueryServiceSnapshot } from '@veams/status-quo-query';
+import type {
+  QueryHandle,
+  QueryHandleData,
+  QueryHandleSnapshot,
+} from '@veams/status-quo-query';
 
 type Company = {
   id: string;
@@ -686,24 +692,25 @@ type Company = {
 const companiesQueryKey = ['companies'] as const;
 const companyByIdQueryKey = (companyId: string) => ['company', companyId] as const;
 
-export interface CompanyService {
-  getCompanies: () => QueryService<Company[], Error>;
-  getCompanyById: (companyId: string) => QueryService<Company, Error>;
-  getCompanyByIdSnapshot: (companyId: string) => QueryServiceSnapshot<Company, Error>;
+export interface CompanyQueryHandler {
+  getCompaniesQuery: () => QueryHandle<Company[], Error>;
+  getCompanyQueryById: (companyId: string) => QueryHandle<Company, Error>;
+  getCompanyStateById: (companyId: string) => QueryHandleSnapshot<Company, Error>;
+  getCompanyDataById: (companyId: string) => QueryHandleData<Company, Error>;
 }
 
-export function createCompanyService(): CompanyService {
+export function createCompanyQueryHandler(): CompanyQueryHandler {
   const manager = getQueryManager();
 
   return {
     // Return a fresh query handle when callers need commands or subscriptions.
-    getCompanies() {
+    getCompaniesQuery() {
       return manager.createUntrackedQuery(companiesQueryKey, fetchCompanies, {
         staleTime: companyStaleTime,
       });
     },
     // Parameterized query handles are cheap and map directly to the final query key.
-    getCompanyById(companyId) {
+    getCompanyQueryById(companyId) {
       const queryKey = companyByIdQueryKey(companyId);
 
       return manager.createUntrackedQuery(queryKey, () => fetchCompanyById(companyId), {
@@ -711,7 +718,7 @@ export function createCompanyService(): CompanyService {
       });
     },
     // Snapshot-only reads should use the manager cache APIs instead of building another handle.
-    getCompanyByIdSnapshot(companyId) {
+    getCompanyStateById(companyId) {
       const queryKey = companyByIdQueryKey(companyId);
       const state = manager.getQueryState(queryKey);
 
@@ -726,13 +733,23 @@ export function createCompanyService(): CompanyService {
         isSuccess: state?.status === 'success',
       };
     },
+    // Data-only reads can stay even smaller when the caller does not need fetch meta state.
+    getCompanyDataById(companyId) {
+      const queryKey = companyByIdQueryKey(companyId);
+      const state = manager.getQueryState(queryKey);
+
+      return {
+        data: manager.getQueryData(queryKey),
+        error: (state?.error as Error | null | undefined) ?? null,
+      };
+    },
   };
 }
 ```
 
 In this example, `getQueryManager()` is your application-level accessor for the shared `QueryManager`.
 
-This keeps singleton services stateless with respect to query handles, supports parameterized service methods naturally, and avoids rebuilding a global query-handle registry.
+This keeps the query handler focused on one feature area, supports parameterized query methods naturally, and offers both full state reads and smaller data-only reads without creating extra handle instances.
 
 ### Tracked Queries and Mutations
 
@@ -744,7 +761,7 @@ Tracked queries embed dependency metadata into the final query-key segment:
 
 Only `deps` participates in automatic invalidation tracking. `view` is optional and is treated as normal query-key data.
 
-`createQuery(queryKey, queryFn, options?)` returns the same `QueryService<TData, TError>` shape as `createUntrackedQuery(...)`, but it registers the query hash under every `deps` entry, re-registers on `refetch()` or the first `subscribe(...)` if TanStack has removed the cache entry in the meantime, and keeps the registry in sync when `dependsOn` derives a new tracked key at runtime.
+`createQuery(queryKey, queryFn, options?)` returns the same `QueryHandle<TData, TError>` shape as `createUntrackedQuery(...)`, but it registers the query hash under every `deps` entry, re-registers on `refetch()` or the first `subscribe(...)` if TanStack has removed the cache entry in the meantime, and keeps the registry in sync when `dependsOn` derives a new tracked key at runtime.
 
 `createMutation(mutationFn, options?)` returns the same `MutationService<TData, TError, TVariables, TOnMutateResult>` shape as `createUntrackedMutation(...)`, but adds:
 
@@ -781,17 +798,17 @@ Reach for standalone `createMutation(...)` when:
 
 Creates a `createUntrackedQuery` factory bound to a `QueryClient`.
 
-`createUntrackedQuery(queryKey, queryFn, options?)` returns `QueryService<TData, TError>`.
+`createUntrackedQuery(queryKey, queryFn, options?)` returns `QueryHandle<TData, TError>`.
 
-`QueryServiceOptions` is based on TanStack `QueryObserverOptions`, without `queryKey` and `queryFn` because those are provided directly to `createUntrackedQuery`.
+`QueryHandleOptions` is based on TanStack `QueryObserverOptions`, without `queryKey` and `queryFn` because those are provided directly to `createUntrackedQuery`.
 
 It also adds:
 
 - `dependsOn?: QueryDependencyTuple<[...sources]>`
 
-`dependsOn` observes the listed source query services and lets the downstream query derive only `queryKey` and `enabled`. Source services are activated while the downstream query is active, and downstream `refetch()` refetches the sources first. The public `QueryService` API does not change when this option is used.
+`dependsOn` observes the listed source query handles and lets the downstream query derive only `queryKey` and `enabled`. Source handles are activated while the downstream query is active, and downstream `refetch()` refetches the sources first. The public `QueryHandle` API does not change when this option is used.
 
-`QueryService` methods:
+`QueryHandle` methods:
 
 - `getSnapshot()`
 - `subscribe(listener)`
@@ -799,7 +816,7 @@ It also adds:
 - `invalidate(options?)`
 - `unsafe_getResult()`
 
-`QueryServiceSnapshot<TData, TError>` fields:
+`QueryHandleSnapshot<TData, TError>` fields:
 
 - `data`
 - `error`
@@ -809,6 +826,11 @@ It also adds:
 - `isFetching`
 - `isPending`
 - `isSuccess`
+
+`QueryHandleData<TData, TError>` fields:
+
+- `data`
+- `error`
 
 `invalidate(options?)` invalidates the query by its exact key. `QueryInvalidateOptions` supports:
 
@@ -848,6 +870,11 @@ Creates a `createUntrackedMutation` factory bound to a `QueryClient`.
 `unsafe_getResult()` returns the raw TanStack `MutationObserverResult`.
 
 ### Query Helpers
+
+`toQueryHandleData(snapshot)` reduces a query snapshot to:
+
+- `data`
+- `error`
 
 `toQueryMetaState(snapshot)` reduces a query snapshot to:
 
