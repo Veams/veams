@@ -1373,7 +1373,7 @@ await companyProfileQuery.refetch();`;
 
 const statusQuoQueryReactSubscriptionExample = `import { QueryClient } from '@tanstack/query-core';
 import { setupQueryManager } from '@veams/status-quo-query';
-import { useQuerySubscription } from '@veams/status-quo-query/react';
+import { useQueryHandle } from '@veams/status-quo-query/react';
 
 const queryClient = new QueryClient();
 const manager = setupQueryManager(queryClient);
@@ -1385,7 +1385,7 @@ const companyQuery = manager.createUntrackedQuery(
 );
 
 function CompanyHeader() {
-  const snapshot = useQuerySubscription(companyQuery);
+  const snapshot = useQueryHandle(companyQuery);
 
   if (snapshot.isPending) {
     return <p>Loading company...</p>;
@@ -1409,7 +1409,7 @@ const statusQuoQueryStatusQuoBridgeExample = `import { NativeStateHandler } from
 import {
   toQueryMetaState,
   type QueryMetaState,
-  type QueryService,
+  type QueryHandle,
 } from '@veams/status-quo-query';
 
 type Company = {
@@ -1430,7 +1430,7 @@ export class CompanyCardHandler extends NativeStateHandler<
   CompanyCardState,
   CompanyCardActions
 > {
-  constructor(private readonly companyQuery: QueryService<Company, Error>) {
+  constructor(private readonly companyQuery: QueryHandle<Company, Error>) {
     super({
       initialState: {
         company: companyQuery.getSnapshot().data,
@@ -1528,7 +1528,11 @@ import { setupQueryManager } from '@veams/status-quo-query';
 const queryClient = new QueryClient();
 const manager = setupQueryManager(queryClient);`;
 
-const statusQuoQueryServiceGuideExample = `import type { QueryService, QueryServiceSnapshot } from '@veams/status-quo-query';
+const statusQuoQueryServiceGuideExample = `import type {
+  QueryHandle,
+  QueryHandleData,
+  QueryHandleSnapshot,
+} from '@veams/status-quo-query';
 
 type Company = {
   id: string;
@@ -1539,24 +1543,25 @@ type Company = {
 const companiesQueryKey = ['companies'] as const;
 const companyByIdQueryKey = (companyId: string) => ['company', companyId] as const;
 
-export interface CompanyService {
-  getCompanies: () => QueryService<Company[], Error>;
-  getCompanyById: (companyId: string) => QueryService<Company, Error>;
-  getCompanyByIdSnapshot: (companyId: string) => QueryServiceSnapshot<Company, Error>;
+export interface CompanyQueryHandler {
+  getCompaniesQuery: () => QueryHandle<Company[], Error>;
+  getCompanyQueryById: (companyId: string) => QueryHandle<Company, Error>;
+  getCompanyStateById: (companyId: string) => QueryHandleSnapshot<Company, Error>;
+  getCompanyDataById: (companyId: string) => QueryHandleData<Company, Error>;
 }
 
-export function createCompanyService(): CompanyService {
+export function createCompanyQueryHandler(): CompanyQueryHandler {
   const manager = getQueryManager();
 
   return {
     // Return a fresh query handle when callers need commands or subscriptions.
-    getCompanies() {
+    getCompaniesQuery() {
       return manager.createUntrackedQuery(companiesQueryKey, fetchCompanies, {
         staleTime: companyStaleTime,
       });
     },
     // Parameterized query handles are cheap and map directly to the final query key.
-    getCompanyById(companyId) {
+    getCompanyQueryById(companyId) {
       const queryKey = companyByIdQueryKey(companyId);
 
       return manager.createUntrackedQuery(queryKey, () => fetchCompanyById(companyId), {
@@ -1564,7 +1569,7 @@ export function createCompanyService(): CompanyService {
       });
     },
     // Snapshot-only reads should use the manager cache APIs instead of building another handle.
-    getCompanyByIdSnapshot(companyId) {
+    getCompanyStateById(companyId) {
       const queryKey = companyByIdQueryKey(companyId);
       const state = manager.getQueryState(queryKey);
 
@@ -1577,6 +1582,16 @@ export function createCompanyService(): CompanyService {
         isFetching: state?.fetchStatus === 'fetching',
         isPending: state?.status === 'pending',
         isSuccess: state?.status === 'success',
+      };
+    },
+    // Data-only reads can stay even smaller when the caller does not need fetch meta state.
+    getCompanyDataById(companyId) {
+      const queryKey = companyByIdQueryKey(companyId);
+      const state = manager.getQueryState(queryKey);
+
+      return {
+        data: manager.getQueryData(queryKey),
+        error: (state?.error as Error | null | undefined) ?? null,
       };
     },
   };
@@ -1706,6 +1721,7 @@ const statusQuoQueryApiImports = `import {
   setupQuery,
   isQueryLoading,
   QueryDependencyTuple,
+  toQueryHandleData,
   toQueryMetaState,
 } from '@veams/status-quo-query';`;
 
@@ -5119,16 +5135,16 @@ export const docsPackages: DocsPackage[] = [
                 featureCards: [
                   {
                     description:
-                      'The service layer (Query/Mutation) syncs state into the handler. The handler can trigger service commands like `refetch()`, and the view observes the resulting snapshot.',
-                    title: 'Service-Enhanced Flow',
+                      'A query handler owns query and mutation access. A state handler can subscribe to that query handler, derive UI state, and expose the resulting snapshot to the view.',
+                    title: 'QueryHandler => StateHandler => Snapshot',
                     visual: 'query-architecture',
                   },
                 ],
                 id: 'command-boundary',
                 paragraphs: [
-                  'The service layer owns fetching and cache work. The handler stays the UI state boundary.',
+                  'Keep query concerns in the query handler, keep UI orchestration in the state handler, and keep the view focused on snapshots.',
                 ],
-                title: 'Service & Handler Integration',
+                title: 'QueryHandlers, StateHandlers, and Snapshots',
               },
               {
                 featureCards: [
@@ -5149,8 +5165,8 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Getting Started',
             id: 'concepts',
             intro:
-              'Treat TanStack Query as the engine and use this package as the service layer.',
-            summary: 'Service layer over TanStack Query.',
+              'Treat TanStack Query as the engine, then move through query handlers, state handlers, and snapshots.',
+            summary: 'QueryHandlers => StateHandlers => Snapshot.',
             title: 'Concepts',
           },
           {
@@ -5171,7 +5187,7 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   'Built on `@tanstack/query-core`, not on framework hooks.',
                   'The root package stays framework-neutral and exposes subscribable handles plus manager commands.',
-                  'Optional React bindings live in `@veams/status-quo-query/react` and expose `useQuerySubscription(...)`.',
+                  'Optional React bindings live in `@veams/status-quo-query/react` and expose `useQueryHandle(...)`.',
                   'The query and mutation API stays the same whether you consume it from services, handlers, or React components.',
                 ],
                 id: 'framework-support',
@@ -5273,18 +5289,18 @@ export const docsPackages: DocsPackage[] = [
             blocks: [
               {
                 callout:
-                  'Do not memoize `QueryService` handles in a package-level registry.',
+                  'Do not memoize `QueryHandle` instances in a package-level registry.',
                 bullets: [
-                  'Return fresh query handles from methods that expose `refetch()`, `subscribe(...)`, or `invalidate()`.',
-                  'Read cache state directly from `QueryManager` in snapshot-only methods through `getQueryData(...)` and `getQueryState(...)`.',
-                  'Keep a stable query handle only when one service instance intentionally owns one long-lived subscription source.',
+                  'Expose fresh query handles from query-handler methods that return commands or subscriptions.',
+                  'Use `getQueryState(...)` for full state reads and `getQueryData(...)` when the caller only needs cached data.',
+                  'Keep one query handler focused on one feature area and let its methods define the query API for that feature.',
                 ],
                 id: 'service-writing-purpose',
                 paragraphs: [
                   'TanStack already deduplicates cached queries by `queryKey`.',
-                  'A `QueryService` is a handle over that cached state, closer to a TanStack `QueryObserver` than to the cache entry itself.',
+                  'A `QueryHandle` is a handle over that cached state, closer to a TanStack `QueryObserver` than to the cache entry itself.',
                 ],
-                title: 'Treat query services as handles',
+                title: 'Shape the query handler API',
               },
               {
                 codeExamples: [
@@ -5298,18 +5314,18 @@ export const docsPackages: DocsPackage[] = [
                 paragraphs: [
                   'In this example, `getQueryManager()` is your application-level accessor for the shared `QueryManager`.',
                 ],
-                title: 'Write singleton-friendly services',
+                title: 'Group query methods by feature',
               },
               {
                 bullets: [
-                  'Singleton services should own query definitions, not cached `QueryService` instances.',
-                  'Parameterized methods work naturally when each call builds a fresh handle from the final query key.',
-                  'Snapshot-only methods should avoid allocating a fresh observer wrapper just to read status and data.',
-                  'This keeps service state small and avoids rebuilding a global query-handle registry by params.',
+                  'Use `...Query()` suffixes for methods that return live query handles.',
+                  'Use `...State()` or `...Data()` suffixes for synchronous manager-backed reads.',
+                  'Parameterized methods work naturally when each call derives the final query key from its inputs.',
+                  'Keep the handler small and feature-specific instead of building one global registry of query handles.',
                 ],
                 id: 'service-writing-guidelines',
                 paragraphs: [
-                  'Use service-level handle caching only when the service API intentionally exposes one stable subscribable source.',
+                  'This keeps query behavior explicit at the method level: live handle, full state, or data-only read.',
                 ],
                 title: 'Operational rules',
               },
@@ -5317,9 +5333,9 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Guides',
             id: 'service-writing',
             intro:
-              'Write services around query definitions and cache reads instead of a registry of query handles.',
-            summary: 'Fresh handles for live work. Direct cache reads for snapshots.',
-            title: 'How to Write a Service',
+              'Build one query handler per feature area and let its methods expose fresh handles, full state reads, and data-only reads.',
+            summary: 'One query handler. Query, state, and data methods.',
+            title: 'How to Write a QueryHandler',
           },
           {
             blocks: [
@@ -5373,16 +5389,16 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'react-and-handler-choices',
                 paragraphs: [
-                  'Use the React hook when a component should subscribe directly to a query service and render from its latest snapshot.',
+                  'Use the React hook when a component should subscribe directly to a query handle and render from its latest snapshot.',
                   'Use a `status-quo` handler when query state is only one part of a broader view model and the handler should stay the UI boundary.',
                 ],
                 title: 'Choose the integration boundary deliberately',
               },
               {
                 bullets: [
-                  '`useQuerySubscription(query)` subscribes a component to the passive `QueryServiceSnapshot` of one query handle.',
+                  '`useQueryHandle(queryHandle)` subscribes a component to the passive `QueryHandleSnapshot` of one query handle.',
                   '`bindSubscribable(query, ...)` is the better seam when the query should feed a `status-quo` handler or another subscribable composition layer.',
-                  'Keep commands on the handle in both cases: call `refetch()` or `invalidate()` on the query service, not on the snapshot.',
+                  'Keep commands on the handle in both cases: call `refetch()` or `invalidate()` on the query handle, not on the snapshot.',
                   'Map the snapshot at the outer layer that actually owns presentation concerns: component or handler.',
                 ],
                 id: 'react-and-handler-rules',
@@ -5395,7 +5411,7 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Guides',
             id: 'react-and-status-quo',
             intro:
-              'Use the React subpath for direct component reads, or bridge the same query service into a `status-quo` handler when the view model is broader.',
+              'Use the React subpath for direct component reads, or bridge the same query handle into a `status-quo` handler when the view model is broader.',
             summary: 'Choose the right integration boundary.',
             title: 'React and Status Quo Integration',
           },
@@ -5506,9 +5522,9 @@ export const docsPackages: DocsPackage[] = [
             blocks: [
               {
                 bullets: [
-                  'Use `dependsOn` when one query should derive its own key from other query services.',
+                  'Use `dependsOn` when one query should derive its own key from other query handles.',
                   'The derivation callback can change only `queryKey` and `enabled`.',
-                  'The downstream handle stays the same `QueryService`; the reactivity is internal.',
+                  'The downstream handle stays the same `QueryHandle`; the reactivity is internal.',
                 ],
                 id: 'reactive-dependencies-shape',
                 paragraphs: [
@@ -5719,7 +5735,7 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   '`QueryDependencyTuple<[...sources]>` defines the ordered source services plus the `deriveOptions(...)` callback for `dependsOn`.',
-                  'The callback receives `QueryServiceSnapshot` values in the same order as the declared source services.',
+                  'The callback receives `QueryHandleSnapshot` values in the same order as the declared source services.',
                   'It may return only `queryKey` and `enabled` for the downstream query.',
                 ],
                 id: 'query-dependency-tuple',
@@ -5730,7 +5746,7 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  '`QueryServiceOptions` is TanStack `QueryObserverOptions` without `queryFn` and `queryKey`, because those are passed directly to the factory.',
+                  '`QueryHandleOptions` is TanStack `QueryObserverOptions` without `queryFn` and `queryKey`, because those are passed directly to the factory.',
                   'It also adds `dependsOn?` for declarative reactive query dependencies.',
                   'The runtime derivation path is intentionally narrow: `dependsOn` may change only `queryKey` and `enabled`, and downstream `refetch()` will refetch the declared source services first.',
                 ],
@@ -5738,7 +5754,7 @@ export const docsPackages: DocsPackage[] = [
                 paragraphs: [
                   'Keep long-lived query policy in the base options. Use `dependsOn` only for key derivation and gating.',
                 ],
-                title: 'QueryServiceOptions',
+                title: 'QueryHandleOptions',
               },
               {
                 bullets: [
@@ -5778,27 +5794,39 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  '`QueryServiceSnapshot` is the passive state shape returned by `getSnapshot()` and `subscribe(listener)` on a query handle.',
+                  '`QueryHandleData` is the lightweight data/error read model for one query.',
+                  'Fields include `data` and `error` only.',
+                  'Use it when callers need cached content but not fetch meta state such as `isPending` or `fetchStatus`.',
+                ],
+                id: 'query-data',
+                paragraphs: [
+                  'Use `QueryHandleData` as the compact read model for data-first access.',
+                ],
+                title: 'QueryHandleData',
+              },
+              {
+                bullets: [
+                  '`QueryHandleSnapshot` is the passive state shape returned by `getSnapshot()` and `subscribe(listener)` on a query handle.',
                   'Fields include `data`, `error`, `status`, `fetchStatus`, `isError`, `isFetching`, `isPending`, and `isSuccess`.',
                   'It is designed for reads and derived state only. Commands stay on the query handle.',
                 ],
                 id: 'query-snapshot',
                 paragraphs: [
-                  'Use `QueryServiceSnapshot` as the read model for query state.',
+                  'Use `QueryHandleSnapshot` as the read model for query state.',
                 ],
-                title: 'QueryServiceSnapshot',
+                title: 'QueryHandleSnapshot',
               },
               {
                 bullets: [
-                  '`useQuerySubscription(queryService)` lives in `@veams/status-quo-query/react`.',
-                  'It subscribes React directly to one `QueryService` and returns the latest `QueryServiceSnapshot`.',
+                  '`useQueryHandle(queryHandle)` lives in `@veams/status-quo-query/react`.',
+                  'It subscribes React directly to one `QueryHandle` and returns the latest `QueryHandleSnapshot`.',
                   'Use it when a component should observe query state directly without introducing another handler boundary.',
                 ],
-                id: 'use-query-subscription',
+                id: 'use-query-handle',
                 paragraphs: [
                   'This is the optional React integration layer over the same query handle shape.',
                 ],
-                title: 'useQuerySubscription',
+                title: 'useQueryHandle',
               },
               {
                 bullets: [
@@ -5838,7 +5866,19 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  '`toQueryMetaState(snapshot)` accepts any object with `status` and `fetchStatus`, typically a `QueryServiceSnapshot`.',
+                  '`toQueryHandleData(snapshot)` accepts any object with `data` and `error`, typically a `QueryHandleSnapshot`.',
+                  'Returns a smaller `QueryHandleData` object containing only those two fields.',
+                  'Use it when UI code or handlers need only the cached payload and error state.',
+                ],
+                id: 'to-query-handle-data',
+                paragraphs: [
+                  'Use this helper when consumers do not need query meta state.',
+                ],
+                title: 'toQueryHandleData',
+              },
+              {
+                bullets: [
+                  '`toQueryMetaState(snapshot)` accepts any object with `status` and `fetchStatus`, typically a `QueryHandleSnapshot`.',
                   'Returns a smaller `QueryMetaState` object containing only those two fields.',
                   'Use it to keep UI helpers and selectors focused on the minimal query state they actually need.',
                 ],
@@ -5978,7 +6018,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'reactive-dependency-example',
                 paragraphs: [
-                  'Two source query services resolve first. The downstream query derives its final key from them.',
+                  'Two source query handles resolve first. The downstream query derives its final key from them.',
                 ],
                 title: 'Reactive dependency example',
               },
@@ -5986,7 +6026,7 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Examples',
             id: 'example-reactive-dependencies',
             intro:
-              'Use `dependsOn` when a query should read upstream query services before it runs.',
+              'Use `dependsOn` when a query should read upstream query handles before it runs.',
             summary: 'A downstream query derived from upstream services.',
             title: 'Reactive dependency example',
           },

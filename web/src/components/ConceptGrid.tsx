@@ -648,7 +648,7 @@ function ConceptIllustration({ visual }: Pick<FeatureCard, 'visual'>) {
     case 'query-architecture':
       return (
         <svg aria-hidden="true" className="concept-illustration" viewBox="0 0 320 125">
-          {/* Service Layer */}
+          {/* Query Handler */}
           <rect
             fill="rgba(31, 139, 143, 0.15)"
             height="40"
@@ -656,61 +656,67 @@ function ConceptIllustration({ visual }: Pick<FeatureCard, 'visual'>) {
             stroke="var(--accent-teal)"
             strokeDasharray="4 2"
             strokeWidth="2"
-            width="70"
+            width="86"
             x="10"
             y="45"
           />
-          <text fill="var(--accent-teal)" fontFamily="var(--font-mono)" fontSize="8" x="15" y="68">
-            SERVICE
+          <text fill="var(--accent-teal)" fontFamily="var(--font-mono)" fontSize="8" x="15" y="63">
+            QUERY
+          </text>
+          <text fill="var(--accent-teal)" fontFamily="var(--font-mono)" fontSize="8" x="15" y="73">
+            HANDLER
           </text>
 
-          {/* Sync arrow from Service to Handler */}
+          {/* Sync arrow from QueryHandler to StateHandler */}
           <path
-            d="M80 65 H100"
+            d="M96 65 H112"
             fill="none"
             stroke="var(--visual-white)"
             strokeLinecap="round"
             strokeWidth="2"
           />
-          <path d="M100 65 L92 61 M100 65 L92 69" fill="none" stroke="var(--visual-white)" strokeWidth="2" />
+          <path d="M112 65 L104 61 M112 65 L104 69" fill="none" stroke="var(--visual-white)" strokeWidth="2" />
 
-          {/* Handler */}
+          {/* State Handler */}
           <rect
             fill="rgba(30, 37, 49, 0.96)"
             height="40"
             rx="6"
             stroke="var(--visual-blue)"
             strokeWidth="2"
-            width="70"
-            x="100"
+            width="86"
+            x="112"
             y="45"
           />
-          <text fill="var(--visual-blue)" fontFamily="var(--font-mono)" fontSize="8" x="105" y="68">
+          <text fill="var(--visual-blue)" fontFamily="var(--font-mono)" fontSize="8" x="117" y="63">
+            STATE
+          </text>
+          <text fill="var(--visual-blue)" fontFamily="var(--font-mono)" fontSize="8" x="117" y="73">
             HANDLER
           </text>
 
-          {/* Command arrow from Handler to Service */}
+          {/* Command arrow from StateHandler to QueryHandler */}
           <path
-            d="M100 55 H80"
+            d="M112 55 H96"
             fill="none"
             stroke="var(--visual-orange)"
             strokeLinecap="round"
             strokeWidth="1.5"
           />
-          <path d="M80 55 L88 51 M80 55 L88 59" fill="none" stroke="var(--visual-orange)" strokeWidth="1.5" />
-          <text fill="var(--visual-orange)" fontFamily="var(--font-mono)" fontSize="6" x="78" y="50" textAnchor="end">
-            refetch()
+          <path d="M96 55 L104 51 M96 55 L104 59" fill="none" stroke="var(--visual-orange)" strokeWidth="1.5" />
+          <text fill="var(--visual-orange)" fontFamily="var(--font-mono)" fontSize="6" x="94" y="50" textAnchor="end">
+            refetch / mutate
           </text>
 
           {/* Snapshot flow */}
           <path
-            d="M170 65 H190"
+            d="M198 65 H214"
             fill="none"
             stroke="var(--visual-white)"
             strokeLinecap="round"
             strokeWidth="2"
           />
-          <path d="M190 65 L182 61 M190 65 L182 69" fill="none" stroke="var(--visual-white)" strokeWidth="2" />
+          <path d="M214 65 L206 61 M214 65 L206 69" fill="none" stroke="var(--visual-white)" strokeWidth="2" />
 
           {/* Snapshot */}
           <rect
@@ -719,33 +725,33 @@ function ConceptIllustration({ visual }: Pick<FeatureCard, 'visual'>) {
             rx="6"
             stroke="var(--visual-slate)"
             strokeWidth="2"
-            width="70"
-            x="190"
+            width="76"
+            x="214"
             y="45"
           />
-          <text fill="var(--visual-slate)" fontFamily="var(--font-mono)" fontSize="8" x="195" y="68">
+          <text fill="var(--visual-slate)" fontFamily="var(--font-mono)" fontSize="8" x="220" y="68">
             SNAPSHOT
           </text>
 
           {/* View Layer */}
           <path
-            d="M225 45 V20 H135 V45"
+            d="M252 45 V20 H155 V45"
             fill="none"
             stroke="var(--visual-white)"
             strokeDasharray="3 3"
             strokeLinecap="round"
             strokeWidth="1"
           />
-          <path d="M135 45 L132 38 M135 45 L138 38" fill="none" stroke="var(--visual-white)" strokeWidth="1" />
+          <path d="M155 45 L152 38 M155 45 L158 38" fill="none" stroke="var(--visual-white)" strokeWidth="1" />
           <text
             fill="var(--visual-white)"
             fontFamily="var(--font-body)"
             fontSize="7"
             textAnchor="middle"
-            x="180"
+            x="203"
             y="12"
           >
-            VIEW (triggers Handler actions)
+            VIEW (reads snapshots)
           </text>
         </svg>
       );
