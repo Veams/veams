@@ -124,6 +124,16 @@ describe('Observable State Handler', () => {
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
+  it('should destroy named subscriptions as well', () => {
+    const spy = jest.fn();
+
+    stateHandler.namedSubscriptions.set('namedSubscription', { unsubscribe: spy });
+
+    stateHandler.destroy();
+
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
   it('should expose state item observable via getObservableItem', async () => {
     const observableValue = await lastValueFrom(stateHandler.getObservableItem('test').pipe(take(1)));
 

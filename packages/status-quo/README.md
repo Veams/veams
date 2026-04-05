@@ -651,14 +651,24 @@ Public methods:
 - `destroy(): void`
 - `getActions(): A` (abstract)
 
+Tracked subscription state:
+
+- `subscriptions: Array<{ unsubscribe: () => void }>`
+- `namedSubscriptions: Map<string, { unsubscribe: () => void }>`
+  - Use `this.namedSubscriptions` inside the handler when you need to inspect which named bindings are currently registered.
+
 Protected helpers:
 
 - `getStateValue(): S` (abstract)
 - `setStateValue(next: S): void` (abstract)
 - `initDevTools(options?: { enabled?: boolean; namespace?: string }): void`
+- `bindSubscribable<T>(subscriptionName: string, service: { subscribe: (listener: (value: T) => void) => () => void; getSnapshot?: () => T }, onChange: (value: T) => void, selector?: (value: T) => T, isEqual?: (current: T, next: T) => boolean): void`
+- `bindSubscribable<T, Sel>(subscriptionName: string, service: { subscribe: (listener: (value: T) => void) => () => void; getSnapshot?: () => T }, onChange: (value: Sel) => void, selector: (value: T) => Sel, isEqual?: (current: Sel, next: Sel) => boolean): void`
 - `bindSubscribable<T>(service: { subscribe: (listener: (value: T) => void) => () => void; getSnapshot?: () => T }, onChange: (value: T) => void, selector?: (value: T) => T, isEqual?: (current: T, next: T) => boolean): void`
 - `bindSubscribable<T, Sel>(service: { subscribe: (listener: (value: T) => void) => () => void; getSnapshot?: () => T }, onChange: (value: Sel) => void, selector: (value: T) => Sel, isEqual?: (current: Sel, next: Sel) => boolean): void`
-  - Registers the subscription on `this.subscriptions` and invokes `onChange` with the current snapshot when available.
+  - Named subscriptions are tracked on `this.namedSubscriptions`. Rebinding the same `subscriptionName` unsubscribes the previous binding before replacing it.
+  - Unnamed subscriptions are tracked on `this.subscriptions`.
+  - Both named and unnamed subscriptions invoke `onChange` with the current snapshot when available.
   - If `selector` is omitted, identity selection is used.
   - `onChange` is only called when selected value changes according to `isEqual` (default `Object.is`).
 

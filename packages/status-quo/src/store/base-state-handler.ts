@@ -23,6 +23,10 @@ type Subscribable<T> = {
   getSnapshot?: () => T;
 };
 
+type ManagedSubscription = {
+  unsubscribe: () => void;
+};
+
 /**
  * Configuration for Redux DevTools features enabled in this handler.
  */
@@ -50,7 +54,9 @@ export abstract class BaseStateHandler<S, A> implements StateSubscriptionHandler
   protected devTools: DevTools | null = null;
 
   // Keeps track of active subscriptions to allow for cleanup.
-  subscriptions: Array<{ unsubscribe: () => void }> = [];
+  subscriptions: ManagedSubscription[] = [];
+  // Tracks keyed subscriptions so handlers can replace them by name.
+  namedSubscriptions = new Map<string, ManagedSubscription>();
 
   /**
    * Initializes the handler with the given initial state.
@@ -125,8 +131,15 @@ export abstract class BaseStateHandler<S, A> implements StateSubscriptionHandler
    * Cleans up all active subscriptions when the handler is destroyed.
    */
   destroy(): void {
+    const subscriptions = [...this.subscriptions];
+    const namedSubscriptions = [...this.namedSubscriptions.values()];
+
+    this.subscriptions = [];
+    this.namedSubscriptions.clear();
+
     // Execute the unsubscribe function for each tracked subscription.
-    this.subscriptions.forEach((subscription) => subscription.unsubscribe());
+    subscriptions.forEach((subscription) => subscription.unsubscribe());
+    namedSubscriptions.forEach((subscription) => subscription.unsubscribe());
   }
 
   // Abstract methods to be implemented by concrete handlers for specific state engines (RxJS, Signals, etc.).
@@ -145,6 +158,18 @@ export abstract class BaseStateHandler<S, A> implements StateSubscriptionHandler
    * Useful for bridging different state systems.
    */
   protected bindSubscribable<T, Sel>(
+    subscriptionName: string,
+    service: Subscribable<T>,
+    onChange: (value: Sel) => void,
+    selector: Selector<T, Sel>,
+    isEqual?: EqualityFn<Sel>
+  ): void;
+  protected bindSubscribable<T>(
+    subscriptionName: string,
+    service: Subscribable<T>,
+    onChange: (value: T) => void
+  ): void;
+  protected bindSubscribable<T, Sel>(
     service: Subscribable<T>,
     onChange: (value: Sel) => void,
     selector: Selector<T, Sel>,
@@ -152,11 +177,27 @@ export abstract class BaseStateHandler<S, A> implements StateSubscriptionHandler
   ): void;
   protected bindSubscribable<T>(service: Subscribable<T>, onChange: (value: T) => void): void;
   protected bindSubscribable<T, Sel = T>(
-    service: Subscribable<T>,
-    onChange: (value: Sel) => void,
-    selector?: Selector<T, Sel>,
+    subscriptionNameOrService: string | Subscribable<T>,
+    serviceOrOnChange: Subscribable<T> | ((value: Sel) => void),
+    onChangeOrSelector?: ((value: Sel) => void) | Selector<T, Sel>,
+    selectorOrIsEqual?: Selector<T, Sel> | EqualityFn<Sel>,
     isEqual: EqualityFn<Sel> = Object.is
   ) {
+    const hasSubscriptionName = typeof subscriptionNameOrService === 'string';
+    const subscriptionName = hasSubscriptionName ? subscriptionNameOrService : null;
+    const service = (
+      hasSubscriptionName ? serviceOrOnChange : subscriptionNameOrService
+    ) as Subscribable<T>;
+    const onChange = (
+      hasSubscriptionName ? onChangeOrSelector : serviceOrOnChange
+    ) as (value: Sel) => void;
+    const selector = (
+      hasSubscriptionName ? selectorOrIsEqual : onChangeOrSelector
+    ) as Selector<T, Sel> | undefined;
+    const equalityFn = (
+      hasSubscriptionName ? isEqual : (selectorOrIsEqual ?? Object.is)
+    ) as EqualityFn<Sel>;
+
     // Default to identity selector if none is provided.
     const selectorFn = (selector ?? ((value: T) => value as unknown as Sel));
     // Create a cache for selector results to avoid unnecessary updates.
@@ -172,7 +213,7 @@ export abstract class BaseStateHandler<S, A> implements StateSubscriptionHandler
         selectorCache,
         value,
         selectorFn,
-        isEqual
+        equalityFn
       );
 
       // Only trigger the callback if the selected value changed.
@@ -183,10 +224,19 @@ export abstract class BaseStateHandler<S, A> implements StateSubscriptionHandler
       onChange(nextSelection);
     };
 
+    if (subscriptionName) {
+      this.namedSubscriptions.get(subscriptionName)?.unsubscribe();
+    }
+
     // Subscribe to the external source.
-    const unsubscribe = service.subscribe(notifySelectedValue);
-    // Track the subscription for later cleanup.
-    this.subscriptions = [...(this.subscriptions ?? []), { unsubscribe }];
+    const subscription = { unsubscribe: service.subscribe(notifySelectedValue) };
+
+    if (subscriptionName) {
+      this.namedSubscriptions.set(subscriptionName, subscription);
+    } else {
+      // Track the subscription for later cleanup.
+      this.subscriptions = [...(this.subscriptions ?? []), subscription];
+    }
 
     // If the source has a getSnapshot method and we haven't received a value yet, pull it manually.
     if (service.getSnapshot && !receivedSyncValue) notifySelectedValue(service.getSnapshot());

@@ -49,6 +49,10 @@ type CounterState = { count: number };
 type CounterActions = { increase: () => void };
 type CounterBucketSelection = { bucket: number };
 type CounterBucketState = { bucket: number };
+type CounterSubscribable = {
+  subscribe: (listener: (value: CounterState) => void) => () => void;
+  getSnapshot: () => CounterState;
+};
 
 class CounterSignalStateHandler extends SignalStateHandler<CounterState, CounterActions> {
   constructor(initialCount = 0) {
@@ -135,6 +139,58 @@ class CounterSignalBucketBridgeStateHandler extends SignalStateHandler<
       noop: () => undefined,
     };
   }
+}
+
+class CounterNamedSignalBridgeStateHandler extends SignalStateHandler<
+  CounterState,
+  { noop: () => void }
+> {
+  constructor(private readonly onCounterSync: (counterState: CounterState) => void) {
+    super({
+      initialState: {
+        count: -1,
+      },
+    });
+  }
+
+  bindNamedCounter(service: CounterSubscribable, subscriptionName = 'namedSubscription') {
+    this.bindSubscribable<CounterState, CounterState>(
+      subscriptionName,
+      service,
+      (nextCounterState) => {
+        this.onCounterSync(nextCounterState);
+        this.setState({ count: nextCounterState.count }, 'sync-counter');
+      },
+      (counterState) => counterState
+    );
+  }
+
+  getActions(): { noop: () => void } {
+    return {
+      noop: () => undefined,
+    };
+  }
+}
+
+function createCounterSubscribable(initialCount: number) {
+  let listener: ((value: CounterState) => void) | null = null;
+  const unsubscribe = jest.fn(() => {
+    listener = null;
+  });
+
+  return {
+    emit(value: CounterState) {
+      listener?.(value);
+    },
+    service: {
+      getSnapshot: () => ({ count: initialCount }),
+      subscribe: (nextListener: (value: CounterState) => void) => {
+        listener = nextListener;
+        return unsubscribe;
+      },
+    } satisfies CounterSubscribable,
+    unsubscribe,
+  };
 }
 
 describe('Signal State Handler', () => {
@@ -310,5 +366,41 @@ describe('Signal State Handler', () => {
     expect(bridgeStateHandler.getState()).toStrictEqual({ bucket: 2 });
 
     bridgeStateHandler.destroy();
+  });
+
+  it('should replace named bindSubscribable subscriptions when bound again with the same key', () => {
+    const syncSpy = jest.fn();
+    const bridgeStateHandler = new CounterNamedSignalBridgeStateHandler(syncSpy);
+    const firstCounter = createCounterSubscribable(1);
+    const secondCounter = createCounterSubscribable(5);
+
+    bridgeStateHandler.bindNamedCounter(firstCounter.service);
+    bridgeStateHandler.bindNamedCounter(secondCounter.service);
+
+    firstCounter.emit({ count: 2 });
+    secondCounter.emit({ count: 6 });
+
+    expect(firstCounter.unsubscribe).toHaveBeenCalledTimes(1);
+    expect(secondCounter.unsubscribe).toHaveBeenCalledTimes(0);
+    expect(syncSpy).toHaveBeenCalledTimes(3);
+    expect(syncSpy).toHaveBeenNthCalledWith(1, { count: 1 });
+    expect(syncSpy).toHaveBeenNthCalledWith(2, { count: 5 });
+    expect(syncSpy).toHaveBeenNthCalledWith(3, { count: 6 });
+    expect(bridgeStateHandler.getState()).toStrictEqual({ count: 6 });
+
+    bridgeStateHandler.destroy();
+  });
+
+  it('should unsubscribe named bindSubscribable subscriptions on destroy', () => {
+    const syncSpy = jest.fn();
+    const bridgeStateHandler = new CounterNamedSignalBridgeStateHandler(syncSpy);
+    const counter = createCounterSubscribable(3);
+
+    bridgeStateHandler.bindNamedCounter(counter.service);
+    bridgeStateHandler.destroy();
+    counter.emit({ count: 4 });
+
+    expect(counter.unsubscribe).toHaveBeenCalledTimes(1);
+    expect(syncSpy).toHaveBeenCalledTimes(1);
   });
 });

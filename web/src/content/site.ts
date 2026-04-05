@@ -693,6 +693,7 @@ class CounterHandler extends NativeStateHandler<CounterState, CounterActions> {
 
     // Use the native bindSubscribable to sync state manually.
     this.bindSubscribable(
+      'stepSync',
       uiStateHandler,
       (selection) => {
         this.setState({ step: selection.step }, 'sync-step');
@@ -965,6 +966,75 @@ class CounterBucketHandler extends SignalStateHandler<BucketState, BucketActions
 
 const counter = new CounterHandler();
 const bucket = new CounterBucketHandler(counter);`;
+
+const statusQuoNamedBindSubscribableExample = `import {
+  NativeStateHandler,
+} from '@veams/status-quo';
+
+type ListItem = {
+  id: string;
+  label: string;
+  detail: string;
+};
+
+type ListState = {
+  items: Array<Pick<ListItem, 'id' | 'label'>>;
+  selectedId: string | null;
+  selectedItem: ListItem | null;
+};
+
+type ListActions = {
+  selectItem: (params: { id: string }) => void;
+};
+
+declare function getList(): {
+  subscribe: (
+    listener: (value: { items: Array<Pick<ListItem, 'id' | 'label'>> }) => void
+  ) => () => void;
+  getSnapshot: () => { items: Array<Pick<ListItem, 'id' | 'label'>> };
+};
+
+declare function getListItem(id: string): {
+  subscribe: (listener: (value: ListItem | null) => void) => () => void;
+  getSnapshot: () => ListItem | null;
+};
+
+class ListHandler extends NativeStateHandler<ListState, ListActions> {
+  constructor() {
+    super({
+      initialState: {
+        items: [],
+        selectedId: null,
+        selectedItem: null,
+      },
+    });
+
+    // Unnamed binding: stable for the whole handler lifetime.
+    this.bindSubscribable(
+      getList(),
+      (snapshot) => {
+        this.setState({ items: snapshot.items }, 'sync-list');
+      },
+      (current, next) => current.items === next.items
+    );
+  }
+
+  getActions(): ListActions {
+    return {
+      selectItem: (params) => {
+        this.setState({ selectedId: params.id }, 'select-item');
+
+        // Named binding: selecting a new item replaces the previous item subscription.
+        this.bindSubscribable('item', getListItem(params.id), (selectedItem) => {
+          this.setState({ selectedItem }, 'sync-selected-item');
+        });
+
+        // Handlers can inspect active named bindings when needed.
+        this.namedSubscriptions.has('item');
+      },
+    };
+  }
+}`;
 
 const statusQuoGlobalSetup = `import { setupStatusQuo } from '@veams/status-quo';
 
@@ -4236,19 +4306,21 @@ export const docsPackages: DocsPackage[] = [
               {
                 codeExamples: [
                   {
-                    code: statusQuoBindSubscribableExample,
-                    label: 'Compose with bindSubscribable',
+                    code: statusQuoNamedBindSubscribableExample,
+                    label: 'List and selected item binding',
                     language: 'ts',
                   },
                 ],
                 bullets: [
                   'Keep syncing logic inside the handler instead of scattering it across component effects.',
                   '`bindSubscribable()` works with any source that exposes `subscribe()` and optionally `getSnapshot()`.',
+                  'Pass a subscription name when later binds should replace an earlier sync instead of stacking another listener.',
+                  'This is useful when an action needs to refresh upstream wiring without leaking the previous subscription.',
                   'Selectors and equality checks matter here too, especially when noisy upstream changes should not trigger work.',
                 ],
                 id: 'handler-composition',
                 paragraphs: [
-                  '`bindSubscribable()` is the low-level composition tool. Use it when one handler should react to another handler, a singleton, or another subscribable source. This is also the seam that makes `@veams/status-quo-query` fit naturally into the same model.',
+                  '`bindSubscribable()` is the low-level composition tool. Use it when one handler should react to another handler, a singleton, or another subscribable source. Named bindings are the safer option when the same sync may be re-established later from an action or lifecycle branch.',
                 ],
                 title: 'Compose handlers, not components',
               },
@@ -4259,6 +4331,69 @@ export const docsPackages: DocsPackage[] = [
               'There are two kinds of composition here: wiring hooks in React and wiring handlers to other subscribable sources.',
             summary: 'Shortcuts when you can. Low-level when it pays off.',
             title: 'Composition',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: statusQuoBindSubscribableExample,
+                    label: 'Unnamed bindSubscribable',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  'Use the unnamed form when the binding is attached once and should live for the whole handler lifetime.',
+                  'This is the normal choice for stable upstream derivations created in the constructor.',
+                  'The binding is tracked for cleanup and does not need a manual handle in feature code.',
+                ],
+                id: 'unnamed-binding',
+                paragraphs: [
+                  'Unnamed `bindSubscribable(...)` is the simplest form. It is a handler-owned subscription: attach it once, derive local state from the upstream source, and let the handler clean it up later.',
+                ],
+                title: 'Unnamed bindings for stable sync',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: statusQuoNamedBindSubscribableExample,
+                    label: 'List and selected item binding',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  'Use the named form when a later action or lifecycle branch may need to rebind the same upstream sync.',
+                  'Reusing the same binding name unsubscribes the old binding before the new one is attached.',
+                  'Inspect `this.namedSubscriptions` inside the handler when you need to see which named bindings are currently registered.',
+                  'This keeps rebinding local to the handler instead of leaking duplicate listeners into the feature.',
+                ],
+                id: 'named-binding',
+                paragraphs: [
+                  'Named `bindSubscribable(...)` is the replaceable form. It is useful when a handler selects one upstream resource at a time, such as one active list item, and should treat a new selection as replacement instead of accumulation. The handler can also inspect `this.namedSubscriptions` directly when feature logic needs visibility into the currently active named bindings.',
+                ],
+                title: 'Named bindings for replaceable sync',
+              },
+              {
+                callout:
+                  'Bindings are handler lifecycle work. Cleanup belongs to `destroy()`, not to scattered feature-level unsubscribe calls.',
+                bullets: [
+                  'Unnamed bindings are tracked with the handler subscriptions and are unsubscribed during `destroy()`.',
+                  'Named bindings are tracked separately, but `destroy()` unsubscribes those as well.',
+                  'The cleanup phase should leave no active upstream listeners after the handler is destroyed.',
+                ],
+                id: 'binding-cleanup',
+                paragraphs: [
+                  'The important lifecycle rule is simple: the handler owns binding cleanup. Use unnamed bindings for stable lifetime work, named bindings for replaceable work, and rely on `destroy()` to close both categories during teardown.',
+                ],
+                title: 'Destroy lifecycle and cleanup phase',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'bindings',
+            intro:
+              'Bindings keep handler-to-handler synchronization inside the state layer, with one path for stable lifetime work and one path for replaceable work.',
+            summary: 'Unnamed, named, and destroy-time cleanup.',
+            title: 'Bindings',
           },
           {
             blocks: [
@@ -4876,6 +5011,37 @@ export const docsPackages: DocsPackage[] = [
             intro: 'Use selectors to minimize rerenders while keeping one coherent handler model.',
             summary: 'Selector-based rerender control with custom equality.',
             title: 'Selector optimization with custom equality',
+          },
+          {
+            blocks: [
+              {
+                bullets: [
+                  'Use `bindSubscribable()` when one handler should derive part of its state from another subscribable source.',
+                  'Leave the binding unnamed when it is a stable one-time sync that should simply be cleaned up on `destroy()`.',
+                  'Give the binding a name when the same sync may be re-established later from an action or lifecycle branch.',
+                  'Reusing the same name replaces the previous upstream subscription before registering the new one.',
+                ],
+                codeExamples: [
+                  {
+                    code: statusQuoNamedBindSubscribableExample,
+                    label: 'List and selected item binding',
+                    language: 'ts',
+                  },
+                ],
+                id: 'bind-subscribable-example',
+                paragraphs: [
+                  'This example focuses on handler-to-handler composition instead of React ownership. One binding keeps the list itself synchronized for the whole handler lifetime, while another binding follows exactly one selected item at a time.',
+                  'The snippet shows both modes: the list binding is unnamed because it is attached once and only needs destroy-time cleanup, while `selectItem({ id })` uses `this.bindSubscribable(\'item\', getListItem(params.id), ...)` so each new selection replaces the previous item subscription.',
+                ],
+                title: 'Named and unnamed sync with `bindSubscribable()`',
+              },
+            ],
+            eyebrow: 'Examples',
+            id: 'example-bind-subscribable',
+            intro:
+              'Use `bindSubscribable()` when one handler should react to another subscribable source without pushing that wiring into components.',
+            summary: 'Unnamed stable sync plus named replaceable sync.',
+            title: 'Named and unnamed sync with `bindSubscribable()`',
           },
         ],
         title: 'Examples',
