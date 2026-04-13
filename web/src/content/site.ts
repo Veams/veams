@@ -5187,7 +5187,7 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   'Built on `@tanstack/query-core`, not on framework hooks.',
                   'The root package stays framework-neutral and exposes subscribable handles plus manager commands.',
-                  'Optional React bindings live in `@veams/status-quo-query/react` and expose `useQueryHandle(...)`.',
+                  'Optional React bindings live in `@veams/status-quo-query/react` and expose `useQueryHandle(...)` and `useMutationHandle(...)`.',
                   'The query and mutation API stays the same whether you consume it from services, handlers, or React components.',
                 ],
                 id: 'framework-support',
@@ -5770,15 +5770,15 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  '`MutationServiceSnapshot` is the passive state shape returned by `getSnapshot()` and `subscribe(listener)` on a mutation handle.',
+                  '`MutationHandleSnapshot` is the passive state shape returned by `getSnapshot()` and `subscribe(listener)` on a mutation handle.',
                   'Fields include `data`, `error`, `status`, `variables`, `isError`, `isIdle`, `isPending`, and `isSuccess`.',
                   'It is state-only by design. Commands stay on the mutation handle, not on the snapshot.',
                 ],
                 id: 'mutation-snapshot',
                 paragraphs: [
-                  'Use `MutationServiceSnapshot` as the read model for mutation state.',
+                  'Use `MutationHandleSnapshot` as the read model for mutation state.',
                 ],
-                title: 'MutationServiceSnapshot',
+                title: 'MutationHandleSnapshot',
               },
               {
                 bullets: [
@@ -5827,6 +5827,19 @@ export const docsPackages: DocsPackage[] = [
                   'This is the optional React integration layer over the same query handle shape.',
                 ],
                 title: 'useQueryHandle',
+              },
+              {
+                bullets: [
+                  '`useMutationHandle(mutationHandle)` lives in `@veams/status-quo-query/react`.',
+                  'It subscribes React directly to one `MutationHandle` and returns the latest `MutationHandleSnapshot`.',
+                  'Use it when a component should reflect mutation state — pending, success, or error — without owning the mutation trigger logic.',
+                  'Call `mutationHandle.mutate(variables)` directly on the handle; the hook only subscribes to state.',
+                ],
+                id: 'use-mutation-handle',
+                paragraphs: [
+                  'This is the optional React integration layer over the same mutation handle shape.',
+                ],
+                title: 'useMutationHandle',
               },
               {
                 bullets: [
