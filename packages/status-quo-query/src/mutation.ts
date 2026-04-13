@@ -32,7 +32,7 @@ export type MutationStatus = TanstackMutationStatus;
 /**
  * Represents a stable snapshot of the mutation service's state.
  */
-export interface MutationServiceSnapshot<TData = unknown, TError = Error, TVariables = void> {
+export interface MutationHandleSnapshot<TData = unknown, TError = Error, TVariables = void> {
   // The data returned from a successful mutation.
   data: TData | undefined;
   // The error object if the mutation failed.
@@ -54,17 +54,17 @@ export interface MutationServiceSnapshot<TData = unknown, TError = Error, TVaria
 /**
  * Defines the public API for a mutation service.
  */
-export interface MutationService<
+export interface MutationHandle<
   TData = unknown,
   TError = Error,
   TVariables = void,
   TOnMutateResult = unknown,
 > {
   // Returns the current state snapshot of the mutation.
-  getSnapshot: () => MutationServiceSnapshot<TData, TError, TVariables>;
+  getSnapshot: () => MutationHandleSnapshot<TData, TError, TVariables>;
   // Subscribes a listener to state changes; returns an unsubscribe function.
   subscribe: (
-    listener: (snapshot: MutationServiceSnapshot<TData, TError, TVariables>) => void
+    listener: (snapshot: MutationHandleSnapshot<TData, TError, TVariables>) => void
   ) => () => void;
   // Triggers the mutation with the given variables and optional lifecycle callbacks.
   mutate: (
@@ -80,7 +80,7 @@ export interface MutationService<
 /**
  * Configuration options for creating a mutation service, excluding the mutation function itself.
  */
-export type MutationServiceOptions<
+export type MutationHandleOptions<
   TData = unknown,
   TError = Error,
   TVariables = void,
@@ -95,8 +95,8 @@ export interface CreateUntrackedMutation {
     // The asynchronous function that performs the mutation.
     mutationFn: MutationFunction<TData, TVariables>,
     // Optional configuration for behavior like retry or lifecycle hooks.
-    options?: MutationServiceOptions<TData, TError, TVariables, TOnMutateResult>
-  ): MutationService<TData, TError, TVariables, TOnMutateResult>;
+    options?: MutationHandleOptions<TData, TError, TVariables, TOnMutateResult>
+  ): MutationHandle<TData, TError, TVariables, TOnMutateResult>;
 }
 
 /**
@@ -106,13 +106,13 @@ export interface CreateUntrackedMutation {
  * options only describe how the facade should derive dependency values and when it should
  * invalidate matching tracked queries after the mutation lifecycle settles.
  */
-export interface TrackedMutationServiceOptions<
+export interface TrackedMutationHandleOptions<
   TDeps extends TrackedDependencyRecord = TrackedDependencyRecord,
   TData = unknown,
   TError = Error,
   TVariables = void,
   TOnMutateResult = unknown,
-> extends MutationServiceOptions<TData, TError, TVariables, TOnMutateResult> {
+> extends MutationHandleOptions<TData, TError, TVariables, TOnMutateResult> {
   // Optional dependency keys used by the default variable reader.
   dependencyKeys?: readonly (keyof TDeps & string)[];
   // Optional custom resolver when mutation variables do not expose dependency fields directly.
@@ -135,8 +135,8 @@ export interface CreateMutation {
     TOnMutateResult = unknown,
   >(
     mutationFn: MutationFunction<TData, TVariables>,
-    options?: TrackedMutationServiceOptions<TDeps, TData, TError, TVariables, TOnMutateResult>
-  ): MutationService<TData, TError, TVariables, TOnMutateResult>;
+    options?: TrackedMutationHandleOptions<TDeps, TData, TError, TVariables, TOnMutateResult>
+  ): MutationHandle<TData, TError, TVariables, TOnMutateResult>;
 }
 
 /**
@@ -151,9 +151,9 @@ export function setupMutation(queryClient: QueryClient): CreateUntrackedMutation
     TOnMutateResult = unknown,
   >(
     mutationFn: MutationFunction<TData, TVariables>,
-    options?: MutationServiceOptions<TData, TError, TVariables, TOnMutateResult>
-  ): MutationService<TData, TError, TVariables, TOnMutateResult> {
-    return createMutationService(queryClient, mutationFn, options);
+    options?: MutationHandleOptions<TData, TError, TVariables, TOnMutateResult>
+  ): MutationHandle<TData, TError, TVariables, TOnMutateResult> {
+    return createMutationHandle(queryClient, mutationFn, options);
   };
 }
 
@@ -177,8 +177,8 @@ export function setupTrackedMutation(
     TOnMutateResult = unknown,
   >(
     mutationFn: MutationFunction<TData, TVariables>,
-    options?: TrackedMutationServiceOptions<TDeps, TData, TError, TVariables, TOnMutateResult>
-  ): MutationService<TData, TError, TVariables, TOnMutateResult> {
+    options?: TrackedMutationHandleOptions<TDeps, TData, TError, TVariables, TOnMutateResult>
+  ): MutationHandle<TData, TError, TVariables, TOnMutateResult> {
     // Split tracked-only options from the underlying TanStack mutation observer options.
     const {
       dependencyKeys,
@@ -187,8 +187,8 @@ export function setupTrackedMutation(
       resolveDependencies,
       ...mutationOptions
     } = options ?? {};
-    // Reuse the normal mutation service so snapshots and subscription behavior stay identical.
-    const service = createMutationService(queryClient, mutationFn, mutationOptions);
+    // Reuse the normal mutation handle so snapshots and subscription behavior stay identical.
+    const handle = createMutationHandle(queryClient, mutationFn, mutationOptions);
     // The paired helper injects dependency keys here, while standalone tracked mutations can
     // still provide them directly or bypass them with a custom resolver.
     const resolvedDependencyKeys = (dependencyKeys ?? defaultDependencyKeys);
@@ -220,12 +220,12 @@ export function setupTrackedMutation(
     };
 
     return {
-      ...service,
+      ...handle,
       mutate: async (variables, mutateOptions) => {
         try {
           // Let TanStack finish the mutation first so its own callbacks and state machine remain
           // authoritative. The facade only coordinates the follow-up invalidation.
-          const result = await service.mutate(variables, mutateOptions);
+          const result = await handle.mutate(variables, mutateOptions);
 
           if (invalidateOn === 'success' || invalidateOn === 'settled') {
             await invalidateTrackedQueries(variables);
@@ -252,9 +252,9 @@ export function setupTrackedMutation(
 /**
  * Internal helper to transform a raw Tanstack mutation result into our public snapshot format.
  */
-function toMutationServiceSnapshot<TData, TError, TVariables, TOnMutateResult>(
+function toMutationHandleSnapshot<TData, TError, TVariables, TOnMutateResult>(
   result: MutationObserverResult<TData, TError, TVariables, TOnMutateResult>
-): MutationServiceSnapshot<TData, TError, TVariables> {
+): MutationHandleSnapshot<TData, TError, TVariables> {
   // Extract and return the relevant fields for the UI or other services.
   return {
     data: result.data,
@@ -268,7 +268,7 @@ function toMutationServiceSnapshot<TData, TError, TVariables, TOnMutateResult>(
   };
 }
 
-function createMutationService<
+function createMutationHandle<
   TData = unknown,
   TError = Error,
   TVariables = void,
@@ -276,8 +276,8 @@ function createMutationService<
 >(
   queryClient: QueryClient,
   mutationFn: MutationFunction<TData, TVariables>,
-  options?: MutationServiceOptions<TData, TError, TVariables, TOnMutateResult>
-): MutationService<TData, TError, TVariables, TOnMutateResult> {
+  options?: MutationHandleOptions<TData, TError, TVariables, TOnMutateResult>
+): MutationHandle<TData, TError, TVariables, TOnMutateResult> {
   // Keep the original mutation implementation in one place so tracked and untracked mutations
   // always expose the same observer-backed runtime behavior.
   const observer = new MutationObserver<TData, TError, TVariables, TOnMutateResult>(queryClient, {
@@ -286,10 +286,10 @@ function createMutationService<
   });
 
   return {
-    getSnapshot: () => toMutationServiceSnapshot(observer.getCurrentResult()),
+    getSnapshot: () => toMutationHandleSnapshot(observer.getCurrentResult()),
     subscribe: (listener) =>
       observer.subscribe((result) => {
-        listener(toMutationServiceSnapshot(result));
+        listener(toMutationHandleSnapshot(result));
       }),
     mutate: (variables, mutateOptions) => observer.mutate(variables, mutateOptions),
     reset: () => observer.reset(),

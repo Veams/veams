@@ -8,8 +8,8 @@ import {
 import {
   type CreateMutation,
   type CreateUntrackedMutation,
-  type MutationService,
-  type TrackedMutationServiceOptions,
+  type MutationHandle,
+  type TrackedMutationHandleOptions,
   setupMutation,
   setupTrackedMutation,
 } from './mutation.js';
@@ -29,7 +29,7 @@ export interface CreateMutationWithDefaults<TDependencyKey extends string> {
   <TData = unknown, TError = Error, TVariables = void, TOnMutateResult = unknown>(
     mutationFn: MutationFunction<TData, TVariables>,
     options?: Omit<
-      TrackedMutationServiceOptions<
+      TrackedMutationHandleOptions<
         Record<TDependencyKey, TrackedDependencyValue>,
         TData,
         TError,
@@ -38,7 +38,7 @@ export interface CreateMutationWithDefaults<TDependencyKey extends string> {
       >,
       'dependencyKeys'
     >
-  ): MutationService<TData, TError, TVariables, TOnMutateResult>;
+  ): MutationHandle<TData, TError, TVariables, TOnMutateResult>;
 }
 
 /**
@@ -54,13 +54,13 @@ export interface CreateQueryAndMutation {
  * Defines the public API for the query manager facade.
  */
 export interface QueryManager {
-  // Factory for creating a dependency-tracked mutation service within the context of this provider.
+  // Factory for creating a dependency-tracked mutation handle within the context of this provider.
   createMutation: CreateMutation;
   // Factory for creating a dependency-tracked query handle within the context of this provider.
   createQuery: CreateQuery;
   // Factory for creating an untracked query handle within the context of this provider.
   createUntrackedQuery: CreateUntrackedQuery;
-  // Factory for creating an untracked mutation service within the context of this provider.
+  // Factory for creating an untracked mutation handle within the context of this provider.
   createUntrackedMutation: CreateUntrackedMutation;
   // Convenience helper that shares dependency keys between tracked queries and mutations.
   createQueryAndMutation: CreateQueryAndMutation;
@@ -126,7 +126,7 @@ export function setupQueryManager(queryClient: QueryClient): QueryManager {
       > = <TData = unknown, TError = Error, TVariables = void, TOnMutateResult = unknown>(
         mutationFn: MutationFunction<TData, TVariables>,
         options?: Omit<
-          TrackedMutationServiceOptions<
+          TrackedMutationHandleOptions<
             Record<TDependencyKeys[number], TrackedDependencyValue>,
             TData,
             TError,

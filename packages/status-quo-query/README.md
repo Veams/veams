@@ -19,11 +19,11 @@ npm install react
 Status Quo Query deliberately keeps the public surface small:
 
 - `QueryHandle<TData, TError>` is the read handle for one query.
-- `MutationService<TData, TError, TVariables>` is the write handle for one mutation.
+- `MutationHandle<TData, TError, TVariables>` is the write handle for one mutation.
 - snapshots are passive state objects returned from `getSnapshot()` and `subscribe(...)`.
 - commands stay on the handle: `refetch()`, `invalidate()`, `mutate()`, `reset()`.
 - `QueryManager` is the broader coordination layer for cross-query work.
-- `@veams/status-quo-query/react` is optional and adds one React subscription hook over the same handle shape.
+- `@veams/status-quo-query/react` is optional and adds React subscription hooks (`useQueryHandle`, `useMutationHandle`) over the same handle shape.
 
 That keeps the package usable in service code, query handlers, state handlers, and React components without changing the core query or mutation API.
 
@@ -49,13 +49,13 @@ Root exports:
 - `CreateUntrackedMutation`
 - `QueryHandle`
 - `QueryHandleData`
-- `MutationService`
+- `MutationHandle`
 - `QueryHandleSnapshot`
-- `MutationServiceSnapshot`
+- `MutationHandleSnapshot`
 - `QueryDependencyTuple`
 - `QueryHandleOptions`
-- `MutationServiceOptions`
-- `TrackedMutationServiceOptions`
+- `MutationHandleOptions`
+- `TrackedMutationHandleOptions`
 - `QueryInvalidateOptions`
 - `QueryMetaState`
 - `TrackedDependencyRecord`
@@ -70,7 +70,7 @@ Subpath exports:
 - `@veams/status-quo-query/provider`
 - `@veams/status-quo-query/query`
 - `@veams/status-quo-query/mutation`
-- `@veams/status-quo-query/react`
+- `@veams/status-quo-query/react` (`useQueryHandle`, `useMutationHandle`)
 
 ## Quickstart
 
@@ -133,8 +133,9 @@ await userQuery.invalidate({ refetchType: 'none' });
 
 ## React Bindings
 
-The React entrypoint exposes `useQueryHandle(...)` and keeps `react` optional unless you
-import `@veams/status-quo-query/react`.
+The React entrypoint exposes `useQueryHandle(...)` and `useMutationHandle(...)` and keeps `react` optional unless you import `@veams/status-quo-query/react`.
+
+### `useQueryHandle`
 
 ```tsx
 import { useQueryHandle } from '@veams/status-quo-query/react';
@@ -152,6 +153,35 @@ Use the hook when a component should subscribe directly to a query handle and re
 - read `data`, `status`, `fetchStatus`, and flags like `isPending` from the snapshot
 - call `query.refetch()` or `query.invalidate()` on the handle itself
 - derive view-specific values in the component instead of adding selector logic to the hook
+
+### `useMutationHandle`
+
+```tsx
+import { useMutationHandle } from '@veams/status-quo-query/react';
+import type { MutationHandle } from '@veams/status-quo-query';
+
+function SaveButton({
+  mutation,
+  payload,
+}: {
+  mutation: MutationHandle<{ ok: boolean }, Error, { name: string }>;
+  payload: { name: string };
+}) {
+  const snapshot = useMutationHandle(mutation);
+
+  return (
+    <button onClick={() => mutation.mutate(payload)} disabled={snapshot.isPending}>
+      {snapshot.isPending ? 'Saving…' : 'Save'}
+    </button>
+  );
+}
+```
+
+Use `useMutationHandle` when a component should react to mutation state (pending, success, error). Keep imperative calls on the handle itself:
+
+- read `status`, `isPending`, `isError`, `isSuccess`, `data`, `error`, `variables` from the snapshot
+- call `mutation.mutate(variables)` or `mutation.reset()` on the handle itself
+- the hook does not trigger the mutation — it only subscribes to its state
 
 ## Status Quo Integration
 
@@ -763,7 +793,7 @@ Only `deps` participates in automatic invalidation tracking. `view` is optional 
 
 `createQuery(queryKey, queryFn, options?)` returns the same `QueryHandle<TData, TError>` shape as `createUntrackedQuery(...)`, but it registers the query hash under every `deps` entry, re-registers on `refetch()` or the first `subscribe(...)` if TanStack has removed the cache entry in the meantime, and keeps the registry in sync when `dependsOn` derives a new tracked key at runtime.
 
-`createMutation(mutationFn, options?)` returns the same `MutationService<TData, TError, TVariables, TOnMutateResult>` shape as `createUntrackedMutation(...)`, but adds:
+`createMutation(mutationFn, options?)` returns the same `MutationHandle<TData, TError, TVariables, TOnMutateResult>` shape as `createUntrackedMutation(...)`, but adds:
 
 - `dependencyKeys?`
 - `resolveDependencies?`
@@ -786,7 +816,7 @@ Captures dependency names once and returns:
 - the tracked query factory
 - a tracked mutation factory whose default resolver reads `variables[dependencyKey]`
 
-The tracked query factory still expects a query key with a final `{ deps, view? }` segment. The tracked mutation factory keeps the same `MutationService` shape as `createMutation(...)`, but no longer needs `dependencyKeys` repeated in each call.
+The tracked query factory still expects a query key with a final `{ deps, view? }` segment. The tracked mutation factory keeps the same `MutationHandle` shape as `createMutation(...)`, but no longer needs `dependencyKeys` repeated in each call.
 
 Reach for standalone `createMutation(...)` when:
 
@@ -844,11 +874,11 @@ It also adds:
 
 Creates a `createUntrackedMutation` factory bound to a `QueryClient`.
 
-`createUntrackedMutation(mutationFn, options?)` returns `MutationService<TData, TError, TVariables, TOnMutateResult>`.
+`createUntrackedMutation(mutationFn, options?)` returns `MutationHandle<TData, TError, TVariables, TOnMutateResult>`.
 
-`MutationServiceOptions` is based on TanStack `MutationObserverOptions`, without `mutationFn` because it is provided directly to `createUntrackedMutation`.
+`MutationHandleOptions` is based on TanStack `MutationObserverOptions`, without `mutationFn` because it is provided directly to `createUntrackedMutation`.
 
-`MutationService` methods:
+`MutationHandle` methods:
 
 - `getSnapshot()`
 - `subscribe(listener)`
@@ -856,7 +886,7 @@ Creates a `createUntrackedMutation` factory bound to a `QueryClient`.
 - `reset()`
 - `unsafe_getResult()`
 
-`MutationServiceSnapshot<TData, TError, TVariables>` fields:
+`MutationHandleSnapshot<TData, TError, TVariables>` fields:
 
 - `data`
 - `error`

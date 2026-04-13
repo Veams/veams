@@ -1,1 +1,1 @@
-export { useQueryHandle } from './hooks/index.js';
+export { useQueryHandle, useMutationHandle } from './hooks/index.js';
