@@ -27,10 +27,12 @@ import type { FormHTMLAttributes, ReactNode, SyntheticEvent } from 'react';
  */
 interface BaseFormProviderProps<T extends FormValues>
   extends Omit<FormHTMLAttributes<HTMLFormElement>, 'children' | 'onSubmit'> {
+  // The HTML element to render as a wrapper. Defaults to 'form'.
+  renderAs?: 'form' | 'fieldset' | 'div' | 'section';
   // Child components that can access the form context.
   children: ReactNode;
   // Callback triggered on successful form submission.
-  onSubmit: (values: T, form: FormStateHandler<T>) => void | Promise<void>;
+  onSubmit?: (values: T, form: FormStateHandler<T>) => void | Promise<void>;
   // When to validate a field before it has been touched.
   validationMode?: Exclude<ValidationMode, 'inherit'>;
   // When to revalidate a field after it has been touched.
@@ -116,6 +118,7 @@ export function FormProvider<T extends FormValues>(
   props: FormProviderWithExternalState<T>
 ): React.JSX.Element;
 export function FormProvider<T extends FormValues>({
+  renderAs = 'form',
   children,
   formHandlerInstance,
   initialValues,
@@ -180,19 +183,29 @@ export function FormProvider<T extends FormValues>({
 
     try {
       // Execute the provided submission logic.
-      await onSubmit(controller.getState().values, controller);
+      if (onSubmit) {
+        await onSubmit(controller.getState().values, controller);
+      }
     } finally {
       // Reset submitting status regardless of outcome.
       controller.setSubmitting(false);
     }
   };
 
+    const Component = renderAs;
+
   return (
     <FormValidationConfigContext.Provider value={validationConfig}>
       <FormContext.Provider value={controller as unknown as FormStateHandler<AnyFieldValues>}>
-        <form {...formProps} noValidate={noValidate} onSubmit={(event) => void handleSubmit(event)}>
-          {children}
-        </form>
+        {Component === 'form' ? (
+          <form {...formProps} noValidate={noValidate} onSubmit={(event) => void handleSubmit(event)}>
+            {children}
+          </form>
+        ) : (
+          <Component {...(formProps as React.HTMLAttributes<HTMLElement>)}>
+            {children}
+          </Component>
+        )}
       </FormContext.Provider>
     </FormValidationConfigContext.Provider>
   );

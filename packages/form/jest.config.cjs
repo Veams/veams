@@ -1,3 +1,4 @@
+if(typeof structuredClone === "undefined") { global.structuredClone = val => JSON.parse(JSON.stringify(val)); }
 module.exports = {
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
   transformIgnorePatterns: [],
