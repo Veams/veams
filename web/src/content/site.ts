@@ -6878,8 +6878,8 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   '`FormProvider(props)` has two valid shapes.',
-                  'Local mode takes `{ children, initialValues, onSubmit, validator?, validationMode?, revalidationMode?, ...formProps }`. External mode takes `{ children, formHandlerInstance, onSubmit, validationMode?, revalidationMode?, ...formProps }`.',
-                  '`onSubmit(values, form)` receives the validated values and the resolved `FormStateHandler`. The provider calls `validateForm()` and `touchAllFields()` before invoking it.',
+                  'Local mode takes \`{ children, initialValues, onSubmit?, renderAs?, validator?, validationMode?, revalidationMode?, ...formProps }\`. External mode takes \`{ children, formHandlerInstance, onSubmit?, renderAs?, validationMode?, revalidationMode?, ...formProps }\`.',
+                  "`renderAs` defaults to `'form'` but supports `'fieldset'`, `'div'`, or `'section'`. `onSubmit(values, form)` is optional, receives the validated values and the resolved `FormStateHandler`. The provider calls `validateForm()` and `touchAllFields()` before invoking it.",
                   '`validationMode` defaults to `blur`. `revalidationMode` defaults to `change`.',
                 ],
                 id: 'form-provider-api',

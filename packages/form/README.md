@@ -103,6 +103,16 @@ profileForm.setFieldValue('profile.email', 'nested@veams.org');
 profileForm.setFieldTouched('profile.email', true);
 ```
 
+## FormProvider Wrapper
+
+By default, `FormProvider` renders a `<form>` element. You can change this using the `renderAs` prop (supports `'form'`, `'fieldset'`, `'div'`, or `'section'`). When using a non-form element, `onSubmit` becomes optional and the native submit event is not automatically attached.
+
+```tsx
+<FormProvider renderAs="div" initialValues={{ name: '' }}>
+  {/* ... */}
+</FormProvider>
+```
+
 ## React Quickstart
 
 Use `FormProvider` to own one handler instance locally and `useUncontrolledField()` to bind native elements:
