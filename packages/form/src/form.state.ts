@@ -1,7 +1,7 @@
 /**
  * Core form state management logic and types.
  */
-import { SignalStateHandler, type DevToolsOptions } from '@veams/status-quo';
+import { NativeStateHandler, type DevToolsOptions } from '@veams/status-quo';
 
 import { collectLeafPaths, setValueAtPath } from './path-utils.js';
 
@@ -147,9 +147,9 @@ export interface FormActions<T extends FormValues> {
 
 /**
  * Central engine for form state management.
- * Extends Status Quo's SignalStateHandler for efficient reactivity.
+ * Extends Status Quo's NativeStateHandler — no signals dependency required.
  */
-export class FormStateHandler<T extends FormValues> extends SignalStateHandler<
+export class FormStateHandler<T extends FormValues> extends NativeStateHandler<
   FormState<T>,
   FormActions<T>
 > {
