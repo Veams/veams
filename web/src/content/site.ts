@@ -717,10 +717,8 @@ class CounterHandler extends NativeStateHandler<CounterState, CounterActions> {
   }
 }`;
 
-const statusQuoObservableHandlerExample = `import {
-  ObservableStateHandler,
-  makeStateSingleton,
-} from '@veams/status-quo';
+const statusQuoObservableHandlerExample = `import { ObservableStateHandler } from '@veams/status-quo/observable';
+import { makeStateSingleton } from '@veams/status-quo';
 import { distinctUntilChanged, map } from 'rxjs';
 
 type Viewport = 'compact' | 'wide';
@@ -802,10 +800,8 @@ class CounterHandler extends ObservableStateHandler<CounterState, CounterActions
 }`;
 
 const statusQuoSignalHandlerExample = `import { computed } from '@preact/signals-core';
-import {
-  SignalStateHandler,
-  makeStateSingleton,
-} from '@veams/status-quo';
+import { SignalStateHandler } from '@veams/status-quo/signals';
+import { makeStateSingleton } from '@veams/status-quo';
 
 type Viewport = 'compact' | 'wide';
 
@@ -915,7 +911,7 @@ function CounterCard() {
   return <button onClick={actions.increase}>{count}</button>;
 }`;
 
-const statusQuoBindSubscribableExample = `import { SignalStateHandler } from '@veams/status-quo';
+const statusQuoBindSubscribableExample = `import { SignalStateHandler } from '@veams/status-quo/signals';
 
 type CounterState = { count: number };
 type CounterActions = { increase: () => void };
@@ -1081,7 +1077,7 @@ class SearchHandler extends NativeStateHandler<SearchState, SearchActions> {
   }
 }`;
 
-const statusQuoDevToolsExample = `import { SignalStateHandler } from '@veams/status-quo';
+const statusQuoDevToolsExample = `import { SignalStateHandler } from '@veams/status-quo/signals';
 
 type CounterState = { count: number };
 type CounterActions = {
@@ -1639,11 +1635,11 @@ const productDetailKey: TrackedQueryKey<{
 
 const statusQuoApiImports = `import {
   NativeStateHandler,
-  ObservableStateHandler,
-  SignalStateHandler,
   makeStateSingleton,
   setupStatusQuo,
 } from '@veams/status-quo';
+import { ObservableStateHandler } from '@veams/status-quo/observable';
+import { SignalStateHandler } from '@veams/status-quo/signals';
 import {
   StateProvider,
   useProvidedStateActions,
@@ -1693,15 +1689,16 @@ const statusQuoSubpathImports = `import {
   useStateFactory,
   useStateSubscription,
 } from '@veams/status-quo/react';
-import { ObservableStateHandler, makeStateSingleton } from '@veams/status-quo/store';`;
+import { ObservableStateHandler } from '@veams/status-quo/observable';
+import { SignalStateHandler } from '@veams/status-quo/signals';`;
 
 const statusQuoFrameworkCoreImports = `import {
   NativeStateHandler,
-  ObservableStateHandler,
-  SignalStateHandler,
   makeStateSingleton,
   setupStatusQuo,
-} from '@veams/status-quo';`;
+} from '@veams/status-quo';
+import { ObservableStateHandler } from '@veams/status-quo/observable';
+import { SignalStateHandler } from '@veams/status-quo/signals';`;
 
 const statusQuoFrameworkReactImports = `import {
   StateProvider,
@@ -4631,7 +4628,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'entry-points',
                 paragraphs: [
-                  'The root package is framework-agnostic and covers handlers, runtime setup, and singleton helpers. Use `@veams/status-quo/react` for the React integration layer and `@veams/status-quo/store` when you want the store primitives grouped separately.',
+                  'The root package is framework-agnostic and covers handlers, runtime setup, and singleton helpers. `NativeStateHandler`, `makeStateSingleton`, and `setupStatusQuo` are exported from the root. Use `@veams/status-quo/observable` for `ObservableStateHandler` (requires rxjs), `@veams/status-quo/signals` for `SignalStateHandler` (requires @preact/signals-core), `@veams/status-quo/react` for the React integration layer, and `@veams/status-quo/store` for store primitives grouped separately.',
                 ],
                 title: 'Entry points',
               },
@@ -4679,6 +4676,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'observable-state-handler',
                 paragraphs: [
+                  'Import from `@veams/status-quo/observable`. Requires `rxjs` as a peer dependency.',
                   'This is the RxJS-backed concrete base. The app-facing handler contract stays stable while the underlying reactive engine becomes observable-driven.',
                 ],
                 title: 'ObservableStateHandler',
@@ -4712,6 +4710,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'signal-state-handler',
                 paragraphs: [
+                  'Import from `@veams/status-quo/signals`. Requires `@preact/signals-core` as a peer dependency.',
                   'This is the Signals-backed concrete base. It keeps the outer API aligned with the other handler implementations while exposing signal access for reactive integrations.',
                 ],
                 title: 'SignalStateHandler',

@@ -105,11 +105,13 @@ setupStatusQuo({
 
 StatusQuo provides three handler implementations with the same public interface:
 
-- `NativeStateHandler` (**Zero dependency**, plain JS)
-- `ObservableStateHandler` (RxJS-backed)
-- `SignalStateHandler` (Signals-backed)
+- `NativeStateHandler` (**Zero dependency**, plain JS) — `import { NativeStateHandler } from '@veams/status-quo'`
+- `ObservableStateHandler` (RxJS-backed) — `import { ObservableStateHandler } from '@veams/status-quo/observable'`
+- `SignalStateHandler` (Signals-backed) — `import { SignalStateHandler } from '@veams/status-quo/signals'`
 
 All are built on `BaseStateHandler`, which provides the shared lifecycle and devtools support.
+
+The RxJS and Signals handlers live in dedicated subpaths to avoid pulling in their peer dependencies when you are only using `NativeStateHandler`.
 
 ## Hooks
 
@@ -228,6 +230,7 @@ Use only the slice you need. RxJS makes multi-source composition powerful and de
 
 ```ts
 import { combineLatest } from 'rxjs';
+import { SignalStateHandler } from '@veams/status-quo/signals';
 
 // RxJS: combine handler streams (RxJS shines here)
 class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
@@ -254,6 +257,7 @@ class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
 
 // Signals: combine derived values via computed + bindSubscribable
 import { computed } from '@preact/signals-core';
+import { SignalStateHandler } from '@veams/status-quo/signals';
 
 class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
   private counter = CounterSignalHandler.getInstance();
@@ -581,6 +585,8 @@ setupStatusQuo({
 Override it per handler when needed:
 
 ```ts
+import { ObservableStateHandler } from '@veams/status-quo/observable';
+
 class CounterStore extends ObservableStateHandler<CounterState, CounterActions> {
   constructor() {
     super({
@@ -711,6 +717,8 @@ Notes:
 
 ### `ObservableStateHandler<S, A>`
 
+Import from `@veams/status-quo/observable`. Requires `rxjs` as a peer dependency.
+
 RxJS-backed handler. Extends `BaseStateHandler`.
 
 Constructor:
@@ -747,6 +755,8 @@ Notes:
 - Subscribers receive the next state snapshot as a callback argument.
 
 ### `SignalStateHandler<S, A>`
+
+Import from `@veams/status-quo/signals`. Requires `@preact/signals-core` as a peer dependency.
 
 Signals-backed handler. Extends `BaseStateHandler`.
 
@@ -839,6 +849,15 @@ Lifecycle behavior:
   - Returns `[state, actions]`.
 
 ## Migration
+
+From 1.x to 2.0:
+
+`ObservableStateHandler` and `SignalStateHandler` are no longer exported from the main entry (`@veams/status-quo`). They now live in dedicated subpaths:
+
+1. Replace `import { ObservableStateHandler } from '@veams/status-quo'` with `import { ObservableStateHandler } from '@veams/status-quo/observable'`.
+2. Replace `import { SignalStateHandler } from '@veams/status-quo'` with `import { SignalStateHandler } from '@veams/status-quo/signals'`.
+
+Everything else (`NativeStateHandler`, `makeStateSingleton`, `setupStatusQuo`, all types, `@veams/status-quo/react`, `@veams/status-quo/store`) is unchanged.
 
 From pre-1.0 releases:
 
