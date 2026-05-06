@@ -25,6 +25,20 @@
         "default": "./dist/store/index.js"
       },
       "require": "./dist/store/index.js"
+    },
+    "./observable": {
+      "import": {
+        "types": "./dist/observable/index.d.ts",
+        "default": "./dist/observable/index.js"
+      },
+      "require": "./dist/observable/index.js"
+    },
+    "./signals": {
+      "import": {
+        "types": "./dist/signals/index.d.ts",
+        "default": "./dist/signals/index.js"
+      },
+      "require": "./dist/signals/index.js"
     }
   },
   "types": "dist/index.d.ts",
