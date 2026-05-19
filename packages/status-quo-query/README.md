@@ -870,6 +870,97 @@ It also adds:
 
 `unsafe_getResult()` returns the raw TanStack `QueryObserverResult`.
 
+### Window focus and stale queries
+
+`QueryHandle.subscribe(...)` activates the same TanStack `QueryClient` lifecycle that
+`QueryClientProvider` activates for `useQuery`.
+
+TanStack's `refetchOnWindowFocus` support does not live on the individual
+`QueryObserver` alone. A `QueryClient` has to be mounted so TanStack can subscribe to
+the global `focusManager` and forward browser focus changes to the query cache. Native
+React Query users usually get this through:
+
+```tsx
+<QueryClientProvider client={queryClient}>
+  <App />
+</QueryClientProvider>
+```
+
+Status Quo Query does not require that provider because query handles can be used in
+service code, state handlers, and React components. Instead, a subscribed query handle
+mounts the provided `QueryClient` for as long as that handle subscription is active:
+
+```ts
+const query = createUntrackedQuery(['clock'], fetchClock, {
+  staleTime: 5_000,
+  refetchOnWindowFocus: true,
+});
+
+const unsubscribe = query.subscribe((snapshot) => {
+  console.log(snapshot.data);
+});
+
+// Later, when the state handler or component is destroyed:
+unsubscribe();
+```
+
+With an active subscription, the flow is:
+
+1. The first `subscribe(...)` mounts the `QueryClient`.
+2. TanStack installs its focus and online listeners through `focusManager` and
+   `onlineManager`.
+3. The `QueryObserver` performs its normal mount behavior and starts stale timers.
+4. Once `staleTime` has elapsed, the observer marks the current result stale.
+5. When the browser window becomes focused again, TanStack calls `queryCache.onFocus()`.
+6. Active stale queries with `refetchOnWindowFocus: true` refetch.
+7. Unsubscribing removes the observer and unmounts the client lifecycle for that
+   subscription.
+
+This means `staleTime` and `refetchOnWindowFocus` behave the same way through a
+`QueryHandle` subscription as they do through `useQuery`:
+
+```ts
+const query = createUntrackedQuery(
+  ['staleTime'],
+  () => Promise.resolve(new Date()),
+  {
+    staleTime: 5_000,
+  }
+);
+```
+
+The default TanStack behavior is preserved. `refetchOnWindowFocus` defaults to `true`,
+so the query above refetches on focus only after it has become stale. Use
+`refetchOnWindowFocus: 'always'` when focus should refetch even while the cached data is
+still fresh, or `refetchOnWindowFocus: false` when focus should never refetch that
+query.
+
+`bindSubscribable(...)` integrations also participate automatically because they call
+`QueryHandle.subscribe(...)` internally:
+
+```ts
+this.bindSubscribable(productQuery, (snapshot) => {
+  this.setState({
+    product: snapshot.data,
+    productStatus: snapshot.status,
+  });
+});
+```
+
+The state handler receives:
+
+- an initial snapshot, either synchronously from the observer or through
+  `getSnapshot()`
+- the stale-result update after `staleTime` expires
+- a fresh snapshot after the window regains focus and the stale query refetches
+
+One-off reads do not install focus listeners. `getSnapshot()`, `getQueryData(...)`,
+`getQueryState(...)`, and `fetchQuery(...)` are passive cache reads or explicit fetches;
+they are not live observers. Use `subscribe(...)`, `useQueryHandle(...)`, or
+`bindSubscribable(...)` when the query should respond to TanStack observer lifecycle
+events such as `refetchOnWindowFocus`, `refetchOnReconnect`, stale timers, and refetch
+intervals.
+
 ### `setupMutation(queryClient)`
 
 Creates a `createUntrackedMutation` factory bound to a `QueryClient`.

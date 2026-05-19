@@ -424,9 +424,14 @@ function createQueryHandle<
     handle: {
       getSnapshot: () => toQueryHandleSnapshot(observer.getCurrentResult()),
       subscribe: (listener) =>
-        observer.subscribe((result) => {
-          listener(toQueryHandleSnapshot(result));
-        }),
+        // QueryObserver subscriptions alone are not enough for browser lifecycle events.
+        // TanStack wires focus/reconnect refetching through QueryClient.mount(), so every
+        // live QueryHandle subscription must also activate the client lifecycle.
+        subscribeToMountedQueryClient(queryClient, () =>
+          observer.subscribe((result) => {
+            listener(toQueryHandleSnapshot(result));
+          })
+        ),
       refetch: async (refetchOptions) =>
         toQueryHandleSnapshot(await observer.refetch(refetchOptions)),
       invalidate: (invalidateOptions) =>
@@ -442,6 +447,56 @@ function createQueryHandle<
         ),
       unsafe_getResult: () => observer.getCurrentResult(),
     },
+  };
+}
+
+/**
+ * Subscribes to a TanStack observer while the owning QueryClient is mounted.
+ *
+ * Native `useQuery` users normally get this lifecycle from `QueryClientProvider`, which calls
+ * `queryClient.mount()` and lets TanStack subscribe to `focusManager` and `onlineManager`.
+ * Status Quo Query can be used without a React provider, so the wrapper has to mount the client
+ * when a query handle becomes live.
+ *
+ * Mounting is intentionally scoped to `subscribe(...)` rather than `setupQuery(...)`:
+ *
+ * - passive reads such as `getSnapshot()` and `getQueryData(...)` should not install global
+ *   focus/online listeners
+ * - short-lived factories should not leave a permanently mounted client behind
+ * - TanStack reference-counts `mount()` / `unmount()`, so multiple active handles can safely
+ *   mount the same client at the same time
+ *
+ * This is the piece that makes `staleTime` + `refetchOnWindowFocus` behave like native
+ * `useQuery`: the observer marks itself stale after the stale timer expires, then the mounted
+ * client forwards the next focus event to the query cache so active stale queries refetch.
+ */
+function subscribeToMountedQueryClient(
+  queryClient: QueryClient,
+  subscribe: () => () => void
+): () => void {
+  queryClient.mount();
+
+  let isSubscribed = true;
+  let unsubscribe: () => void;
+
+  try {
+    unsubscribe = subscribe();
+  } catch (error) {
+    // Keep mount/unmount balanced if the observer subscription throws before returning cleanup.
+    queryClient.unmount();
+    throw error;
+  }
+
+  return () => {
+    if (!isSubscribed) {
+      return;
+    }
+
+    isSubscribed = false;
+    unsubscribe();
+    // Balance the mount for this specific subscription. TanStack keeps the client mounted while
+    // any other active subscription has also called mount().
+    queryClient.unmount();
   };
 }
 

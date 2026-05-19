@@ -5866,6 +5866,21 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
+                  '`QueryHandle.subscribe(...)` mounts the bound TanStack `QueryClient` while the subscription is active, then unmounts it during cleanup.',
+                  'This mirrors what `QueryClientProvider` does for native `useQuery`: the mounted client subscribes to `focusManager` and forwards browser focus changes to `queryCache.onFocus()`.',
+                  'With an active subscription, stale timers, `refetchOnWindowFocus`, `refetchOnReconnect`, and refetch intervals follow TanStack observer semantics.',
+                  '`staleTime` still controls freshness. The default `refetchOnWindowFocus: true` refetches only after the query is stale; use `"always"` to refetch on every focus or `false` to disable focus refetching.',
+                  '`bindSubscribable(...)` participates automatically because it subscribes to the query handle internally.',
+                  'Passive reads such as `getSnapshot()`, `getQueryData(...)`, `getQueryState(...)`, and `fetchQuery(...)` do not install focus listeners. Use `subscribe(...)`, `useQueryHandle(...)`, or `bindSubscribable(...)` for live observer behavior.',
+                ],
+                id: 'query-focus-refetch',
+                paragraphs: [
+                  'Subscribed query handles activate the TanStack client lifecycle required for focus-driven refetching.',
+                ],
+                title: 'Window focus refetching',
+              },
+              {
+                bullets: [
                   '`setupQueryManager(queryClient)` binds one TanStack `QueryClient` to the full facade.',
                   'The only parameter is the `queryClient` instance that should back both factories and manager operations.',
                   'Returns a `QueryManager` with both factories plus management methods like `getQueryData(...)`, `getQueryState(...)`, and `invalidateQueries(...)` on one object.',

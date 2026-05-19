@@ -1,4 +1,4 @@
-import { QueryClient } from '@tanstack/query-core';
+import { focusManager, QueryClient } from '@tanstack/query-core';
 
 import { isQueryLoading, setupQuery, toQueryMetaState } from '../query';
 
@@ -41,6 +41,40 @@ describe('Query Service', () => {
 
     expect(statuses).toContain('pending');
     expect(statuses).toContain('success');
+  });
+
+  it('refetches stale subscribed queries when window focus returns', async () => {
+    jest.useFakeTimers();
+
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 0 } } });
+    const createQuery = setupQuery(queryClient);
+    const queryFn = jest
+      .fn()
+      .mockResolvedValueOnce('initial')
+      .mockResolvedValueOnce('focused');
+    const service = createQuery(['demo', 'focus'], queryFn, { staleTime: 5_000 });
+    const unsubscribe = service.subscribe(() => undefined);
+
+    try {
+      await flushTasks();
+
+      expect(queryFn).toHaveBeenCalledTimes(1);
+      expect(service.getSnapshot().data).toBe('initial');
+
+      jest.advanceTimersByTime(5_001);
+      await flushTasks();
+
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+      await flushTasks();
+
+      expect(queryFn).toHaveBeenCalledTimes(2);
+      expect(service.getSnapshot().data).toBe('focused');
+    } finally {
+      unsubscribe();
+      focusManager.setFocused(undefined);
+      jest.useRealTimers();
+    }
   });
 
   it('invalidates its own query key exactly', async () => {
