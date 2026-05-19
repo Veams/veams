@@ -45,6 +45,10 @@ export default defineConfig({
         replacement: path.resolve(workspaceRoot, 'packages/status-quo/src/react/index.ts'),
       },
       {
+        find: '@veams/status-quo/signals',
+        replacement: path.resolve(workspaceRoot, 'packages/status-quo/src/signals/index.ts'),
+      },
+      {
         find: '@veams/status-quo/store',
         replacement: path.resolve(workspaceRoot, 'packages/status-quo/src/store/index.ts'),
       },
