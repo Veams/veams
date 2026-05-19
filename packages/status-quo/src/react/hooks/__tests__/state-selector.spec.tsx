@@ -13,7 +13,7 @@ import type { StateSubscriptionHandler } from '../../../types/types.js';
 
 declare global {
   // React 19 requires this flag in test environments that use manual act() calls.
-   
+
   var IS_REACT_ACT_ENVIRONMENT: boolean;
 }
 
@@ -104,6 +104,11 @@ class TestStateHandler implements StateSubscriptionHandler<TestState, TestAction
     const nextState = this.state;
     this.listeners.forEach((listener) => listener(nextState));
   }
+}
+
+class LifecycleTestStateHandler extends TestStateHandler {
+  connect = jest.fn();
+  disconnect = jest.fn();
 }
 
 class CounterStateHandler implements StateSubscriptionHandler<CounterState, CounterActions> {
@@ -675,6 +680,160 @@ describe('Selector hooks', () => {
       user: { name: 'Ada' },
       counter: 1,
     });
+  });
+
+  it('useStateSubscription should connect after commit and defer disconnect cleanup', async () => {
+    const stateHandler = new LifecycleTestStateHandler({
+      user: { name: 'Ada' },
+      counter: 0,
+    });
+    const createStateHandler = jest.fn(() => stateHandler);
+    const renderConnectCallCounts: number[] = [];
+    const renderSpy = jest.fn(() => {
+      renderConnectCallCounts.push(stateHandler.connect.mock.calls.length);
+    });
+    const actionsReadySpy = jest.fn<void, [TestActions]>();
+
+    act(() => {
+      root.render(
+        <FullSubscriptionConsumer
+          createStateHandler={createStateHandler}
+          onRender={renderSpy}
+          onActionsReady={actionsReadySpy}
+        />
+      );
+    });
+
+    expect(renderConnectCallCounts).toStrictEqual([0]);
+    expect(stateHandler.connect).toHaveBeenCalledTimes(1);
+    expect(stateHandler.disconnect).not.toHaveBeenCalled();
+    expect(stateHandler.destroy).not.toHaveBeenCalled();
+
+    act(() => {
+      root.render(<React.Fragment />);
+    });
+
+    expect(stateHandler.disconnect).not.toHaveBeenCalled();
+    expect(stateHandler.destroy).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      });
+    });
+
+    expect(stateHandler.disconnect).toHaveBeenCalledTimes(1);
+    expect(stateHandler.destroy).toHaveBeenCalledTimes(1);
+  });
+
+  it('useStateSubscription should keep the connection through immediate resubscription', async () => {
+    const stateHandler = new LifecycleTestStateHandler({
+      user: { name: 'Ada' },
+      counter: 0,
+    });
+    const createStateHandler = jest.fn(() => stateHandler);
+    const renderSpy = jest.fn();
+    const actionsReadySpy = jest.fn<void, [TestActions]>();
+
+    act(() => {
+      root.render(
+        <FullSubscriptionConsumer
+          createStateHandler={createStateHandler}
+          onRender={renderSpy}
+          onActionsReady={actionsReadySpy}
+        />
+      );
+    });
+
+    act(() => {
+      root.render(<React.Fragment />);
+    });
+
+    act(() => {
+      root.render(
+        <FullSubscriptionConsumer
+          createStateHandler={createStateHandler}
+          onRender={renderSpy}
+          onActionsReady={actionsReadySpy}
+        />
+      );
+    });
+
+    await act(async () => {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      });
+    });
+
+    expect(stateHandler.connect).toHaveBeenCalledTimes(1);
+    expect(stateHandler.disconnect).not.toHaveBeenCalled();
+    expect(stateHandler.destroy).not.toHaveBeenCalled();
+
+    act(() => {
+      root.render(<React.Fragment />);
+    });
+
+    await act(async () => {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      });
+    });
+
+    expect(stateHandler.disconnect).toHaveBeenCalledTimes(1);
+    expect(stateHandler.destroy).toHaveBeenCalledTimes(1);
+  });
+
+  it('useStateSubscription should disconnect only after the last consumer unsubscribes', async () => {
+    const stateHandler = new LifecycleTestStateHandler({
+      user: { name: 'Ada' },
+      counter: 0,
+    });
+    const createStateHandler = jest.fn(() => stateHandler);
+    const firstRenderSpy = jest.fn();
+    const secondRenderSpy = jest.fn();
+    const actionsReadySpy = jest.fn<void, [TestActions]>();
+    const Consumers = ({ showSecond }: { showSecond: boolean }) => (
+      <React.Fragment>
+        <FullSubscriptionConsumer
+          createStateHandler={createStateHandler}
+          onRender={firstRenderSpy}
+          onActionsReady={actionsReadySpy}
+        />
+        {showSecond && (
+          <FullSubscriptionConsumer
+            createStateHandler={createStateHandler}
+            onRender={secondRenderSpy}
+            onActionsReady={actionsReadySpy}
+          />
+        )}
+      </React.Fragment>
+    );
+
+    act(() => {
+      root.render(<Consumers showSecond />);
+    });
+
+    expect(stateHandler.connect).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      root.render(<Consumers showSecond={false} />);
+    });
+
+    expect(stateHandler.disconnect).not.toHaveBeenCalled();
+    expect(stateHandler.destroy).not.toHaveBeenCalled();
+
+    act(() => {
+      root.render(<React.Fragment />);
+    });
+
+    await act(async () => {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      });
+    });
+
+    expect(stateHandler.disconnect).toHaveBeenCalledTimes(1);
+    expect(stateHandler.destroy).toHaveBeenCalledTimes(1);
   });
 
   it('useStateSingleton selector should keep singleton alive while consumers exist', () => {

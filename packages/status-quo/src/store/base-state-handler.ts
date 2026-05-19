@@ -53,6 +53,11 @@ export abstract class BaseStateHandler<S, A> implements StateSubscriptionHandler
   // Holds the Redux DevTools instance if enabled.
   protected devTools: DevTools | null = null;
 
+  // Tracks mounted consumers that have connected this handler.
+  private connectCount = 0;
+  // Prevents duplicate side effects while the handler is already connected.
+  private isConnected = false;
+
   // Keeps track of active subscriptions to allow for cleanup.
   subscriptions: ManagedSubscription[] = [];
   // Tracks keyed subscriptions so handlers can replace them by name.
@@ -128,9 +133,92 @@ export abstract class BaseStateHandler<S, A> implements StateSubscriptionHandler
   }
 
   /**
+   * Starts external effects for this handler.
+   */
+  connect(): void {
+    const previousConnectCount = this.connectCount;
+    this.connectCount += 1;
+
+    if (this.isConnected) {
+      return;
+    }
+
+    this.isConnected = true;
+
+    try {
+      this.onConnect();
+    } catch (error) {
+      this.connectCount = previousConnectCount;
+      this.isConnected = false;
+      this.clearManagedSubscriptions();
+      throw error;
+    }
+  }
+
+  /**
+   * Stops external effects once all connected consumers have disconnected.
+   */
+  disconnect(): void {
+    if (this.connectCount === 0) {
+      return;
+    }
+
+    this.connectCount -= 1;
+
+    if (this.connectCount > 0) {
+      return;
+    }
+
+    if (!this.isConnected) {
+      this.clearManagedSubscriptions();
+      return;
+    }
+
+    try {
+      this.onDisconnect();
+    } finally {
+      this.isConnected = false;
+      this.clearManagedSubscriptions();
+    }
+  }
+
+  /**
    * Cleans up all active subscriptions when the handler is destroyed.
    */
   destroy(): void {
+    this.connectCount = 0;
+
+    if (!this.isConnected) {
+      this.clearManagedSubscriptions();
+      return;
+    }
+
+    try {
+      this.onDisconnect();
+    } finally {
+      this.isConnected = false;
+      this.clearManagedSubscriptions();
+    }
+  }
+
+  /**
+   * Optional hook for subclasses that need to start external effects.
+   */
+  protected onConnect(): void {
+    // Optional override.
+  }
+
+  /**
+   * Optional hook for subclasses that need to stop external effects.
+   */
+  protected onDisconnect(): void {
+    // Optional override.
+  }
+
+  /**
+   * Clears all subscriptions managed through this base handler.
+   */
+  protected clearManagedSubscriptions(): void {
     const subscriptions = [...this.subscriptions];
     const namedSubscriptions = [...this.namedSubscriptions.values()];
 

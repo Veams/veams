@@ -51,6 +51,7 @@ type CounterBucketSelection = { bucket: number };
 type CounterBucketState = { bucket: number };
 type SetState = { openItems: Set<string> };
 type SetActions = { toggle: (id: string) => void };
+type NoopActions = { noop: () => void };
 type CounterSubscribable = {
   subscribe: (listener: (value: CounterState) => void) => () => void;
   getSnapshot: () => CounterState;
@@ -200,6 +201,37 @@ class SetNativeStateHandler extends NativeStateHandler<SetState, SetActions> {
   }
 }
 
+class LifecycleNativeStateHandler extends NativeStateHandler<CounterState, NoopActions> {
+  constructor(
+    private readonly onConnectSpy: () => void,
+    private readonly onDisconnectSpy: () => void
+  ) {
+    super({
+      initialState: {
+        count: 0,
+      },
+    });
+  }
+
+  trackSubscription(subscription: { unsubscribe: () => void }) {
+    this.subscriptions = [...this.subscriptions, subscription];
+  }
+
+  protected override onConnect(): void {
+    this.onConnectSpy();
+  }
+
+  protected override onDisconnect(): void {
+    this.onDisconnectSpy();
+  }
+
+  getActions(): NoopActions {
+    return {
+      noop: () => undefined,
+    };
+  }
+}
+
 function createCounterSubscribable(initialCount: number) {
   let listener: ((value: CounterState) => void) | null = null;
   const unsubscribe = jest.fn(() => {
@@ -267,6 +299,54 @@ describe('Native State Handler', () => {
     stateHandler.destroy();
 
     expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should connect and disconnect side effects with reference counting', () => {
+    const onConnectSpy = jest.fn();
+    const onDisconnectSpy = jest.fn();
+    const handler = new LifecycleNativeStateHandler(onConnectSpy, onDisconnectSpy);
+
+    expect(handler.getSnapshot()).toStrictEqual({ count: 0 });
+    expect(onConnectSpy).not.toHaveBeenCalled();
+
+    handler.connect();
+    handler.connect();
+    handler.disconnect();
+
+    expect(onConnectSpy).toHaveBeenCalledTimes(1);
+    expect(onDisconnectSpy).not.toHaveBeenCalled();
+
+    handler.disconnect();
+
+    expect(onDisconnectSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should clear managed subscriptions on disconnect', () => {
+    const handler = new LifecycleNativeStateHandler(jest.fn(), jest.fn());
+    const unsubscribeSpy = jest.fn();
+
+    handler.trackSubscription({ unsubscribe: unsubscribeSpy });
+    handler.connect();
+    handler.disconnect();
+
+    expect(unsubscribeSpy).toHaveBeenCalledTimes(1);
+    expect(handler.subscriptions).toStrictEqual([]);
+  });
+
+  it('should disconnect and clear managed subscriptions on destroy', () => {
+    const onDisconnectSpy = jest.fn();
+    const handler = new LifecycleNativeStateHandler(jest.fn(), onDisconnectSpy);
+    const unsubscribeSpy = jest.fn();
+
+    handler.trackSubscription({ unsubscribe: unsubscribeSpy });
+    handler.connect();
+    handler.connect();
+
+    handler.destroy();
+    handler.disconnect();
+
+    expect(onDisconnectSpy).toHaveBeenCalledTimes(1);
+    expect(unsubscribeSpy).toHaveBeenCalledTimes(1);
   });
 
   it('should call subscriber when state has changed and also on initial subscribe', () => {

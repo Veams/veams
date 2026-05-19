@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `StateProvider` for sharing one handler instance across a scoped React subtree.
 - `useProvidedStateHandler()`, `useProvidedStateActions()`, and `useProvidedStateSubscription()` for provider-scoped composition.
 - `setupStatusQuo({ devTools: { enabled } })` for global Redux DevTools defaults.
+- Ref-counted `connect()`/`disconnect()` lifecycle support on `BaseStateHandler`, with `onConnect()`/`onDisconnect()` hooks for external effects.
 
 ### Changed
 - The library is now **zero-dependency** when only `NativeStateHandler` is used (`rxjs` and `@preact/signals-core` are peer dependencies).
@@ -19,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `ObservableStateHandler#getObservable(options?)` is now the canonical API for the full state stream.
 - `ObservableStateHandler#getObservableItem(key)` is now the canonical API for keyed item streams.
 - `makeStateSingleton()` now keeps singleton instances alive by default unless `destroyOnNoConsumers: true` is set.
+- React state subscriptions now call handler `connect()` after commit and defer `disconnect()` until the last subscriber has unmounted.
 
 ### Removed
 - React hook and provider exports from the root `@veams/status-quo` entrypoint in favor of `@veams/status-quo/react`.

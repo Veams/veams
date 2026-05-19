@@ -239,7 +239,9 @@ class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
 
   constructor() {
     super({ initialState: { counter: 0, cardTitle: '' }});
+  }
 
+  protected override onConnect(): void {
     this.subscriptions.push(
       combineLatest([
         this.counter$,
@@ -252,7 +254,6 @@ class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
       })
     )
   }
-
 }
 
 // Signals: combine derived values via computed + bindSubscribable
@@ -269,7 +270,9 @@ class AppSignalStore extends SignalStateHandler<AppState, AppActions> {
 
   constructor() {
     super({ initialState: { counter: 0, cardTitle: '' }});
+  }
 
+  protected override onConnect(): void {
     this.bindSubscribable(
       { subscribe: this.combined.subscribe.bind(this.combined), getSnapshot: () => this.combined.value },
       (nextState) => this.setState(nextState, 'sync-combined')
@@ -384,7 +387,7 @@ Creates one handler instance per component mount and returns it.
 
 - `factory`: function returning a `StateSubscriptionHandler`
 - `params`: optional factory params tuple
-- lifecycle note: params are applied when the handler instance is created for that mount
+- lifecycle note: params are applied when the handler instance is created for that mount; external effects should start in `connect()`/`onConnect()`, not in the constructor
 
 ```ts
 import { useStateHandler } from '@veams/status-quo/react';
@@ -442,6 +445,7 @@ const actions = useProvidedStateActions<UserState, UserActions>();
 ### `useStateSubscription(source, selector?, isEqual?)`
 
 Subscribes to either a handler instance or a singleton and returns `[selectedState, actions]`.
+When the source exposes `connect()`/`disconnect()`, the hook connects after the first committed subscriber mounts and defers disconnect until the last subscriber has unmounted.
 
 - `source`: `StateSubscriptionHandler` or `StateSingleton`
   - When you use local state, `source` is the handler instance returned by `useStateHandler()`.
@@ -629,6 +633,8 @@ Required interface implemented by all handlers.
 interface StateSubscriptionHandler<V, A> {
   subscribe(listener: () => void): () => void;
   subscribe(listener: (value: V) => void): () => void;
+  connect?: () => void;
+  disconnect?: () => void;
   getSnapshot: () => V;
   destroy: () => void;
   getInitialState: () => V;
@@ -652,10 +658,21 @@ Public methods:
 - `getState(): S`
 - `getSnapshot(): S`
 - `setState(next: Partial<S>, actionName = 'change'): void`
+- `connect(): void`
+- `disconnect(): void`
 - `subscribe(listener: () => void): () => void` (abstract)
 - `subscribe(listener: (value: S) => void): () => void` (abstract)
 - `destroy(): void`
 - `getActions(): A` (abstract)
+
+Lifecycle:
+
+- Constructors should create the initial snapshot only.
+- `connect()` is ref-counted and calls `onConnect()` once when the first consumer connects.
+- `disconnect()` decrements the ref count, calls `onDisconnect()` after the last consumer disconnects, then clears managed subscriptions.
+- `destroy()` is final cleanup and closes any active connection.
+
+Use `onConnect()` for external effects: query observers, router listeners, DOM listeners, timers, intervals, and handler-to-handler subscriptions that should only be live while mounted consumers exist. Keep pure initial state shaping, option normalization, and dependency assignment in the constructor.
 
 Tracked subscription state:
 
@@ -667,6 +684,8 @@ Protected helpers:
 
 - `getStateValue(): S` (abstract)
 - `setStateValue(next: S): void` (abstract)
+- `onConnect(): void`
+- `onDisconnect(): void`
 - `initDevTools(options?: { enabled?: boolean; namespace?: string }): void`
 - `bindSubscribable<T>(subscriptionName: string, service: { subscribe: (listener: (value: T) => void) => () => void; getSnapshot?: () => T }, onChange: (value: T) => void, selector?: (value: T) => T, isEqual?: (current: T, next: T) => boolean): void`
 - `bindSubscribable<T, Sel>(subscriptionName: string, service: { subscribe: (listener: (value: T) => void) => () => void; getSnapshot?: () => T }, onChange: (value: Sel) => void, selector: (value: T) => Sel, isEqual?: (current: Sel, next: Sel) => boolean): void`

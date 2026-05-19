@@ -20,12 +20,12 @@ type Listener = () => void;
 type SharedStateSubscriptionHandler = StateSubscriptionHandler<unknown, unknown>;
 
 /**
- * Tracks the reference count and deferred destruction status of a state handler.
+ * Tracks the reference count and deferred lifecycle cleanup status of a state handler.
  */
-type DeferredDestroy = {
+type DeferredLifecycle = {
   // Number of active consumers of the state handler.
   refCount: number;
-  // ID of the timeout for deferred destruction.
+  // ID of the timeout for deferred disconnect/destruction.
   timeoutId: ReturnType<typeof setTimeout> | null;
 };
 
@@ -51,18 +51,18 @@ type ServerSnapshotCacheEntry<Source, Selected> = {
   sourceSnapshot: Source;
 };
 
-// Global map to track deferred destruction status for each state handler instance.
-const deferredDestroyMap = new WeakMap<SharedStateSubscriptionHandler, DeferredDestroy>();
+// Global map to track deferred lifecycle status for each state handler instance.
+const deferredLifecycleMap = new WeakMap<SharedStateSubscriptionHandler, DeferredLifecycle>();
 
 /**
- * Returns the deferred destruction status for a given state handler instance.
+ * Returns the deferred lifecycle status for a given state handler instance.
  * Initializes the status if it does not already exist.
  */
-function getDeferredDestroyState(
+function getDeferredLifecycleState(
   stateSubscriptionHandler: SharedStateSubscriptionHandler
-): DeferredDestroy {
+): DeferredLifecycle {
   // Retrieve the existing status from the map.
-  const existingState = deferredDestroyMap.get(stateSubscriptionHandler);
+  const existingState = deferredLifecycleMap.get(stateSubscriptionHandler);
 
   // If status already exists, return it.
   if (existingState) {
@@ -70,12 +70,12 @@ function getDeferredDestroyState(
   }
 
   // Create and store a new status for the handler.
-  const nextState: DeferredDestroy = {
+  const nextState: DeferredLifecycle = {
     refCount: 0,
     timeoutId: null,
   };
 
-  deferredDestroyMap.set(stateSubscriptionHandler, nextState);
+  deferredLifecycleMap.set(stateSubscriptionHandler, nextState);
 
   return nextState;
 }
@@ -113,17 +113,20 @@ export function useStateSubscriptionSelector<V, A, Sel>(
   // Subscription function to be used by useSyncExternalStore.
   const subscribe = useCallback(
     (listener: Listener) => {
-      // Access the deferred destruction status for this handler.
+      // Access the deferred lifecycle status for this handler.
       const sharedStateSubscriptionHandler =
         stateSubscriptionHandler as unknown as SharedStateSubscriptionHandler;
-      const deferredDestroyState = getDeferredDestroyState(sharedStateSubscriptionHandler);
-      // Increment the consumer reference count.
-      deferredDestroyState.refCount += 1;
+      const deferredLifecycleState = getDeferredLifecycleState(sharedStateSubscriptionHandler);
+      const hadPendingCleanup = deferredLifecycleState.timeoutId !== null;
+      const wasIdle = deferredLifecycleState.refCount === 0;
 
-      // If a pending destruction timeout is scheduled, cancel it.
-      if (deferredDestroyState.timeoutId) {
-        clearTimeout(deferredDestroyState.timeoutId);
-        deferredDestroyState.timeoutId = null;
+      // Increment the consumer reference count.
+      deferredLifecycleState.refCount += 1;
+
+      // If a pending cleanup timeout is scheduled, cancel it.
+      if (deferredLifecycleState.timeoutId) {
+        clearTimeout(deferredLifecycleState.timeoutId);
+        deferredLifecycleState.timeoutId = null;
       }
 
       // Subscribe to the state handler.
@@ -135,51 +138,62 @@ export function useStateSubscriptionSelector<V, A, Sel>(
         listener();
       });
 
+      if (wasIdle && !hadPendingCleanup) {
+        stateSubscriptionHandler.connect?.();
+      }
+
       // Return an unsubscribe function to be called by React.
       return () => {
         // Execute the handler's unsubscribe method.
         unsubscribe();
 
-        // If automatic cleanup is disabled, stop here.
-        if (!destroyOnCleanup) {
-          return;
-        }
-
-        // Retrieve the current destruction status.
-        const activeDeferredDestroyState = deferredDestroyMap.get(sharedStateSubscriptionHandler);
+        // Retrieve the current lifecycle status.
+        const activeDeferredLifecycleState = deferredLifecycleMap.get(
+          sharedStateSubscriptionHandler
+        );
 
         // If no status is found, stop here.
-        if (!activeDeferredDestroyState) {
+        if (!activeDeferredLifecycleState) {
           return;
         }
 
         // Decrement the consumer reference count.
-        activeDeferredDestroyState.refCount -= 1;
+        activeDeferredLifecycleState.refCount -= 1;
 
-        // If there are still active consumers, do not destroy the handler.
-        if (activeDeferredDestroyState.refCount > 0) {
+        // If there are still active consumers, keep the handler connected.
+        if (activeDeferredLifecycleState.refCount > 0) {
           return;
         }
 
         // Reset the reference count to zero.
-        activeDeferredDestroyState.refCount = 0;
-        // Schedule deferred destruction to allow for potential immediate re-subscriptions.
-        activeDeferredDestroyState.timeoutId = setTimeout(() => {
+        activeDeferredLifecycleState.refCount = 0;
+        // Schedule deferred cleanup to allow for potential immediate re-subscriptions.
+        activeDeferredLifecycleState.timeoutId = setTimeout(() => {
           // Check if the handler still has no consumers after the timeout.
-          const pendingDeferredDestroyState = deferredDestroyMap.get(
+          const pendingDeferredLifecycleState = deferredLifecycleMap.get(
             sharedStateSubscriptionHandler
           );
 
-          // If consumers have reappeared, do not destroy the handler.
-          if (!pendingDeferredDestroyState || pendingDeferredDestroyState.refCount > 0) {
+          // If consumers have reappeared, keep the handler connected.
+          if (!pendingDeferredLifecycleState || pendingDeferredLifecycleState.refCount > 0) {
             return;
           }
 
-          // Clear the pending timeout and destroy the state handler.
-          pendingDeferredDestroyState.timeoutId = null;
-          stateSubscriptionHandler.destroy();
-          // Remove the status from the global map.
-          deferredDestroyMap.delete(sharedStateSubscriptionHandler);
+          // Clear the pending timeout and disconnect the state handler.
+          pendingDeferredLifecycleState.timeoutId = null;
+
+          try {
+            stateSubscriptionHandler.disconnect?.();
+          } finally {
+            if (destroyOnCleanup) {
+              try {
+                stateSubscriptionHandler.destroy();
+              } finally {
+                // Remove the status from the global map after final destruction.
+                deferredLifecycleMap.delete(sharedStateSubscriptionHandler);
+              }
+            }
+          }
         }, 0);
       };
     },

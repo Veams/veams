@@ -13,6 +13,10 @@ export interface StateSubscriptionHandler<V, A> {
   subscribe(listener: () => void): () => void;
   // Method to subscribe a listener that receives the updated state value.
   subscribe(listener: (value: V) => void): () => void;
+  // Optional method to start external effects after a committed consumer subscribes.
+  connect?: () => void;
+  // Optional method to stop external effects after the last consumer unsubscribes.
+  disconnect?: () => void;
   // Method to retrieve the current state snapshot.
   getSnapshot: () => V;
   // Method to clean up resources associated with the handler.
