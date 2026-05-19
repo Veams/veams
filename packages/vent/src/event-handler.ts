@@ -1,9 +1,9 @@
-export type EventCallback<TData = unknown, TScope = unknown> = (
+export type EventCallback<TData = any, TScope = any> = (
   this: TScope,
   data: TData
 ) => void;
 
-export interface EventHandler<TTopic extends string = string, TData = unknown, TScope = unknown> {
+export interface EventHandler<TTopic extends string = string, TData = any, TScope = any> {
   publish: (topic: TTopic, data?: TData, scope?: TScope) => void;
   trigger: EventHandler<TTopic, TData, TScope>['publish'];
   subscribe: (topic: TTopic | string, callback: EventCallback<TData, TScope>) => void;
@@ -25,8 +25,8 @@ function toTopics<TTopic extends string>(topic: TTopic | string): TTopic[] {
 
 export function createEventHandling<
   TTopic extends string = string,
-  TData = unknown,
-  TScope = unknown,
+  TData = any,
+  TScope = any,
 >(): EventHandler<TTopic, TData, TScope> {
   const listenersByTopic = new Map<TTopic, EventCallback<TData, TScope>[]>();
 
