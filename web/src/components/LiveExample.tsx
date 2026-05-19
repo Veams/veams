@@ -1,9 +1,9 @@
 import {
   NativeStateHandler,
   makeStateSingleton,
-  SignalStateHandler,
   type StateSubscriptionHandler,
 } from '@veams/status-quo';
+import { SignalStateHandler } from '@veams/status-quo/signals';
 import {
   StateProvider,
   useProvidedStateActions,

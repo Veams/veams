@@ -688,7 +688,9 @@ type CounterActions = { increase: () => void };
 class CounterHandler extends NativeStateHandler<CounterState, CounterActions> {
   constructor() {
     super({ initialState: { count: 0, step: 1 } });
+  }
 
+  protected override onConnect(): void {
     const uiStateHandler = uiStateSingleton.getInstance();
 
     // Use the native bindSubscribable to sync state manually.
@@ -762,7 +764,9 @@ class CounterHandler extends ObservableStateHandler<CounterState, CounterActions
         step: 1,
       },
     });
+  }
 
+  protected override onConnect(): void {
     // React to the shared UI singleton and derive the local step from it.
     const uiStateHandler = uiStateSingleton.getInstance();
     const step$ = uiStateHandler.getObservable().pipe(
@@ -844,7 +848,9 @@ class CounterHandler extends SignalStateHandler<CounterState, CounterActions> {
         step: 1,
       },
     });
+  }
 
+  protected override onConnect(): void {
     const uiStateHandler = uiStateSingleton.getInstance();
     const stepSignal = computed(() => {
       // Derive the step from the shared viewport.
@@ -911,6 +917,80 @@ function CounterCard() {
   return <button onClick={actions.increase}>{count}</button>;
 }`;
 
+const statusQuoConnectionLifecycleBadExample = `constructor(options: SolvencyScoreCardStateHandlerOptions = {}) {
+  const shouldAnimateOnLoad = options.animateOnLoad ?? true;
+  const initialBaseState = {
+    ...defaultState,
+    ...options.initialState,
+    query: {
+      ...defaultState.query,
+      ...options.initialState?.query,
+    },
+  };
+  const normalizedInitialScore =
+    initialBaseState.score === null ? null : clampScore(initialBaseState.score);
+
+  super({
+    initialState: {
+      ...initialBaseState,
+      isAnimatedIn: !shouldAnimateOnLoad,
+      isCounterActive: !shouldAnimateOnLoad,
+      isPointerActive: !shouldAnimateOnLoad,
+      score: normalizedInitialScore,
+    },
+    options: {
+      devTools: options.devTools ?? DEFAULT_DEVTOOLS,
+    },
+  });
+
+  this.shouldAnimateOnLoad = shouldAnimateOnLoad;
+  this.solvencyQueryHandler = options.solvencyQueryHandler;
+  this.queryHandler = this.solvencyQueryHandler?.getSolvencyScoreQuery();
+
+  this.bindSolvencyScoreQuery();
+  this.scheduleInitialAnimation();
+}`;
+
+const statusQuoConnectionLifecycleGoodExample = `constructor(options: SolvencyScoreCardStateHandlerOptions = {}) {
+  const shouldAnimateOnLoad = options.animateOnLoad ?? true;
+  const initialBaseState = {
+    ...defaultState,
+    ...options.initialState,
+    query: {
+      ...defaultState.query,
+      ...options.initialState?.query,
+    },
+  };
+  const normalizedInitialScore =
+    initialBaseState.score === null ? null : clampScore(initialBaseState.score);
+
+  super({
+    initialState: {
+      ...initialBaseState,
+      isAnimatedIn: !shouldAnimateOnLoad,
+      isCounterActive: !shouldAnimateOnLoad,
+      isPointerActive: !shouldAnimateOnLoad,
+      score: normalizedInitialScore,
+    },
+    options: {
+      devTools: options.devTools ?? DEFAULT_DEVTOOLS,
+    },
+  });
+
+  this.shouldAnimateOnLoad = shouldAnimateOnLoad;
+  this.solvencyQueryHandler = options.solvencyQueryHandler;
+  this.queryHandler = this.solvencyQueryHandler?.getSolvencyScoreQuery();
+}
+
+protected override onConnect(): void {
+  this.bindSolvencyScoreQuery();
+  this.scheduleInitialAnimation();
+}
+
+protected override onDisconnect(): void {
+  this.cancelInitialAnimation();
+}`;
+
 const statusQuoBindSubscribableExample = `import { SignalStateHandler } from '@veams/status-quo/signals';
 
 type CounterState = { count: number };
@@ -936,15 +1016,17 @@ type BucketState = { bucket: number };
 type BucketActions = { reset: () => void };
 
 class CounterBucketHandler extends SignalStateHandler<BucketState, BucketActions> {
-  constructor(source: CounterHandler) {
+  constructor(private readonly source: CounterHandler) {
     super({
       initialState: {
         bucket: 0,
       },
     });
+  }
 
+  protected override onConnect(): void {
     this.bindSubscribable(
-      source,
+      this.source,
       (bucket) => this.setState({ bucket }, 'sync-bucket'),
       (counterState) => ({
         bucket: Math.floor(counterState.count / 10),
@@ -1004,8 +1086,10 @@ class ListHandler extends NativeStateHandler<ListState, ListActions> {
         selectedItem: null,
       },
     });
+  }
 
-    // Unnamed binding: stable for the whole handler lifetime.
+  protected override onConnect(): void {
+    // Unnamed binding: stable for the active connection lifetime.
     this.bindSubscribable(
       getList(),
       (snapshot) => {
@@ -4348,6 +4432,67 @@ export const docsPackages: DocsPackage[] = [
           {
             blocks: [
               {
+                callout: 'Constructors create snapshots. Connection lifecycle starts effects.',
+                codeExamples: [
+                  {
+                    code: statusQuoConnectionLifecycleBadExample,
+                    description:
+                      'This starts a query subscription and animation timer during construction. In React, `useStateHandler()` creates the instance during render, so these effects can run before commit.',
+                    label: 'Bad: constructor starts effects',
+                    language: 'ts',
+                  },
+                  {
+                    code: statusQuoConnectionLifecycleGoodExample,
+                    description:
+                      'The constructor stays render-safe. `onConnect()` starts the query binding and timer after a mounted subscriber exists; `onDisconnect()` stops feature-specific effects.',
+                    label: 'Good: effects start on connect',
+                    language: 'ts',
+                  },
+                ],
+                id: 'connection-lifecycle-example',
+                paragraphs: [
+                  'A handler instance should be cheap to create and safe to inspect. Build the initial state, normalize options, keep injected dependencies, and expose a working `getSnapshot()` from the constructor. Start external work only when a consumer actually subscribes.',
+                ],
+                title: 'Keep constructors render-safe',
+              },
+              {
+                bullets: [
+                  'Use `onConnect()` for query observers, router listeners, DOM listeners, browser events, timers, intervals, and handler-to-handler subscriptions that should only be live while the handler has mounted consumers.',
+                  'Use `onDisconnect()` for feature cleanup that is not already represented as a managed subscription, such as cancelling animation frames or clearing timer handles.',
+                  'Use `bindSubscribable()` inside `onConnect()` for stable live bindings; the base handler clears managed bindings after `onDisconnect()`.',
+                  'Keep pure initialization in the constructor: initial snapshot shaping, option normalization, dependency assignment, and action setup.',
+                ],
+                id: 'when-to-use-connection-lifecycle',
+                paragraphs: [
+                  'Reach for the connection lifecycle whenever the work observes something outside the handler or schedules future work. If the code would need an unsubscribe, cancel, removeEventListener, or clearTimeout path, it belongs in `onConnect()` and `onDisconnect()` rather than the constructor.',
+                ],
+                title: 'When to use it',
+              },
+              {
+                bullets: [
+                  '`new Handler()` must not subscribe, add listeners, start timers, or kick off animations.',
+                  '`handler.getSnapshot()` should work before `connect()`.',
+                  'The first committed subscriber connects the handler; the last subscriber disconnects it after a deferred cleanup tick.',
+                  'Multiple subscribers are safe because `BaseStateHandler` ref-counts `connect()` and `disconnect()`.',
+                  '`destroy()` remains final cleanup and also closes any active connection.',
+                ],
+                id: 'connection-lifecycle-rules',
+                paragraphs: [
+                  'This keeps React Strict Mode and render retries from accidentally duplicating external effects. Development may still connect and disconnect more often, but construction stays pure and effect work happens after commit.',
+                ],
+                title: 'Rules of thumb',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'connection-lifecycle',
+            intro:
+              'Use connection lifecycle for external effects so handler construction stays pure and render-safe.',
+            summary: 'Pure constructors, connected effects.',
+            title: 'Connection Lifecycle',
+          },
+          {
+            blocks: [
+              {
                 codeExamples: [
                   {
                     code: statusQuoBindSubscribableExample,
@@ -4356,8 +4501,8 @@ export const docsPackages: DocsPackage[] = [
                   },
                 ],
                 bullets: [
-                  'Use the unnamed form when the binding is attached once and should live for the whole handler lifetime.',
-                  'This is the normal choice for stable upstream derivations created in the constructor.',
+                  'Use the unnamed form when the binding is attached once and should live for the active connection lifetime.',
+                  'This is the normal choice for stable upstream derivations attached in `onConnect()`.',
                   'The binding is tracked for cleanup and does not need a manual handle in feature code.',
                 ],
                 id: 'unnamed-binding',
@@ -4388,17 +4533,17 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 callout:
-                  'Bindings are handler lifecycle work. Cleanup belongs to `destroy()`, not to scattered feature-level unsubscribe calls.',
+                  'Bindings are handler lifecycle work. Cleanup belongs to `disconnect()` and `destroy()`, not to scattered feature-level unsubscribe calls.',
                 bullets: [
-                  'Unnamed bindings are tracked with the handler subscriptions and are unsubscribed during `destroy()`.',
-                  'Named bindings are tracked separately, but `destroy()` unsubscribes those as well.',
-                  'The cleanup phase should leave no active upstream listeners after the handler is destroyed.',
+                  'Unnamed bindings are tracked with the handler subscriptions and are unsubscribed during `disconnect()` and `destroy()`.',
+                  'Named bindings are tracked separately, but the same cleanup path unsubscribes those as well.',
+                  'The cleanup phase should leave no active upstream listeners after the handler disconnects or is destroyed.',
                 ],
                 id: 'binding-cleanup',
                 paragraphs: [
-                  'The important lifecycle rule is simple: the handler owns binding cleanup. Use unnamed bindings for stable lifetime work, named bindings for replaceable work, and rely on `destroy()` to close both categories during teardown.',
+                  'The important lifecycle rule is simple: the handler owns binding cleanup. Use unnamed bindings for stable connection work, named bindings for replaceable work, and rely on the base lifecycle to close both categories during teardown.',
                 ],
-                title: 'Destroy lifecycle and cleanup phase',
+                title: 'Disconnect and destroy cleanup phase',
               },
             ],
             eyebrow: 'Guides',
@@ -4635,7 +4780,8 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   '`BaseStateHandler` is the abstract root class for all handler implementations.',
-                  'Public instance methods are `getInitialState()`, `getState()`, `getSnapshot()`, `setState(newState, actionName?)`, and `destroy()`.',
+                  'Public instance methods are `getInitialState()`, `getState()`, `getSnapshot()`, `setState(newState, actionName?)`, `connect()`, `disconnect()`, and `destroy()`.',
+                  'Override `onConnect()` and `onDisconnect()` when a handler needs external subscriptions, timers, or listeners.',
                   'Use it as the contract reference when building your own handler class on top of the Status Quo lifecycle and subscription model.',
                 ],
                 id: 'base-state-handler',
@@ -5032,7 +5178,7 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   'Use `bindSubscribable()` when one handler should derive part of its state from another subscribable source.',
-                  'Leave the binding unnamed when it is a stable one-time sync that should simply be cleaned up on `destroy()`.',
+                  'Leave the binding unnamed when it is a stable sync that should simply be cleaned up on `disconnect()` or `destroy()`.',
                   'Give the binding a name when the same sync may be re-established later from an action or lifecycle branch.',
                   'Reusing the same name replaces the previous upstream subscription before registering the new one.',
                 ],
@@ -5045,8 +5191,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'bind-subscribable-example',
                 paragraphs: [
-                  'This example focuses on handler-to-handler composition instead of React ownership. One binding keeps the list itself synchronized for the whole handler lifetime, while another binding follows exactly one selected item at a time.',
-                  'The snippet shows both modes: the list binding is unnamed because it is attached once and only needs destroy-time cleanup, while `selectItem({ id })` uses `this.bindSubscribable(\'item\', getListItem(params.id), ...)` so each new selection replaces the previous item subscription.',
+                  'This example focuses on handler-to-handler composition instead of React ownership. One binding keeps the list itself synchronized while the handler is connected, while another binding follows exactly one selected item at a time.',
+                  'The snippet shows both modes: the list binding is unnamed because it is attached once in `onConnect()` and only needs lifecycle cleanup, while `selectItem({ id })` uses `this.bindSubscribable(\'item\', getListItem(params.id), ...)` so each new selection replaces the previous item subscription.',
                 ],
                 title: 'Named and unnamed sync with `bindSubscribable()`',
               },
