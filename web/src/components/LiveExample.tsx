@@ -1619,7 +1619,7 @@ class AsyncInitFeatureExampleHandler extends NativeStateHandler<
       }
 
       this.setState({
-        lastServerEvent: 'Initial profile loaded — these values are the baseline now.',
+        lastServerEvent: 'Initial profile loaded. These values are the baseline now.',
       });
 
       return asyncInitServerProfiles[0];
@@ -1655,7 +1655,7 @@ class AsyncInitFeatureExampleHandler extends NativeStateHandler<
         // The dirty guard: never overwrite what the user typed.
         if (this.formHandler.getState().isDirty) {
           this.setState({
-            lastServerEvent: 'Prefill skipped — the form has unsaved edits (isDirty).',
+            lastServerEvent: 'Prefill skipped: the form has unsaved edits (isDirty).',
           });
           return;
         }
@@ -1664,7 +1664,7 @@ class AsyncInitFeatureExampleHandler extends NativeStateHandler<
           asyncInitServerProfiles[nextVersion % asyncInitServerProfiles.length]
         );
         this.setState({
-          lastServerEvent: 'Prefill applied via initialize() — new baseline, still clean.',
+          lastServerEvent: 'Prefill applied via initialize(). New baseline, still clean.',
         });
       },
       save: async (values) => {
@@ -1673,7 +1673,7 @@ class AsyncInitFeatureExampleHandler extends NativeStateHandler<
         // Saved values become the new baseline: the form is clean again.
         this.formHandler.initialize(values);
         this.setState({
-          lastServerEvent: `Saved ${values.name} — the saved values are the new baseline.`,
+          lastServerEvent: `Saved ${values.name}. The saved values are the new baseline.`,
         });
       },
     };
@@ -1739,7 +1739,7 @@ function AsyncInitExampleSummary({
       />
       <p className="example-counter-label">
         “Simulate server update” only fills the form while it is clean. It never overwrites your
-        edits. Reset returns to the current baseline — not to the empty skeleton.
+        edits. Reset returns to the current baseline, not to the empty skeleton.
       </p>
       <pre className="example-form-json">{JSON.stringify(values, null, 2)}</pre>
       <p className="example-form-banner is-muted">{lastServerEvent}</p>

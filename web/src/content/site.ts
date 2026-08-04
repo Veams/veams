@@ -2729,7 +2729,7 @@ const formDirtyPrefillExample = `class CompanyEditFormStateHandler extends Nativ
     // The form knows whether the user edited anything since the last baseline.
     if (this.formHandler.getState().isDirty) return;
 
-    // Apply the server data as the new baseline — not as a user change.
+    // Apply the server data as the new baseline, not as a user change.
     this.formHandler.initialize(toFormValues(snapshot.data));
   };
 }`;
@@ -2801,7 +2801,7 @@ class AsyncProfileFeatureHandler extends NativeStateHandler<FeatureState, Featur
 
         // The dirty guard: never overwrite what the user typed.
         if (this.formHandler.getState().isDirty) {
-          this.setState({ lastServerEvent: 'Prefill skipped — unsaved edits (isDirty).' });
+          this.setState({ lastServerEvent: 'Prefill skipped: unsaved edits (isDirty).' });
           return;
         }
 
@@ -6827,9 +6827,9 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  'Root entrypoint stays generic and framework-agnostic.',
+                  'The root entrypoint works without any UI framework.',
                   'React bindings live under `@veams/form/react`.',
-                  'Feature handlers can own the form handler instead of React owning it.',
+                  'A feature handler can own the form handler instead of React owning it.',
                 ],
                 id: 'shape',
                 paragraphs: [
@@ -6840,8 +6840,8 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   'Validation lives close to the values.',
-                  'Touched state stays explicit instead of being inferred from ad-hoc component flags.',
-                  'Submission state is part of the same form snapshot.',
+                  'Touched state is stored explicitly, not guessed from component flags.',
+                  'Submit state is part of the same form snapshot.',
                 ],
                 id: 'why',
                 paragraphs: [
@@ -6857,7 +6857,7 @@ export const docsPackages: DocsPackage[] = [
               'React helpers for uncontrolled native fields and controlled third-party inputs.',
             ],
             heroParagraphs: [
-              'VEAMS Form keeps form ownership explicit: one generic controller, optional React bindings at the view layer.',
+              'VEAMS Form keeps ownership clear: one generic controller, plus optional React bindings for the view.',
             ],
             id: 'overview',
             intro:
@@ -6871,7 +6871,7 @@ export const docsPackages: DocsPackage[] = [
                 featureCards: [
                   {
                     description:
-                      'The FormStateHandler is a pure, framework-agnostic object that manages values, errors, and validation logic independently of any UI library.',
+                      'The FormStateHandler is a plain object that manages values, errors, and validation. It does not depend on any UI library.',
                     title: 'Generic Form Engine',
                     visual: 'form-architecture',
                   },
@@ -6887,7 +6887,7 @@ export const docsPackages: DocsPackage[] = [
                 featureCards: [
                   {
                     description:
-                      'React bindings provide the bridge between the FormStateHandler and the DOM, utilizing hooks and refs for high-performance uncontrolled inputs.',
+                      'The React bindings connect the FormStateHandler to the DOM. They use hooks and refs so inputs stay fast and uncontrolled.',
                     title: 'React View Bindings',
                     visual: 'form-ref-bridge',
                   },
@@ -6901,9 +6901,9 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  'Uncontrolled by Default: Sync DOM to state only when needed.',
-                  'Centralized Validation: One validator function for the whole form.',
-                  'Nested Snapshots: Subscribe to individual field meta for performance.',
+                  'Uncontrolled by default: sync the DOM to state only when needed.',
+                  'Central validation: one validator function for the whole form.',
+                  'Small subscriptions: components subscribe to single fields to avoid extra renders.',
                 ],
                 id: 'form-principles',
                 paragraphs: [
@@ -6935,9 +6935,9 @@ export const docsPackages: DocsPackage[] = [
                   },
                 ],
                 bullets: [
-                  'The root package (`@veams/form`) is framework-agnostic and owns the form model.',
+                  'The root package (`@veams/form`) owns the form model and does not need React.',
                   'React bindings are optional and live in `@veams/form/react`.',
-                  'Guides can use React examples for clarity while the core form patterns stay framework-independent.',
+                  'The guides use React examples for clarity, but the core patterns work in any setup.',
                 ],
                 id: 'framework-support',
                 paragraphs: [
@@ -6974,11 +6974,11 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   'Use the root package for `FormStateHandler` and types.',
                   'Use `@veams/form/react` for `FormProvider`, `useUncontrolledField`, and `Controller`.',
-                  'Keep feature state in Status Quo handlers and let them own the form handler when the flow needs more than plain field state.',
+                  'When a flow needs more than plain field state, keep it in a Status Quo handler and let that handler own the form.',
                 ],
                 id: 'entry-points',
                 paragraphs: [
-                  'The main setup choice is who owns the controller lifecycle.',
+                  'The main decision is which layer owns the form controller.',
                 ],
                 title: 'Choose the owning layer',
               },
@@ -7015,15 +7015,15 @@ export const docsPackages: DocsPackage[] = [
                   },
                 ],
                 bullets: [
-                  '`FormProvider` owns one controller instance locally when you do not pass `formHandlerInstance`.',
+                  '`FormProvider` creates and owns one controller when you do not pass `formHandlerInstance`.',
                   '`useUncontrolledField()` wires native inputs without turning every field into controlled React state.',
-                  '`useFieldMeta()` is already included in the hook result as `meta` for validation UI.',
-                  'By default, fields validate on first blur and revalidate on change after they have been touched once.',
+                  'The hook result already includes `meta` for validation UI.',
+                  'By default, a field validates on its first blur. After that, it revalidates on every change.',
                 ],
                 id: 'react-layer',
                 paragraphs: [
                   'The default React path is `FormProvider` plus uncontrolled field registration.',
-                  'That keeps render churn low and gives you blur-first validation with change revalidation.',
+                  'That keeps re-renders low. Fields validate on blur first and revalidate on change.',
                 ],
                 title: 'Bind it into React',
               },
@@ -7052,9 +7052,9 @@ export const docsPackages: DocsPackage[] = [
                   },
                 ],
                 bullets: [
-                  'Keep the form handler inside a broader feature handler when the form is only one part of the screen state.',
-                  'Expose `getFormHandler()` as the seam between feature state and the React form provider.',
-                  'Share validators and submit logic with the rest of the feature actions instead of scattering them across the view.',
+                  'Keep the form handler inside a feature handler when the form is only one part of the screen state.',
+                  'Expose `getFormHandler()` as the connection point between feature state and the React form provider.',
+                  'Keep validators and submit logic next to the other feature actions instead of spreading them across components.',
                 ],
                 id: 'feature-owned',
                 paragraphs: [
@@ -7085,7 +7085,7 @@ export const docsPackages: DocsPackage[] = [
                   '`onInit` runs once, when the first consumer connects. It gets an `AbortSignal` that fires if the form disconnects before the load finishes.',
                   "`initStatus` starts at `'initializing'` and becomes `'ready'` when the loaded values arrive. If the load fails, it becomes `'error'` and `initError` holds the message.",
                   'The loaded values become the new baseline. Nothing is marked as touched, and validation waits until the user interacts with a field.',
-                  "While the form is `'initializing'`, `FormProvider` ignores submits. Whether fields should be disabled during loading is up to you — read `initStatus` and decide.",
+                  "While the form is `'initializing'`, `FormProvider` ignores submits. Whether fields should be disabled during loading is up to you: read `initStatus` and decide.",
                 ],
                 id: 'async-init',
                 paragraphs: [
@@ -7126,7 +7126,7 @@ export const docsPackages: DocsPackage[] = [
                   '`isDirty` deep-compares the current values with the baseline. Typing the original value back makes the form clean again.',
                   '`touched` answers "did the user interact with this field?". `isDirty` answers "are the values different from the baseline?". The two are independent.',
                   'Use `isDirty` to guard server prefills. You no longer need to keep a copy of the last prefilled values in your own state.',
-                  'After a prefill through `initialize()`, `resetForm()` returns to the prefilled values — not to the empty skeleton.',
+                  'After a prefill through `initialize()`, `resetForm()` returns to the prefilled values, not to the empty skeleton.',
                 ],
                 id: 'dirty-tracking',
                 paragraphs: [
@@ -7160,8 +7160,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'validator-basics',
                 paragraphs: [
-                  'A validator is a pure function over the full value snapshot.',
-                  'Use the same validator for field updates and full-submit checks.',
+                  'A validator is a pure function. It gets all form values and returns an error map.',
+                  'The same validator runs for field updates and for the full submit check.',
                 ],
                 title: 'Model validation as one typed function',
               },
@@ -7181,8 +7181,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'validator-submit-cycle',
                 paragraphs: [
-                  'Split validation clearly: local rules in the validator, backend field errors in `setFieldError()`, and form-level failures in `setSubmitError()`.',
-                  'That keeps the submit cycle explicit.',
+                  'Split validation clearly: local rules go in the validator, backend field errors in `setFieldError()`, and form-level failures in `setSubmitError()`.',
+                  'That keeps the submit cycle easy to follow.',
                 ],
                 title: 'Compose client and server validation',
               },
@@ -7195,13 +7195,13 @@ export const docsPackages: DocsPackage[] = [
                   },
                 ],
                 bullets: [
-                  'Use `toZodValidator(schema)` from `@veams/form/validators/zod` for the common integration path.',
-                  'Keep schema declarations and form adapters close to each other in the feature boundary.',
+                  'Use `toZodValidator(schema)` from `@veams/form/validators/zod` for the common case.',
+                  'Keep the schema and the adapter close together inside the feature.',
                 ],
                 id: 'validator-zod-adapter',
                 paragraphs: [
-                  'Use one narrow adapter when a project already has a schema layer.',
-                  'That keeps the form API on the normal validator contract.',
+                  'If your project already uses a schema library, one small adapter is enough.',
+                  'The form still works with its normal validator function.',
                 ],
                 title: 'Integrate schema validation without coupling',
               },
@@ -7224,7 +7224,7 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Guides',
             id: 'validators',
             intro:
-              'Use one typed validator as the source of truth, then layer server errors through explicit updates.',
+              'One typed validator is the source of truth. Server errors are added through explicit updates.',
             summary: 'Predictable validation from input to submit.',
             title: 'Validators',
           },
@@ -7233,9 +7233,9 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   'Keep native inputs uncontrolled by default through `useUncontrolledField()`.',
-                  'This reduces render churn because typing does not require controlled `value` props on every keypress.',
-                  'Browser-native behavior like autofill and text selection stays predictable.',
-                  'Use `Controller` only for components that explicitly require controlled props.',
+                  'Typing writes to the DOM directly, so React does not re-render on every keypress.',
+                  'Browser behavior like autofill and text selection keeps working as expected.',
+                  'Use `Controller` only for components that really need controlled props.',
                 ],
                 id: 'uncontrolled-principle',
                 paragraphs: [
@@ -7254,12 +7254,12 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 bullets: [
                   'Use `Controller` for third-party selects, date pickers, or custom widgets that expect `value` and `onChange`.',
-                  'The render prop gives you `field` and `fieldState`, mirroring the native-field hooks.',
-                  'Keep native inputs on `useUncontrolledField()` unless a component truly requires controlled props.',
+                  'The render prop gives you `field` and `fieldState`, matching the native field hooks.',
+                  'Keep native inputs on `useUncontrolledField()` unless a component really needs controlled props.',
                 ],
                 id: 'controller',
                 paragraphs: [
-                  'Use `Controller` only when a widget truly needs controlled props.',
+                  'Use `Controller` only when a widget really needs controlled props.',
                 ],
                 title: 'Bridge controlled components on purpose',
               },
@@ -7289,7 +7289,7 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   'Use dot-path field names such as `profile.email` and `settings.newsletter`.',
                   'Return dot-path keys from validators so field metadata resolves correctly.',
-                  'Nested support is designed for object trees; treat array index paths as out of scope unless you provide your own mapping layer.',
+                  'Nested support targets object trees. Array index paths are not supported unless you add your own mapping.',
                 ],
                 id: 'nested-fields',
                 paragraphs: [
@@ -7324,10 +7324,10 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 bullets: [
-                  '`Controller({ name, render, validationMode?, revalidationMode? })` bridges controlled inputs through a render prop.',
-                  '`name` is the dot-path field name. `render` receives `{ field, fieldState }` so controlled widgets can bind `value`, `onChange`, and `onBlur` explicitly.',
-                  '`validationMode?` and `revalidationMode?` override the current `FormProvider` timing for that field only.',
-                  'Use it for third-party inputs that require controlled props. Native fields should usually stay on `useUncontrolledField()`.',
+                  '`Controller({ name, render, validationMode?, revalidationMode? })` connects controlled inputs through a render prop.',
+                  '`name` is the dot-path field name. `render` receives `{ field, fieldState }` so controlled widgets can bind `value`, `onChange`, and `onBlur`.',
+                  '`validationMode?` and `revalidationMode?` override the `FormProvider` timing for that field only.',
+                  'Use it for third-party inputs that need controlled props. Native fields should usually stay on `useUncontrolledField()`.',
                 ],
                 id: 'controller-api',
                 paragraphs: [
@@ -7345,7 +7345,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'form-provider-api',
                 paragraphs: [
-                  'Use `FormProvider` to own or bridge one controller into a React subtree.',
+                  'Use `FormProvider` to create a controller locally or to connect an existing one to a React subtree.',
                 ],
                 title: 'FormProvider',
               },
@@ -7378,32 +7378,32 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 bullets: [
                   '`new FormStateHandler(config)` takes `{ initialValues, onInit?, validator?, options? }`.',
-                  '`initialValues` seeds `values` with the same nested shape the form will keep for its whole lifetime. `validator?` returns the typed field-error map. `options?.devTools` configures the underlying Status Quo devtools integration.',
-                  "`onInit?` loads the real initial values asynchronously: it runs once on the first connect, receives `{ signal }` for abort handling, and applies its result through `initialize()`. `initStatus` tracks the lifecycle as `'ready' | 'initializing' | 'error'` with `initError` holding the failure message.",
+                  '`initialValues` sets the first `values` and defines the shape the form keeps. `validator?` returns the typed field-error map. `options?.devTools` configures the Status Quo devtools integration.',
+                  "`onInit?` loads the real initial values from an async source. It runs once on the first connect, gets `{ signal }` for abort handling, and applies its result through `initialize()`. `initStatus` tracks the lifecycle as `'ready' | 'initializing' | 'error'`, and `initError` holds the failure message.",
                   'The state snapshot is `{ values, errors, submitError, touched, isSubmitting, isValid, isDirty, initStatus, initError }`.',
-                  '`isDirty` reports whether the current values deviate deeply from the baseline (`initialValues`). It recomputes on `setFieldValue()`, `resetForm()`, and `initialize()` — independent of `touched`.',
-                  '`initialize(values)` sets a new baseline: it rebases `initialValues`, clears `errors`, `submitError`, and `touched`, sets `isDirty` to `false`, and marks `initStatus` as `\'ready\'`. It does not run the validator. A pending `onInit` is cancelled by a manual call.',
-                  '`errors` contains active field-level messages keyed by dot-path. Missing keys mean valid fields. `submitError` is the form-level backend message and stays separate from field validation.',
-                  '`isValid` is derived from the field error map only. A `submitError` may exist while `isValid` is still `true`.',
-                  '`setFieldValue(name, value, options?)` updates the nested value, optionally reruns the validator for the full snapshot, updates `errors`, and clears stale `submitError`.',
-                  '`validateForm()` reruns the validator against the current snapshot, stores the resulting field errors, and returns the boolean result for submit flow control.',
-                  '`setFieldError(name, errorMessage?)` is for authoritative backend field constraints. `setSubmitError(errorMessage?)` is for generic backend failures that do not belong to one field.',
-                  '`setFieldTouched(name, isTouched?)` marks one field explicitly. `touchAllFields()` marks every leaf field so validation messages can become visible in one step.',
-                  '`resetForm(values?)` replaces the current values with either the current baseline or a new snapshot and clears `errors`, `submitError`, `touched`, and submit state. It does not rebase the baseline — use `initialize()` for that.',
-                  '`setSubmitting(isSubmitting)` exists for non-React or custom submit orchestration. When you use `FormProvider`, the provider manages that flag around `onSubmit` for you.',
+                  '`isDirty` is `true` when the current values differ from the baseline (`initialValues`). It updates on `setFieldValue()`, `resetForm()`, and `initialize()`, and is independent of `touched`.',
+                  '`initialize(values)` sets a new baseline: the values replace `initialValues`, errors and touched state are cleared, `isDirty` becomes `false`, and `initStatus` becomes `\'ready\'`. It does not run the validator. A manual call cancels a pending `onInit`.',
+                  '`errors` holds active field messages keyed by dot-path. Missing keys mean valid fields. `submitError` is the form-level backend message and stays separate from field validation.',
+                  '`isValid` only looks at the field error map. A `submitError` can exist while `isValid` is still `true`.',
+                  '`setFieldValue(name, value, options?)` updates the nested value, optionally reruns the validator, updates `errors`, and clears a stale `submitError`.',
+                  '`validateForm()` reruns the validator, stores the resulting field errors, and returns `true` or `false` for submit flow control.',
+                  '`setFieldError(name, errorMessage?)` is for backend field errors. `setSubmitError(errorMessage?)` is for backend failures that do not belong to one field.',
+                  '`setFieldTouched(name, isTouched?)` marks one field. `touchAllFields()` marks every leaf field so all validation messages show at once.',
+                  '`resetForm(values?)` goes back to the current baseline, or applies the given values, and clears `errors`, `submitError`, `touched`, and submit state. It never changes the baseline. Use `initialize()` for that.',
+                  '`setSubmitting(isSubmitting)` is for custom submit flows outside `FormProvider`. With `FormProvider`, the provider manages that flag around `onSubmit` for you.',
                 ],
                 id: 'form-state-handler-api',
                 paragraphs: [
-                  'This is the generic root controller for the full form lifecycle.',
-                  'Keep field validation state in `errors` and `isValid`, and form-level failures in `submitError`.',
+                  'This is the root controller for the full form lifecycle.',
+                  'Field validation state lives in `errors` and `isValid`. Form-level failures live in `submitError`.',
                 ],
                 title: 'FormStateHandler',
               },
               {
                 bullets: [
                   '`toZodValidator(schema)` takes one schema-like object with `safeParse(values)` and `error.issues`.',
-                  'Returns a `ValidatorFn<TValues>` that maps schema issues into the standard field-error object shape.',
-                  'Use it when a feature already owns a Zod schema and you want the form API to stay on the normal validator contract.',
+                  'It returns a `ValidatorFn<TValues>` that maps schema issues into the standard field-error shape.',
+                  'Use it when a feature already owns a Zod schema and the form should keep its normal validator function.',
                 ],
                 id: 'to-zod-validator-api',
                 paragraphs: [
@@ -7414,8 +7414,8 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   '`useFieldMeta(name)` takes one field name or dot-path.',
-                  'Returns `{ error, touched, showError }` for that field only.',
-                  'Use it when a component only needs validation metadata and should not subscribe to the full form snapshot.',
+                  'It returns `{ error, touched, showError }` for that field only.',
+                  'Use it when a component only needs validation metadata and should not subscribe to the whole form.',
                 ],
                 id: 'use-field-meta-api',
                 paragraphs: [
@@ -7426,8 +7426,8 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   '`useFormController()` takes no parameters.',
-                  'Returns the current `FormStateHandler` from the nearest `FormProvider`.',
-                  'Throws outside provider scope so missing form ownership fails loudly.',
+                  'It returns the current `FormStateHandler` from the nearest `FormProvider`.',
+                  'It throws when used outside a `FormProvider`, so a missing provider fails fast.',
                 ],
                 id: 'use-form-controller-api',
                 paragraphs: [
@@ -7438,8 +7438,8 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   '`useFormMeta()` takes no parameters.',
-                  'Returns aggregate form metadata including `{ errors, submitError, touched, isSubmitting, isValid, isDirty, initStatus, initError }`.',
-                  'Use it for error summaries, submit banners, unsaved-changes guards, or loading states while `onInit` resolves.',
+                  'It returns form-level metadata: `{ errors, submitError, touched, isSubmitting, isValid, isDirty, initStatus, initError }`.',
+                  'Use it for error summaries, submit banners, unsaved-changes guards, or loading states while `onInit` runs.',
                 ],
                 id: 'use-form-meta-api',
                 paragraphs: [
@@ -7450,8 +7450,8 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   '`useUncontrolledField(name, options?)` takes one field name or dot-path plus optional field configuration.',
-                  '`options?` varies by element type and covers cases such as checkboxes, radios, selects, default values, value extraction, and `validationMode` / `revalidationMode` overrides.',
-                  'Returns the registration props and `meta` needed to bind native inputs without making every keystroke controlled React state.',
+                  '`options?` depends on the element type. It covers checkboxes, radios, selects, default values, value extraction, and `validationMode` / `revalidationMode` overrides.',
+                  'It returns the registration props and `meta` you need to bind native inputs without controlled React state.',
                 ],
                 id: 'use-uncontrolled-field-api',
                 paragraphs: [
@@ -7521,7 +7521,7 @@ export const docsPackages: DocsPackage[] = [
                 id: 'controlled-input-example',
                 liveExample: 'form-controlled-input',
                 paragraphs: [
-                  'Use this escape hatch for widgets that cannot use native uncontrolled registration.',
+                  'Use this bridge for widgets that cannot register as native uncontrolled inputs.',
                 ],
                 title: 'Controlled input',
               },
@@ -7544,9 +7544,9 @@ export const docsPackages: DocsPackage[] = [
                   },
                 ],
                 bullets: [
-                  'Feature handler owns the form instance.',
-                  'Nested values are addressed with dot-path fields.',
-                  'Provider binds the existing handler without duplicate initial values.',
+                  'The feature handler owns the form instance.',
+                  'Nested values use dot-path field names.',
+                  'The provider connects the existing handler without repeating initial values.',
                 ],
                 id: 'nested-feature-form',
                 liveExample: 'form-nested-feature-form',
@@ -7606,8 +7606,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 bullets: [
                   'Client rules live in the form validator.',
-                  'Server errors map back through `setFieldError()`.',
-                  'One feature action owns the submit lifecycle.',
+                  'Server errors come back through `setFieldError()`.',
+                  'One feature action owns the whole submit flow.',
                 ],
                 id: 'feature-form-validation',
                 liveExample: 'form-feature-validation',
@@ -7637,12 +7637,12 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   'The form default stays on `validationMode="blur"` and `revalidationMode="change"`.',
                   'One field overrides to `change`, another waits until `submit`.',
-                  'The preview lets you see each timing model in one place.',
+                  'The preview shows each timing option in one place.',
                 ],
                 id: 'validation-mode-example',
                 liveExample: 'form-validation-mode',
                 paragraphs: [
-                  'This example shows inherited, change-first, and submit-only timing in one form.',
+                  'This example shows blur, change, and submit timing in one form.',
                 ],
                 title: 'Validation mode',
               },
