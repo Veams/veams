@@ -9,10 +9,12 @@ export {
   type FormErrors,
   type FormFieldName,
   type FormFieldValue,
+  type FormInitStatus,
   type FormState,
   type FormStateHandlerConfig,
   type FormStateHandlerOptions,
   type FormTouched,
   type FormValues,
+  type OnInitFn,
   type ValidatorFn,
 } from './form.state.js';

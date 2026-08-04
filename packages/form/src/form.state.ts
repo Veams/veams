@@ -3,7 +3,7 @@
  */
 import { NativeStateHandler, type DevToolsOptions } from '@veams/status-quo';
 
-import { collectLeafPaths, setValueAtPath } from './path-utils.js';
+import { collectLeafPaths, isDeepEqual, setValueAtPath } from './path-utils.js';
 
 /**
  * Base type for form values, restricted to object shapes.
@@ -59,6 +59,14 @@ export type FormErrors<T extends FormValues> = Partial<Record<FormFieldName<T>, 
 export type FormTouched<T extends FormValues> = Partial<Record<FormFieldName<T>, boolean>>;
 
 /**
+ * Lifecycle status of asynchronous form initialization.
+ * - 'ready': initial values are final (sync forms start here).
+ * - 'initializing': an onInit callback is pending; values are the sync skeleton.
+ * - 'error': the onInit callback failed.
+ */
+export type FormInitStatus = 'ready' | 'initializing' | 'error';
+
+/**
  * The internal state structure for a form.
  */
 export interface FormState<T extends FormValues> {
@@ -74,12 +82,24 @@ export interface FormState<T extends FormValues> {
   isSubmitting: boolean;
   // Whether the form is currently valid.
   isValid: boolean;
+  // Whether the current values deviate from the baseline (initialValues).
+  isDirty: boolean;
+  // Lifecycle status of asynchronous initialization.
+  initStatus: FormInitStatus;
+  // Error message captured when asynchronous initialization failed.
+  initError?: string;
 }
 
 /**
  * Function signature for form validation.
  */
 export type ValidatorFn<T extends FormValues> = (values: T) => FormErrors<T>;
+
+/**
+ * Function signature for asynchronous initial value loading.
+ * Receives an AbortSignal that fires when the handler disconnects before resolution.
+ */
+export type OnInitFn<T extends FormValues> = (context: { signal: AbortSignal }) => T | Promise<T>;
 
 /**
  * Additional options for field value updates.
@@ -101,8 +121,10 @@ export interface FormStateHandlerOptions {
  * Initial configuration for creating a new form state handler.
  */
 export interface FormStateHandlerConfig<T extends FormValues> {
-  // The initial data for the form.
+  // The initial data for the form. Acts as the sync skeleton while onInit is pending.
   initialValues: T;
+  // Optional asynchronous loader for the real initial values, invoked once on first connect.
+  onInit?: OnInitFn<T>;
   // Optional runtime settings.
   options?: FormStateHandlerOptions;
   // Optional validation logic.
@@ -123,6 +145,8 @@ const defaultFormStateHandlerOptions: Required<FormStateHandlerOptions> = {
  * Defines the public actions available to manipulate the form state.
  */
 export interface FormActions<T extends FormValues> {
+  // Applies values as the new baseline: rebases initialValues and resets interaction state.
+  initialize: (values: T) => void;
   // Reverts the form to its initial state or a new set of values.
   resetForm: (values?: T) => void;
   // Sets an explicit error message for a field.
@@ -153,17 +177,23 @@ export class FormStateHandler<T extends FormValues> extends NativeStateHandler<
   FormState<T>,
   FormActions<T>
 > {
-  // Reference values for resetting the form.
-  private readonly initialValues: T;
+  // Reference values for resetting the form. Rebased by initialize().
+  private initialValues: T;
   // The validation function provided during initialization.
   private readonly validator?: ValidatorFn<T>;
+  // Optional asynchronous loader for the real initial values.
+  private readonly onInit?: OnInitFn<T>;
+  // Guards the onInit callback against running more than once per init cycle.
+  private initRan = false;
+  // Abort controller for a pending onInit invocation.
+  private initAbortController: AbortController | null = null;
 
   /**
    * Creates a new FormStateHandler instance.
    * Initializes the internal state and optional DevTools connection.
    */
   constructor(config: FormStateHandlerConfig<T>) {
-    const { initialValues, options, validator } = config;
+    const { initialValues, onInit, options, validator } = config;
 
     super({
       initialState: {
@@ -173,6 +203,9 @@ export class FormStateHandler<T extends FormValues> extends NativeStateHandler<
         touched: {},
         isSubmitting: false,
         isValid: true,
+        isDirty: false,
+        initStatus: onInit ? 'initializing' : 'ready',
+        initError: undefined,
       },
       options: {
         ...options,
@@ -182,6 +215,7 @@ export class FormStateHandler<T extends FormValues> extends NativeStateHandler<
 
     this.initialValues = initialValues;
     this.validator = validator;
+    this.onInit = onInit;
   }
 
   /**
@@ -189,6 +223,7 @@ export class FormStateHandler<T extends FormValues> extends NativeStateHandler<
    */
   getActions(): FormActions<T> {
     return {
+      initialize: this.initialize,
       resetForm: this.resetForm,
       setFieldError: this.setFieldError,
       setSubmitError: this.setSubmitError,
@@ -201,8 +236,38 @@ export class FormStateHandler<T extends FormValues> extends NativeStateHandler<
   }
 
   /**
+   * Applies values as the new baseline of the form.
+   * Rebases initialValues (so resetForm reverts to them), clears interaction
+   * state, and marks initialization as complete. Does not run the validator —
+   * validation starts with the first interaction.
+   */
+  initialize = (values: T) => {
+    // Cancel a pending onInit invocation; a manual initialize wins.
+    this.initAbortController?.abort();
+    this.initAbortController = null;
+    this.initRan = true;
+    this.initialValues = values;
+
+    this.setState(
+      {
+        values,
+        errors: {},
+        submitError: undefined,
+        touched: {},
+        isSubmitting: false,
+        isValid: true,
+        isDirty: false,
+        initStatus: 'ready',
+        initError: undefined,
+      },
+      'Form :: Initialize'
+    );
+  };
+
+  /**
    * Resets the form state.
    * If values are provided, they become the new current values.
+   * Does not rebase initialValues — use initialize() to set a new baseline.
    */
   resetForm = (values?: T) => {
     const nextValues = values ?? this.initialValues;
@@ -210,11 +275,12 @@ export class FormStateHandler<T extends FormValues> extends NativeStateHandler<
     this.setState(
       {
         values: nextValues,
-        errors: {} as FormErrors<T>,
+        errors: {},
         submitError: undefined,
-        touched: {} as FormTouched<T>,
+        touched: {},
         isSubmitting: false,
         isValid: true,
+        isDirty: !isDeepEqual(nextValues, this.initialValues),
       },
       'Form :: Reset'
     );
@@ -241,6 +307,7 @@ export class FormStateHandler<T extends FormValues> extends NativeStateHandler<
         errors: nextErrors,
         submitError: undefined,
         isValid: this.isEmptyErrors(nextErrors),
+        isDirty: !isDeepEqual(nextValues, this.initialValues),
       },
       `Form :: Set ${String(name)}`
     );
@@ -346,6 +413,86 @@ export class FormStateHandler<T extends FormValues> extends NativeStateHandler<
   };
 
   /**
+   * Starts the asynchronous initialization when the first consumer connects.
+   */
+  protected onConnect(): void {
+    this.runInit();
+  }
+
+  /**
+   * Aborts a pending initialization when the last consumer disconnects.
+   * Resets the guard so a later reconnect retries the load.
+   */
+  protected onDisconnect(): void {
+    if (!this.initAbortController) {
+      return;
+    }
+
+    const abortController = this.initAbortController;
+
+    this.initAbortController = null;
+    this.initRan = false;
+    abortController.abort();
+  }
+
+  /**
+   * Invokes the onInit callback once and applies its result via initialize().
+   */
+  private runInit(): void {
+    if (!this.onInit || this.initRan) {
+      return;
+    }
+
+    this.initRan = true;
+
+    const abortController = new AbortController();
+    this.initAbortController = abortController;
+
+    let result: T | Promise<T>;
+
+    try {
+      result = this.onInit({ signal: abortController.signal });
+    } catch (error) {
+      this.failInit(error);
+      return;
+    }
+
+    Promise.resolve(result).then(
+      (values) => {
+        // Drop stale results after abort or a manual initialize().
+        if (abortController.signal.aborted || this.initAbortController !== abortController) {
+          return;
+        }
+
+        this.initialize(values);
+      },
+      (error: unknown) => {
+        // An aborted load is not an error; the guard was already reset.
+        if (abortController.signal.aborted || this.initAbortController !== abortController) {
+          return;
+        }
+
+        this.failInit(error);
+      }
+    );
+  }
+
+  /**
+   * Transitions the form into the init error status.
+   */
+  private failInit(error: unknown): void {
+    this.initAbortController = null;
+
+    this.setState(
+      {
+        initStatus: 'error',
+        initError: error instanceof Error ? error.message : String(error),
+      },
+      'Form :: Init Error'
+    );
+  }
+
+  /**
    * Checks if an error map contains any actual messages.
    */
   private isEmptyErrors(errors: FormErrors<T>) {
@@ -357,7 +504,7 @@ export class FormStateHandler<T extends FormValues> extends NativeStateHandler<
    */
   private validateValues(values: T): FormErrors<T> {
     if (!this.validator) {
-      return {} as FormErrors<T>;
+      return {};
     }
 
     return compactErrors(this.validator(values));

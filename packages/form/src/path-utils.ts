@@ -84,6 +84,37 @@ export function setValueAtPath<TValues extends object>(
 }
 
 /**
+ * Deeply compares two values for structural equality.
+ * Supports primitives, Dates, arrays, and plain objects — the value shapes
+ * allowed in form values.
+ */
+export function isDeepEqual(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) {
+    return true;
+  }
+
+  if (left instanceof Date && right instanceof Date) {
+    return left.getTime() === right.getTime();
+  }
+
+  if (Array.isArray(left) && Array.isArray(right)) {
+    return left.length === right.length && left.every((item, index) => isDeepEqual(item, right[index]));
+  }
+
+  if (isPlainObject(left) && isPlainObject(right)) {
+    const leftKeys = Object.keys(left);
+    const rightKeys = Object.keys(right);
+
+    return (
+      leftKeys.length === rightKeys.length &&
+      leftKeys.every((key) => key in right && isDeepEqual(left[key], right[key]))
+    );
+  }
+
+  return false;
+}
+
+/**
  * Recursively collects all dot-notation paths that lead to a leaf value.
  * A leaf value is any value that is not a plain object (e.g., string, number, array).
  */

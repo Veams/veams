@@ -5,7 +5,12 @@
 import { useStateSubscription } from '@veams/status-quo/react';
 import React, { useContext, useRef } from 'react';
 
-import { FormStateHandler, type FormValues, type ValidatorFn } from '../form.state.js';
+import {
+  FormStateHandler,
+  type FormValues,
+  type OnInitFn,
+  type ValidatorFn,
+} from '../form.state.js';
 import { getValueAtPath } from '../path-utils.js';
 import {
   FormContext,
@@ -46,6 +51,8 @@ interface FormProviderWithLocalState<T extends FormValues> extends BaseFormProvi
   formHandlerInstance?: undefined;
   // Initial values required for local state initialization.
   initialValues: T;
+  // Optional asynchronous loader for the real initial values.
+  onInit?: OnInitFn<T>;
   // Optional validator for the local state.
   validator?: ValidatorFn<T>;
 }
@@ -57,6 +64,7 @@ interface FormProviderWithExternalState<T extends FormValues> extends BaseFormPr
   // The external FormStateHandler instance to use.
   formHandlerInstance: FormStateHandler<T>;
   initialValues?: never;
+  onInit?: never;
   validator?: never;
 }
 
@@ -123,6 +131,7 @@ export function FormProvider<T extends FormValues>({
   formHandlerInstance,
   initialValues,
   noValidate = true,
+  onInit,
   onSubmit,
   revalidationMode = defaultFormValidationConfig.revalidationMode,
   validationMode = defaultFormValidationConfig.validationMode,
@@ -131,6 +140,7 @@ export function FormProvider<T extends FormValues>({
 }: BaseFormProviderProps<T> & {
   formHandlerInstance?: FormStateHandler<T>;
   initialValues?: T;
+  onInit?: OnInitFn<T>;
   revalidationMode?: Exclude<ValidationMode, 'inherit'>;
   validationMode?: Exclude<ValidationMode, 'inherit'>;
   validator?: ValidatorFn<T>;
@@ -148,6 +158,7 @@ export function FormProvider<T extends FormValues>({
 
     localHandlerRef.current = new FormStateHandler<T>({
       initialValues,
+      onInit,
       validator,
     });
   }
@@ -170,6 +181,12 @@ export function FormProvider<T extends FormValues>({
    */
   const handleSubmit = async (event: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
     event.preventDefault();
+
+    // Ignore submissions while asynchronous initialization is still pending.
+    if (controller.getState().initStatus === 'initializing') {
+      return;
+    }
+
     controller.setSubmitError(undefined);
 
     // Trigger full form validation before submission.

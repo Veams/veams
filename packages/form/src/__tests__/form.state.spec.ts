@@ -19,6 +19,9 @@ describe('FormStateHandler', () => {
 
     expect(handler.getState()).toEqual({
       errors: {},
+      initError: undefined,
+      initStatus: 'ready',
+      isDirty: false,
       isSubmitting: false,
       isValid: true,
       submitError: undefined,
@@ -165,6 +168,10 @@ describe('FormStateHandler', () => {
 
     expect(handler.getState()).toEqual({
       errors: {},
+      initError: undefined,
+      initStatus: 'ready',
+      // Reset with values differing from the unrebased baseline is dirty.
+      isDirty: true,
       isSubmitting: false,
       isValid: true,
       submitError: undefined,
@@ -172,6 +179,233 @@ describe('FormStateHandler', () => {
       values: {
         email: 'reset@example.com',
       },
+    });
+  });
+
+  describe('isDirty', () => {
+    it('should track deviation from the baseline and revert on equal values', () => {
+      const handler = new FormStateHandler({
+        initialValues: { email: 'base@veams.org' },
+      });
+
+      expect(handler.getState().isDirty).toBe(false);
+
+      handler.setFieldValue('email', 'edited@veams.org');
+      expect(handler.getState().isDirty).toBe(true);
+
+      // Typing back the baseline value makes the form clean again.
+      handler.setFieldValue('email', 'base@veams.org');
+      expect(handler.getState().isDirty).toBe(false);
+    });
+
+    it('should compare nested values deeply', () => {
+      const handler = new FormStateHandler({
+        initialValues: { profile: { email: '', tags: ['a'] } },
+      });
+
+      handler.setFieldValue('profile.tags', ['a', 'b']);
+      expect(handler.getState().isDirty).toBe(true);
+
+      handler.setFieldValue('profile.tags', ['a']);
+      expect(handler.getState().isDirty).toBe(false);
+    });
+
+    it('should clear on resetForm without values and reflect provided values', () => {
+      const handler = new FormStateHandler({
+        initialValues: { email: '' },
+      });
+
+      handler.setFieldValue('email', 'edited@veams.org');
+      handler.resetForm();
+      expect(handler.getState().isDirty).toBe(false);
+
+      // Reset with values differing from the (unrebased) baseline stays dirty.
+      handler.resetForm({ email: 'other@veams.org' });
+      expect(handler.getState().isDirty).toBe(true);
+    });
+
+    it('should clear on initialize and compare against the new baseline', () => {
+      const handler = new FormStateHandler({
+        initialValues: { email: '' },
+      });
+
+      handler.setFieldValue('email', 'edited@veams.org');
+      handler.initialize({ email: 'loaded@veams.org' });
+      expect(handler.getState().isDirty).toBe(false);
+
+      handler.setFieldValue('email', 'changed@veams.org');
+      expect(handler.getState().isDirty).toBe(true);
+
+      // Reverting to the rebased baseline, not the constructor values.
+      handler.setFieldValue('email', 'loaded@veams.org');
+      expect(handler.getState().isDirty).toBe(false);
+    });
+  });
+
+  describe('initialize', () => {
+    it('should apply values as the new baseline and rebase resetForm', () => {
+      const handler = new FormStateHandler({
+        initialValues: { email: '' },
+        validator,
+      });
+
+      handler.setFieldValue('email', 'typed@veams.org');
+      handler.setFieldTouched('email', true);
+      handler.initialize({ email: 'loaded@veams.org' });
+
+      expect(handler.getState().values.email).toBe('loaded@veams.org');
+      expect(handler.getState().touched).toEqual({});
+      expect(handler.getState().errors).toEqual({});
+      expect(handler.getState().initStatus).toBe('ready');
+
+      // resetForm without arguments reverts to the initialized baseline.
+      handler.setFieldValue('email', 'changed@veams.org');
+      handler.resetForm();
+
+      expect(handler.getState().values.email).toBe('loaded@veams.org');
+    });
+
+    it('should not run the validator on initialize', () => {
+      const handler = new FormStateHandler({
+        initialValues: { email: 'valid@veams.org' },
+        validator,
+      });
+
+      handler.initialize({ email: '' });
+
+      expect(handler.getState().errors).toEqual({});
+      expect(handler.getState().isValid).toBe(true);
+    });
+  });
+
+  describe('onInit', () => {
+    it('should start in initializing status when onInit is provided', () => {
+      const handler = new FormStateHandler({
+        initialValues: { email: '' },
+        onInit: () => Promise.resolve({ email: 'loaded@veams.org' }),
+      });
+
+      expect(handler.getState().initStatus).toBe('initializing');
+    });
+
+    it('should load values on connect and transition to ready', async () => {
+      const handler = new FormStateHandler({
+        initialValues: { email: '' },
+        onInit: () => Promise.resolve({ email: 'loaded@veams.org' }),
+      });
+
+      handler.connect();
+      await Promise.resolve();
+
+      expect(handler.getState().values.email).toBe('loaded@veams.org');
+      expect(handler.getState().initStatus).toBe('ready');
+      expect(handler.getState().touched).toEqual({});
+    });
+
+    it('should invoke onInit only once across repeated connects', async () => {
+      const onInit = jest.fn(() => Promise.resolve({ email: 'loaded@veams.org' }));
+      const handler = new FormStateHandler({
+        initialValues: { email: '' },
+        onInit,
+      });
+
+      handler.connect();
+      handler.connect();
+      await Promise.resolve();
+
+      expect(onInit).toHaveBeenCalledTimes(1);
+    });
+
+    it('should transition to error status when onInit rejects', async () => {
+      const handler = new FormStateHandler({
+        initialValues: { email: '' },
+        onInit: () => Promise.reject(new Error('API down')),
+      });
+
+      handler.connect();
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(handler.getState().initStatus).toBe('error');
+      expect(handler.getState().initError).toBe('API down');
+      expect(handler.getState().values.email).toBe('');
+    });
+
+    it('should abort a pending init on disconnect and drop the stale result', async () => {
+      let abortSignal: AbortSignal | undefined;
+      let resolveInit: (values: { email: string }) => void = () => undefined;
+      const handler = new FormStateHandler({
+        initialValues: { email: '' },
+        onInit: ({ signal }) => {
+          abortSignal = signal;
+          return new Promise<{ email: string }>((resolve) => {
+            resolveInit = resolve;
+          });
+        },
+      });
+
+      handler.connect();
+      handler.disconnect();
+
+      expect(abortSignal?.aborted).toBe(true);
+
+      // A late resolution must not apply stale values.
+      resolveInit({ email: 'stale@veams.org' });
+      await Promise.resolve();
+
+      expect(handler.getState().values.email).toBe('');
+      expect(handler.getState().initStatus).toBe('initializing');
+    });
+
+    it('should retry the load when reconnecting after an aborted init', async () => {
+      const onInit = jest.fn(() => Promise.resolve({ email: 'loaded@veams.org' }));
+      const handler = new FormStateHandler({
+        initialValues: { email: '' },
+        onInit,
+      });
+
+      handler.connect();
+      handler.disconnect();
+      handler.connect();
+      await Promise.resolve();
+
+      expect(onInit).toHaveBeenCalledTimes(2);
+      expect(handler.getState().values.email).toBe('loaded@veams.org');
+      expect(handler.getState().initStatus).toBe('ready');
+    });
+
+    it('should let a manual initialize win over a pending onInit', async () => {
+      let resolveInit: (values: { email: string }) => void = () => undefined;
+      const handler = new FormStateHandler({
+        initialValues: { email: '' },
+        onInit: () =>
+          new Promise<{ email: string }>((resolve) => {
+            resolveInit = resolve;
+          }),
+      });
+
+      handler.connect();
+      handler.initialize({ email: 'manual@veams.org' });
+
+      resolveInit({ email: 'stale@veams.org' });
+      await Promise.resolve();
+
+      expect(handler.getState().values.email).toBe('manual@veams.org');
+      expect(handler.getState().initStatus).toBe('ready');
+    });
+
+    it('should transition to error status when onInit throws synchronously', () => {
+      const handler = new FormStateHandler({
+        initialValues: { email: '' },
+        onInit: () => {
+          throw new Error('sync failure');
+        },
+      });
+
+      handler.connect();
+
+      expect(handler.getState().initStatus).toBe('error');
+      expect(handler.getState().initError).toBe('sync failure');
     });
   });
 });
