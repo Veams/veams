@@ -23,7 +23,11 @@ Standard Values
 
 @mixin fb-setup($size: 70px, $radius: 50%) {
 	$width: list.nth($size, 1);
-	$height: if(list.length($size) == 2, list.nth($size, 2), $width);
+	$height: $width;
+
+	@if list.length($size) == 2 {
+		$height: list.nth($size, 2);
+	}
 
 	position: relative;
 	display: inline-block;
