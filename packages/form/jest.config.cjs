@@ -1,4 +1,3 @@
-if(typeof structuredClone === "undefined") { global.structuredClone = val => JSON.parse(JSON.stringify(val)); }
 module.exports = {
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
   transformIgnorePatterns: [],
@@ -20,4 +19,5 @@ module.exports = {
   reporters: ['default'],
   moduleFileExtensions: ['mjs', 'js', 'ts', 'jsx', 'tsx'],
   testEnvironment: 'jsdom',
+  setupFiles: ['<rootDir>/../../jest.setup.cjs'],
 };

@@ -1,5 +1,6 @@
 module.exports = {
   testEnvironment: 'jsdom',
+  setupFiles: ['<rootDir>/../../jest.setup.cjs'],
   transform: {
     '^.+\.(t|j)sx?$': [
       '@swc/jest',

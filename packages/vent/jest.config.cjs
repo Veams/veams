@@ -19,4 +19,5 @@ module.exports = {
   reporters: ['default'],
   moduleFileExtensions: ['mjs', 'js', 'ts', 'jsx', 'tsx'],
   testEnvironment: 'jsdom',
+  setupFiles: ['<rootDir>/../../jest.setup.cjs'],
 };
