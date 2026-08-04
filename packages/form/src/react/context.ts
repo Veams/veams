@@ -3,7 +3,7 @@
  */
 import { createContext } from 'react';
 
-import { FormStateHandler } from '../form.state.js';
+import type { FormStateHandler } from '../form.state.js';
 
 /**
  * Generic type for field values used within the React context layer.

@@ -1,7 +1,7 @@
 import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { FormStateHandler } from '../../../form.state.js';
+import type { FormStateHandler } from '../../../form.state.js';
 import { FormProvider } from '../../react-form.js';
 import { useFormController } from '../use-form-controller.js';
 import { useFormMeta } from '../use-form-meta.js';

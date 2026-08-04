@@ -176,7 +176,7 @@ export function getStatusQuoConfig() {
       enabled: statusQuoConfig.distinct.enabled,
       comparator: statusQuoConfig.distinct.comparator,
     },
-  } as ResolvedStatusQuoConfig;
+  };
 }
 
 /**

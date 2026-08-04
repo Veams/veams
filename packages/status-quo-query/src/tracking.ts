@@ -265,8 +265,8 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   }
 
   return (
-    Object.getPrototypeOf(value as object) === Object.prototype ||
-    Object.getPrototypeOf(value as object) === null
+    Object.getPrototypeOf(value) === Object.prototype ||
+    Object.getPrototypeOf(value) === null
   );
 }
 

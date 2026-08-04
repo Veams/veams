@@ -59,6 +59,10 @@ export default defineConfig(
         },
       ],
       'react/prop-types': 'off',
+      // React Compiler rule (hooks plugin v7+). Fires on the intentional
+      // lazy-ref store-bridge pattern (if (!ref.current) ref.current = new Handler()),
+      // which is a React-docs-sanctioned escape hatch for external stores.
+      'react-hooks/refs': 'off',
     },
   },
   {

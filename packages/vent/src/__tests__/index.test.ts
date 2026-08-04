@@ -29,7 +29,7 @@ describe('Event Handler', () => {
     const Vent = createEventHandling<Events>();
     const stub = jest.fn();
 
-    Vent.subscribe('onCustomChange onPurposeChange' as 'onCustomChange', stub);
+    Vent.subscribe('onCustomChange onPurposeChange', stub);
     Vent.publish('onCustomChange', 'foo');
     Vent.publish('onPurposeChange', 'foo');
 

@@ -3,7 +3,8 @@
  */
 import { useContext } from 'react';
 
-import { type FormValues, FormStateHandler } from '../../form.state.js';
+import type { FormStateHandler } from '../../form.state.js';
+import { type FormValues } from '../../form.state.js';
 import { FormContext } from '../context.js';
 
 /**

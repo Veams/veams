@@ -77,7 +77,7 @@ describe('useUncontrolledField', () => {
       );
     });
 
-    const input = container.querySelector('#email-input') as HTMLInputElement | null;
+    const input = container.querySelector('#email-input');
     expect(input).not.toBeNull();
     expect(input?.value).toBe('');
 

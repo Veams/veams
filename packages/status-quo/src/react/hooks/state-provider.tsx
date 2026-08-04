@@ -28,7 +28,7 @@ const StateContext = createContext<StateSubscriptionHandler<unknown, unknown> | 
 export function StateProvider<V, A>({ children, instance }: StateProviderProps<V, A>) {
   // Use a context provider to share the state handler instance.
   return (
-    <StateContext.Provider value={instance as StateSubscriptionHandler<unknown, unknown>}>
+    <StateContext.Provider value={instance}>
       {children}
     </StateContext.Provider>
   );

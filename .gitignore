@@ -98,3 +98,4 @@ junit.xml
 # Terraform
 .terraform.lock.hcl
 .terraform
+.codegraph/
