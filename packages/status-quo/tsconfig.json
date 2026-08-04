@@ -21,6 +21,7 @@
     "module": "es2022",
     "moduleResolution": "bundler",
     "target": "es2022",
+    "rootDir": "src",
     "declarationDir": "dist",
     "outDir": "dist",
     "typeRoots": [
@@ -36,6 +37,9 @@
   "exclude": [
     "node_modules",
     "tasks",
-    "src/**/*.mock.ts"
+    "src/**/__tests__/**",
+    "src/**/*.mock.ts",
+    "src/**/*.{spec,test}.ts",
+    "src/**/*.{spec,test}.tsx"
   ]
 }

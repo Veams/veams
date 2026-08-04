@@ -11,6 +11,7 @@
     "coverage",
     "dist",
     "node_modules",
+    "src/**/__tests__/**",
     "src/**/*.mock.ts",
     "src/**/*.{spec,test}.ts",
     "src/**/*.{spec,test}.tsx"
