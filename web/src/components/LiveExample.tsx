@@ -1688,8 +1688,8 @@ function AsyncInitFormFields() {
     <>
       <p className="example-counter-label">
         {isLoading
-          ? 'The skeleton values render while onInit resolves. Fields are disabled through initStatus.'
-          : 'Edit a field and watch isDirty flip. Type the original value back and it turns clean again.'}
+          ? 'The form is loading its real values through onInit. Until then it shows the empty skeleton, and initStatus disables the fields.'
+          : 'Edit a field and watch isDirty become "yes". Type the original value back and the form is clean again.'}
       </p>
       <fieldset className="example-form-stack" disabled={isLoading}>
         <ExampleTextField
@@ -1738,8 +1738,8 @@ function AsyncInitExampleSummary({
         ]}
       />
       <p className="example-counter-label">
-        “Simulate server update” only prefills while the form is clean. Reset returns to the
-        current baseline — not to the empty skeleton.
+        “Simulate server update” only fills the form while it is clean. It never overwrites your
+        edits. Reset returns to the current baseline — not to the empty skeleton.
       </p>
       <pre className="example-form-json">{JSON.stringify(values, null, 2)}</pre>
       <p className="example-form-banner is-muted">{lastServerEvent}</p>
