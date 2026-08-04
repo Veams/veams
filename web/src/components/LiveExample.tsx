@@ -1578,6 +1578,206 @@ function NestedFeatureFormExample() {
   );
 }
 
+type AsyncProfileValues = {
+  name: string;
+  email: string;
+};
+
+type AsyncInitFeatureState = {
+  lastServerEvent: string;
+  serverVersion: number;
+};
+
+type AsyncInitFeatureActions = {
+  getFormHandler: () => FormStateHandler<AsyncProfileValues>;
+  reloadFromServer: () => Promise<void>;
+  save: (values: AsyncProfileValues) => Promise<void>;
+};
+
+const asyncInitServerProfiles: AsyncProfileValues[] = [
+  { email: 'mina@veams.dev', name: 'Mina Foster' },
+  { email: 'jonas@veams.dev', name: 'Jonas Berg' },
+  { email: 'ada@veams.dev', name: 'Ada Krause' },
+];
+
+class AsyncInitFeatureExampleHandler extends NativeStateHandler<
+  AsyncInitFeatureState,
+  AsyncInitFeatureActions
+> {
+  private readonly formHandler = new FormStateHandler<AsyncProfileValues>({
+    // Synchronous skeleton, visible while onInit resolves.
+    initialValues: {
+      email: '',
+      name: '',
+    },
+    // Loads the real baseline once, when the first field connects.
+    onInit: async ({ signal }) => {
+      await wait(1100);
+
+      if (signal.aborted) {
+        throw new Error('Initial load aborted');
+      }
+
+      this.setState({
+        lastServerEvent: 'Initial profile loaded — these values are the baseline now.',
+      });
+
+      return asyncInitServerProfiles[0];
+    },
+    validator: (values) => ({
+      ...(values.name ? {} : { name: 'Name is required' }),
+      ...(values.email.includes('@') ? {} : { email: 'Enter a valid email address' }),
+    }),
+  });
+
+  constructor() {
+    super({
+      initialState: {
+        lastServerEvent: 'Loading initial profile from the fake API...',
+        serverVersion: 0,
+      },
+    });
+  }
+
+  getActions(): AsyncInitFeatureActions {
+    return {
+      getFormHandler: () => this.formHandler,
+      reloadFromServer: async () => {
+        const nextVersion = this.getState().serverVersion + 1;
+
+        this.setState({
+          lastServerEvent: 'Server sent an updated profile...',
+          serverVersion: nextVersion,
+        });
+
+        await wait(360);
+
+        // The dirty guard: never overwrite what the user typed.
+        if (this.formHandler.getState().isDirty) {
+          this.setState({
+            lastServerEvent: 'Prefill skipped — the form has unsaved edits (isDirty).',
+          });
+          return;
+        }
+
+        this.formHandler.initialize(
+          asyncInitServerProfiles[nextVersion % asyncInitServerProfiles.length]
+        );
+        this.setState({
+          lastServerEvent: 'Prefill applied via initialize() — new baseline, still clean.',
+        });
+      },
+      save: async (values) => {
+        await wait(320);
+
+        // Saved values become the new baseline: the form is clean again.
+        this.formHandler.initialize(values);
+        this.setState({
+          lastServerEvent: `Saved ${values.name} — the saved values are the new baseline.`,
+        });
+      },
+    };
+  }
+}
+
+function AsyncInitFormFields() {
+  const form = useFormMeta<AsyncProfileValues>();
+  const isLoading = form.initStatus === 'initializing';
+
+  return (
+    <>
+      <p className="example-counter-label">
+        {isLoading
+          ? 'The skeleton values render while onInit resolves. Fields are disabled through initStatus.'
+          : 'Edit a field and watch isDirty flip. Type the original value back and it turns clean again.'}
+      </p>
+      <fieldset className="example-form-stack" disabled={isLoading}>
+        <ExampleTextField
+          description="Part of the async-loaded baseline."
+          label="Name"
+          name="name"
+        />
+        <ExampleTextField
+          description="Part of the async-loaded baseline."
+          label="Email"
+          name="email"
+          type="email"
+        />
+      </fieldset>
+      <div className="example-counter-actions">
+        <button
+          className="example-form-primary"
+          disabled={form.initStatus !== 'ready' || !form.isDirty || form.isSubmitting}
+          type="submit"
+        >
+          Save changes
+        </button>
+      </div>
+    </>
+  );
+}
+
+function AsyncInitExampleSummary({
+  lastServerEvent,
+  reloadFromServer,
+}: {
+  lastServerEvent: string;
+  reloadFromServer: () => Promise<void>;
+}) {
+  const controller = useFormController<AsyncProfileValues>();
+  const form = useFormMeta<AsyncProfileValues>();
+  const [values] = useStateSubscription(controller, (state) => state.values);
+
+  return (
+    <ExampleCard title="Lifecycle & dirty state">
+      <StatGrid
+        items={[
+          { label: 'Init status', value: form.initStatus },
+          { label: 'Dirty', value: form.isDirty ? 'yes' : 'no' },
+          { label: 'Valid', value: form.isValid ? 'yes' : 'no' },
+        ]}
+      />
+      <p className="example-counter-label">
+        “Simulate server update” only prefills while the form is clean. Reset returns to the
+        current baseline — not to the empty skeleton.
+      </p>
+      <pre className="example-form-json">{JSON.stringify(values, null, 2)}</pre>
+      <p className="example-form-banner is-muted">{lastServerEvent}</p>
+      <div className="example-counter-actions">
+        <button onClick={() => void reloadFromServer()} type="button">
+          Simulate server update
+        </button>
+        <button onClick={() => controller.resetForm()} type="button">
+          Reset to baseline
+        </button>
+      </div>
+    </ExampleCard>
+  );
+}
+
+function AsyncInitFormExample() {
+  const [featureState, actions] = useStateFactory(() => new AsyncInitFeatureExampleHandler(), []);
+
+  return (
+    <ExampleChrome eyebrow="Working Example" title="Async initial values with dirty-guarded prefill">
+      <FormProvider<AsyncProfileValues>
+        formHandlerInstance={actions.getFormHandler()}
+        onSubmit={actions.save}
+      >
+        <div className="example-counter-layout example-two-column-layout">
+          <ExampleCard title="Profile editor">
+            <AsyncInitFormFields />
+          </ExampleCard>
+          <AsyncInitExampleSummary
+            lastServerEvent={featureState.lastServerEvent}
+            reloadFromServer={actions.reloadFromServer}
+          />
+        </div>
+      </FormProvider>
+    </ExampleChrome>
+  );
+}
+
 type RegisterFeatureState = {
   attempts: number;
   lastResult: string;
@@ -1978,6 +2178,9 @@ export function LiveExample({ id, sourceExamples }: LiveExampleProps) {
       break;
     case 'form-nested-feature-form':
       preview = <NestedFeatureFormExample />;
+      break;
+    case 'form-async-init':
+      preview = <AsyncInitFormExample />;
       break;
     case 'form-controlled-input':
       preview = <ControlledInputExample />;

@@ -24,11 +24,14 @@ Root exports:
 - `FormActions`
 - `FormErrors`
 - `FormFieldName`
+- `FormFieldValue`
+- `FormInitStatus`
 - `FormState`
 - `FormStateHandlerConfig`
 - `FormStateHandlerOptions`
 - `FormTouched`
 - `FormValues`
+- `OnInitFn`
 - `ValidatorFn`
 
 React entrypoint:
@@ -37,6 +40,7 @@ React entrypoint:
 - `FormProvider`
 - `useFormController`
 - `useFieldMeta`
+- `useFormMeta`
 - `useUncontrolledField`
 - `Controller`
 
@@ -314,6 +318,176 @@ function LoginFeature() {
   );
 }
 ```
+
+## Async Initial Values (`onInit`)
+
+Sometimes the real initial values come from an API. Passing them synchronously is impossible, and applying them later with `setFieldValue` or `resetForm` makes the load look like a user change.
+
+`onInit` solves this at the lifecycle level. `initialValues` stays required and acts as the synchronous skeleton; `onInit` loads the real baseline once, on the first connect:
+
+```ts
+import { FormStateHandler } from '@veams/form';
+
+type ProfileValues = {
+  name: string;
+  email: string;
+};
+
+const profileForm = new FormStateHandler<ProfileValues>({
+  // Synchronous skeleton — rendered while loading.
+  initialValues: { name: '', email: '' },
+  // Loads the real baseline. The signal aborts if the form disconnects first.
+  onInit: async ({ signal }) => {
+    const profile = await fetchProfile({ signal });
+    return { name: profile.name, email: profile.email };
+  },
+  validator: validateProfile,
+});
+```
+
+The form state exposes the lifecycle through `initStatus`:
+
+- `'ready'` — values are the final baseline. Synchronous forms (no `onInit`) start here.
+- `'initializing'` — `onInit` is pending; `values` are still the skeleton.
+- `'error'` — `onInit` failed; `initError` holds the message.
+
+Lifecycle rules:
+
+- `onInit` runs once, when the first consumer connects. Repeated connects do not re-run it.
+- If the form disconnects while loading, the `AbortSignal` fires, the stale result is dropped, and a later reconnect retries the load.
+- The resolved values are applied via `initialize()`: they become the new baseline for `resetForm()` and `isDirty`, touched state stays empty, and the validator does not run — validation starts with the first interaction.
+- While `initStatus` is `'initializing'`, `FormProvider` ignores submit events.
+
+With the React bindings, `FormProvider` accepts `onInit` directly and `useFormMeta()` exposes the status:
+
+```tsx
+import { FormProvider, useFormMeta, useUncontrolledField } from '@veams/form/react';
+
+function ProfileFields() {
+  const { initStatus, initError } = useFormMeta<ProfileValues>();
+
+  if (initStatus === 'error') {
+    return <p role="alert">Could not load your profile: {initError}</p>;
+  }
+
+  const isLoading = initStatus === 'initializing';
+
+  return (
+    <fieldset disabled={isLoading}>
+      <NameField />
+      <EmailField />
+    </fieldset>
+  );
+}
+
+function ProfileForm() {
+  return (
+    <FormProvider
+      initialValues={{ name: '', email: '' }}
+      onInit={({ signal }) => fetchProfileValues({ signal })}
+      onSubmit={saveProfile}
+      validator={validateProfile}
+    >
+      <ProfileFields />
+      <button type="submit">Save</button>
+    </FormProvider>
+  );
+}
+```
+
+Fields are not force-disabled during `'initializing'` — disabling is a UI decision the consumer makes through `initStatus`, as shown above.
+
+### `initialize()` vs `resetForm()`
+
+`onInit` is sugar over the public `initialize(values)` primitive. The two reset-like actions have a deliberate semantic split:
+
+- `initialize(values)` — **set a new baseline.** Rebases `initialValues`, clears errors/touched, sets `isDirty` to `false`, marks `initStatus` as `'ready'`. Use it whenever loaded data should become "what the form started from" — async prefills, switching the edited entity, loading a draft.
+- `resetForm(values?)` — **go back to the baseline.** Without arguments it reverts to the current baseline. With values it sets them as current values but does *not* rebase — a later `resetForm()` still returns to the baseline.
+
+```ts
+const form = new FormStateHandler({ initialValues: { email: '' } });
+
+form.initialize({ email: 'loaded@veams.org' }); // new baseline
+form.setFieldValue('email', 'typed@veams.org');
+form.resetForm();                               // back to 'loaded@veams.org', not ''
+```
+
+A manual `initialize()` call also cancels a still-pending `onInit` — the explicit call wins.
+
+## Dirty Tracking (`isDirty`)
+
+`isDirty` reports whether the current values deviate from the baseline (`initialValues`), using deep structural comparison. It answers a different question than `touched`:
+
+- `touched` — *"has the user interacted with this field?"* (per field, set on blur)
+- `isDirty` — *"do the values differ from the baseline?"* (whole form, value-based)
+
+Typing a value and then typing the original value back makes the form clean again:
+
+```ts
+const form = new FormStateHandler({
+  initialValues: { email: 'base@veams.org' },
+});
+
+form.getState().isDirty;                       // false
+form.setFieldValue('email', 'new@veams.org');
+form.getState().isDirty;                       // true
+form.setFieldValue('email', 'base@veams.org');
+form.getState().isDirty;                       // false — values match the baseline again
+```
+
+`isDirty` interacts with the baseline actions as follows:
+
+| Action | Effect on `isDirty` |
+| --- | --- |
+| `setFieldValue(...)` | recomputed against the baseline |
+| `resetForm()` | `false` (values equal the baseline) |
+| `resetForm(values)` | recomputed — stays `true` if `values` differ from the (unrebased) baseline |
+| `initialize(values)` | `false` (the values *are* the new baseline) |
+
+Typical consumer uses: an unsaved-changes guard, or disabling save buttons.
+
+```tsx
+import { useFormMeta } from '@veams/form/react';
+
+function SaveBar() {
+  const { isDirty, isSubmitting } = useFormMeta<ProfileValues>();
+
+  return (
+    <button disabled={!isDirty || isSubmitting} type="submit">
+      Save changes
+    </button>
+  );
+}
+```
+
+### Server-Driven Prefill Without Shadow State
+
+`initialize()` and `isDirty` together replace the common "remember what we prefilled last time" boilerplate. A feature handler that prefills a form from a server query only needs one rule — *never overwrite user edits*:
+
+```ts
+class CompanyEditFormStateHandler extends NativeStateHandler<State, Actions> {
+  private readonly formHandler = new FormStateHandler<CompanyValues>({
+    initialValues: emptyCompanyValues,
+    validator: validateCompany,
+  });
+
+  protected override onConnect(): void {
+    this.bindSubscribable(this.companyProfileQuery, this.syncWithCompanyProfileQuery);
+  }
+
+  private syncWithCompanyProfileQuery = (snapshot: QuerySnapshot): void => {
+    if (snapshot.status !== 'success') return;
+
+    // The form knows whether the user edited anything since the last baseline.
+    if (this.formHandler.getState().isDirty) return;
+
+    // Apply the server data as the new baseline — not as a user change.
+    this.formHandler.initialize(toFormValues(snapshot.data));
+  };
+}
+```
+
+The flow: every successful query emission rebases the form while it is untouched; as soon as the user edits anything, `isDirty` becomes `true` and prefills stop. No copies of the last prefilled values, no manual comparison helpers. As a bonus, a user-triggered `resetForm()` returns to the *prefilled* baseline instead of the empty skeleton.
 
 ## Controlled Components
 

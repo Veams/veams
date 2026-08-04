@@ -44,6 +44,7 @@ export type LiveExampleId =
   | 'form-controlled-input'
   | 'form-simple-form'
   | 'form-nested-feature-form'
+  | 'form-async-init'
   | 'form-feature-validation'
   | 'form-validation-mode'
   | 'vent-release-bus'
@@ -2659,6 +2660,232 @@ function LoginFeature() {
         Toggle password visibility
       </button>
       <button type="submit">Sign in</button>
+    </FormProvider>
+  );
+}`;
+
+const formAsyncInitExample = `import { FormProvider, useFormMeta, useUncontrolledField } from '@veams/form/react';
+
+type ProfileValues = {
+  name: string;
+  email: string;
+};
+
+function ProfileFields() {
+  const { initStatus, initError } = useFormMeta<ProfileValues>();
+
+  if (initStatus === 'error') {
+    return <p role="alert">Could not load your profile: {initError}</p>;
+  }
+
+  return (
+    <fieldset disabled={initStatus === 'initializing'}>
+      <NameField />
+      <EmailField />
+    </fieldset>
+  );
+}
+
+function ProfileForm() {
+  return (
+    <FormProvider
+      initialValues={{ name: '', email: '' }}
+      onInit={({ signal }) => fetchProfileValues({ signal })}
+      onSubmit={saveProfile}
+      validator={validateProfile}
+    >
+      <ProfileFields />
+      <button type="submit">Save</button>
+    </FormProvider>
+  );
+}`;
+
+const formInitializeVsResetExample = `const form = new FormStateHandler({
+  initialValues: { email: '' },
+});
+
+// initialize() sets a NEW baseline: rebases initialValues,
+// clears errors and touched state, sets isDirty to false.
+form.initialize({ email: 'loaded@veams.org' });
+
+form.setFieldValue('email', 'typed@veams.org');
+
+// resetForm() goes BACK to the baseline: 'loaded@veams.org', not ''.
+form.resetForm();`;
+
+const formDirtyPrefillExample = `class CompanyEditFormStateHandler extends NativeStateHandler<State, Actions> {
+  private readonly formHandler = new FormStateHandler<CompanyValues>({
+    initialValues: emptyCompanyValues,
+    validator: validateCompany,
+  });
+
+  protected override onConnect(): void {
+    this.bindSubscribable(this.companyProfileQuery, this.syncWithCompanyProfileQuery);
+  }
+
+  private syncWithCompanyProfileQuery = (snapshot: QuerySnapshot): void => {
+    if (snapshot.status !== 'success') return;
+
+    // The form knows whether the user edited anything since the last baseline.
+    if (this.formHandler.getState().isDirty) return;
+
+    // Apply the server data as the new baseline — not as a user change.
+    this.formHandler.initialize(toFormValues(snapshot.data));
+  };
+}`;
+
+const formAsyncInitWorkingExample = `import { NativeStateHandler } from '@veams/status-quo';
+import { useStateFactory } from '@veams/status-quo/react';
+import { FormStateHandler } from '@veams/form';
+import { FormProvider, useFormController, useFormMeta, useUncontrolledField } from '@veams/form/react';
+
+type ProfileValues = {
+  email: string;
+  name: string;
+};
+
+type FeatureState = {
+  lastServerEvent: string;
+  serverVersion: number;
+};
+
+type FeatureActions = {
+  getFormHandler: () => FormStateHandler<ProfileValues>;
+  reloadFromServer: () => Promise<void>;
+  save: (values: ProfileValues) => Promise<void>;
+};
+
+const serverProfiles: ProfileValues[] = [
+  { email: 'mina@veams.dev', name: 'Mina Foster' },
+  { email: 'jonas@veams.dev', name: 'Jonas Berg' },
+];
+
+class AsyncProfileFeatureHandler extends NativeStateHandler<FeatureState, FeatureActions> {
+  private readonly formHandler = new FormStateHandler<ProfileValues>({
+    // Synchronous skeleton, visible while onInit resolves.
+    initialValues: {
+      email: '',
+      name: '',
+    },
+    // Loads the real baseline once, when the first field connects.
+    onInit: async ({ signal }) => {
+      const profile = await fetchProfile({ signal });
+
+      this.setState({ lastServerEvent: 'Initial profile loaded.' });
+
+      return profile;
+    },
+    validator: (values) => ({
+      ...(values.name ? {} : { name: 'Name is required' }),
+      ...(values.email.includes('@') ? {} : { email: 'Enter a valid email address' }),
+    }),
+  });
+
+  constructor() {
+    super({
+      initialState: {
+        lastServerEvent: 'Loading initial profile...',
+        serverVersion: 0,
+      },
+    });
+  }
+
+  getActions(): FeatureActions {
+    return {
+      getFormHandler: () => this.formHandler,
+      reloadFromServer: async () => {
+        const nextVersion = this.getState().serverVersion + 1;
+        const profile = serverProfiles[nextVersion % serverProfiles.length];
+
+        this.setState({ serverVersion: nextVersion });
+
+        // The dirty guard: never overwrite what the user typed.
+        if (this.formHandler.getState().isDirty) {
+          this.setState({ lastServerEvent: 'Prefill skipped — unsaved edits (isDirty).' });
+          return;
+        }
+
+        this.formHandler.initialize(profile);
+        this.setState({ lastServerEvent: 'Prefill applied via initialize().' });
+      },
+      save: async (values) => {
+        await persistProfile(values);
+
+        // Saved values become the new baseline: the form is clean again.
+        this.formHandler.initialize(values);
+        this.setState({ lastServerEvent: \`Saved \${values.name}.\` });
+      },
+    };
+  }
+}
+
+function TextField({ label, name }: { label: string; name: string }) {
+  const { meta, registerProps } = useUncontrolledField(name);
+
+  return (
+    <label>
+      <span>{label}</span>
+      <input {...registerProps} />
+      {meta.showError ? <p>{meta.error}</p> : null}
+    </label>
+  );
+}
+
+function ProfileFields() {
+  const form = useFormMeta<ProfileValues>();
+
+  return (
+    <fieldset disabled={form.initStatus === 'initializing'}>
+      <TextField label="Name" name="name" />
+      <TextField label="Email" name="email" />
+      <button
+        disabled={form.initStatus !== 'ready' || !form.isDirty || form.isSubmitting}
+        type="submit"
+      >
+        Save changes
+      </button>
+    </fieldset>
+  );
+}
+
+function LifecyclePanel({
+  lastServerEvent,
+  reloadFromServer,
+}: {
+  lastServerEvent: string;
+  reloadFromServer: () => Promise<void>;
+}) {
+  const controller = useFormController<ProfileValues>();
+  const form = useFormMeta<ProfileValues>();
+
+  return (
+    <>
+      <p>Init status: {form.initStatus}</p>
+      <p>Dirty: {form.isDirty ? 'yes' : 'no'}</p>
+      <p>{lastServerEvent}</p>
+      <button onClick={() => void reloadFromServer()} type="button">
+        Simulate server update
+      </button>
+      <button onClick={() => controller.resetForm()} type="button">
+        Reset to baseline
+      </button>
+    </>
+  );
+}
+
+function AsyncInitProfileForm() {
+  const [featureState, actions] = useStateFactory(() => new AsyncProfileFeatureHandler(), []);
+
+  return (
+    <FormProvider<ProfileValues>
+      formHandlerInstance={actions.getFormHandler()}
+      onSubmit={actions.save}
+    >
+      <ProfileFields />
+      <LifecyclePanel
+        lastServerEvent={featureState.lastServerEvent}
+        reloadFromServer={actions.reloadFromServer}
+      />
     </FormProvider>
   );
 }`;
@@ -6848,6 +7075,79 @@ export const docsPackages: DocsPackage[] = [
               {
                 codeExamples: [
                   {
+                    code: formAsyncInitExample,
+                    label: 'Async initial values with onInit',
+                    language: 'tsx',
+                  },
+                ],
+                bullets: [
+                  '`initialValues` stays required and acts as the synchronous skeleton while loading.',
+                  '`onInit` runs once when the first consumer connects and receives an `AbortSignal` that fires if the form disconnects before the load resolves.',
+                  "`initStatus` moves from `'initializing'` to `'ready'` when the loaded values are applied, or to `'error'` with `initError` when the load fails.",
+                  'The resolved values become the new baseline: touched state stays empty and the validator does not run until the first interaction.',
+                  "While `initStatus` is `'initializing'`, `FormProvider` ignores submit events. Disabling fields during the load is a UI decision made through `initStatus`.",
+                ],
+                id: 'async-init',
+                paragraphs: [
+                  'When the real initial values come from an API, applying them with `setFieldValue()` or `resetForm()` makes the load look like a user change.',
+                  '`onInit` moves that load into the form lifecycle instead.',
+                ],
+                title: 'Load initial values asynchronously',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: formInitializeVsResetExample,
+                    label: 'initialize() vs resetForm()',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  '`initialize(values)` sets a new baseline: it rebases `initialValues`, clears errors and touched state, and sets `isDirty` to `false`.',
+                  '`resetForm(values?)` goes back to the baseline. With values it replaces the current values but does not rebase.',
+                  'A manual `initialize()` call cancels a still-pending `onInit` — the explicit call wins.',
+                ],
+                id: 'initialize-vs-reset',
+                paragraphs: [
+                  '`onInit` is sugar over the public `initialize()` primitive.',
+                  'The semantic split is deliberate: initialize sets a new baseline, reset returns to it.',
+                ],
+                title: 'initialize() vs resetForm()',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: formDirtyPrefillExample,
+                    label: 'Server-driven prefill guarded by isDirty',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  '`isDirty` compares the current values deeply against the baseline — typing the original value back makes the form clean again.',
+                  '`touched` answers "has the user interacted?", `isDirty` answers "do the values differ from the baseline?". They are independent.',
+                  'Guard server-driven prefills with `isDirty` instead of keeping copies of the last prefilled values in feature state.',
+                  'After a prefill via `initialize()`, a user-triggered `resetForm()` returns to the prefilled baseline instead of the empty skeleton.',
+                ],
+                id: 'dirty-tracking',
+                paragraphs: [
+                  '`isDirty` reports whether the current values deviate from the baseline.',
+                  'Combined with `initialize()`, it removes the "remember what we prefilled last time" boilerplate from feature handlers.',
+                ],
+                title: 'Track dirty state against the baseline',
+              },
+            ],
+            eyebrow: 'Guides',
+            id: 'async-init-and-dirty-state',
+            intro:
+              'Load initial values asynchronously through the form lifecycle and let the form itself answer whether the user has edited anything.',
+            summary: 'Async baselines and dirty tracking without shadow state.',
+            title: 'Async Init & Dirty State',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
                     code: formValidatorFlowExample,
                     label: 'Typed validator flow',
                     language: 'ts',
@@ -7038,9 +7338,10 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   '`FormProvider(props)` has two valid shapes.',
-                  'Local mode takes \`{ children, initialValues, onSubmit?, renderAs?, validator?, validationMode?, revalidationMode?, ...formProps }\`. External mode takes \`{ children, formHandlerInstance, onSubmit?, renderAs?, validationMode?, revalidationMode?, ...formProps }\`.',
+                  'Local mode takes `{ children, initialValues, onInit?, onSubmit?, renderAs?, validator?, validationMode?, revalidationMode?, ...formProps }`. External mode takes `{ children, formHandlerInstance, onSubmit?, renderAs?, validationMode?, revalidationMode?, ...formProps }`.',
                   "`renderAs` defaults to `'form'` but supports `'fieldset'`, `'div'`, or `'section'`. `onSubmit(values, form)` is optional, receives the validated values and the resolved `FormStateHandler`. The provider calls `validateForm()` and `touchAllFields()` before invoking it.",
                   '`validationMode` defaults to `blur`. `revalidationMode` defaults to `change`.',
+                  "`onInit?` loads the real initial values asynchronously in local mode. While it is pending (`initStatus: 'initializing'`), the provider ignores submit events. In external mode, configure `onInit` on the handler instead.",
                 ],
                 id: 'form-provider-api',
                 paragraphs: [
@@ -7076,16 +7377,19 @@ export const docsPackages: DocsPackage[] = [
                   },
                 ],
                 bullets: [
-                  '`new FormStateHandler(config)` takes `{ initialValues, validator?, options? }`.',
+                  '`new FormStateHandler(config)` takes `{ initialValues, onInit?, validator?, options? }`.',
                   '`initialValues` seeds `values` with the same nested shape the form will keep for its whole lifetime. `validator?` returns the typed field-error map. `options?.devTools` configures the underlying Status Quo devtools integration.',
-                  'The state snapshot is `{ values, errors, submitError, touched, isSubmitting, isValid }`.',
+                  "`onInit?` loads the real initial values asynchronously: it runs once on the first connect, receives `{ signal }` for abort handling, and applies its result through `initialize()`. `initStatus` tracks the lifecycle as `'ready' | 'initializing' | 'error'` with `initError` holding the failure message.",
+                  'The state snapshot is `{ values, errors, submitError, touched, isSubmitting, isValid, isDirty, initStatus, initError }`.',
+                  '`isDirty` reports whether the current values deviate deeply from the baseline (`initialValues`). It recomputes on `setFieldValue()`, `resetForm()`, and `initialize()` — independent of `touched`.',
+                  '`initialize(values)` sets a new baseline: it rebases `initialValues`, clears `errors`, `submitError`, and `touched`, sets `isDirty` to `false`, and marks `initStatus` as `\'ready\'`. It does not run the validator. A pending `onInit` is cancelled by a manual call.',
                   '`errors` contains active field-level messages keyed by dot-path. Missing keys mean valid fields. `submitError` is the form-level backend message and stays separate from field validation.',
                   '`isValid` is derived from the field error map only. A `submitError` may exist while `isValid` is still `true`.',
                   '`setFieldValue(name, value, options?)` updates the nested value, optionally reruns the validator for the full snapshot, updates `errors`, and clears stale `submitError`.',
                   '`validateForm()` reruns the validator against the current snapshot, stores the resulting field errors, and returns the boolean result for submit flow control.',
                   '`setFieldError(name, errorMessage?)` is for authoritative backend field constraints. `setSubmitError(errorMessage?)` is for generic backend failures that do not belong to one field.',
                   '`setFieldTouched(name, isTouched?)` marks one field explicitly. `touchAllFields()` marks every leaf field so validation messages can become visible in one step.',
-                  '`resetForm(values?)` replaces the current values with either the original `initialValues` or a new snapshot and clears `errors`, `submitError`, `touched`, and submit state.',
+                  '`resetForm(values?)` replaces the current values with either the current baseline or a new snapshot and clears `errors`, `submitError`, `touched`, and submit state. It does not rebase the baseline — use `initialize()` for that.',
                   '`setSubmitting(isSubmitting)` exists for non-React or custom submit orchestration. When you use `FormProvider`, the provider manages that flag around `onSubmit` for you.',
                 ],
                 id: 'form-state-handler-api',
@@ -7134,8 +7438,8 @@ export const docsPackages: DocsPackage[] = [
               {
                 bullets: [
                   '`useFormMeta()` takes no parameters.',
-                  'Returns aggregate form metadata including `{ errors, submitError, touched, isSubmitting, isValid }`.',
-                  'Use it for error summaries, submit banners, or other UI that depends on more than one field at once.',
+                  'Returns aggregate form metadata including `{ errors, submitError, touched, isSubmitting, isValid, isDirty, initStatus, initError }`.',
+                  'Use it for error summaries, submit banners, unsaved-changes guards, or loading states while `onInit` resolves.',
                 ],
                 id: 'use-form-meta-api',
                 paragraphs: [
@@ -7258,6 +7562,37 @@ export const docsPackages: DocsPackage[] = [
               'Keep ownership in the feature handler when the form is part of a larger feature.',
             summary: 'Nested values with dot-path fields in a feature-owned form.',
             title: 'Nested feature form',
+          },
+          {
+            blocks: [
+              {
+                codeExamples: [
+                  {
+                    code: formAsyncInitWorkingExample,
+                    label: 'Working async init form',
+                    language: 'tsx',
+                  },
+                ],
+                bullets: [
+                  '`onInit` loads the real baseline once on first connect while `initialValues` renders as the skeleton.',
+                  "`initStatus` drives the loading UX: fields disable during `'initializing'` and submits are ignored.",
+                  'Server-driven prefills are guarded by `isDirty` — the form itself answers "did the user edit anything?".',
+                  'Saving applies the values via `initialize()`, so the saved snapshot becomes the new clean baseline.',
+                ],
+                id: 'async-init-form',
+                liveExample: 'form-async-init',
+                paragraphs: [
+                  'This pattern combines async initial values, dirty tracking, and baseline rebasing in one feature-owned form.',
+                ],
+                title: 'Async init & dirty prefill',
+              },
+            ],
+            eyebrow: 'Examples',
+            id: 'example-async-init',
+            intro:
+              'Load the baseline asynchronously, guard prefills with dirty state, and rebase on save.',
+            summary: 'Async baselines with dirty-guarded server prefills.',
+            title: 'Async init & dirty prefill',
           },
           {
             blocks: [
