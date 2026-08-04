@@ -3653,14 +3653,14 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 description:
-                  'Framework-agnostic state handlers with React hooks and explicit lifecycle management.',
+                  'State handlers that work with any framework, plus React hooks and a clear lifecycle.',
                 link: '/packages/status-quo/overview',
                 title: 'Status Quo',
                 visual: 'framework-core',
               },
               {
                 description:
-                  'Stable query and mutation handles over TanStack Query, plus a centralized query manager.',
+                  'Stable query and mutation handles on top of TanStack Query, plus a central query manager.',
                 link: '/packages/status-quo-query/overview',
                 title: 'Status Quo Query',
                 visual: 'query-facade',
@@ -3674,7 +3674,7 @@ export const docsPackages: DocsPackage[] = [
               },
               {
                 description:
-                  'Generic form state engine with optional React bindings for high-performance uncontrolled inputs.',
+                  'A generic form state engine with optional React bindings for fast, uncontrolled inputs.',
                 link: '/packages/form/overview',
                 title: 'Form',
                 visual: 'form-architecture',
@@ -3695,7 +3695,7 @@ export const docsPackages: DocsPackage[] = [
               },
             ],
             heroParagraphs: [
-              'VEAMS provides a suite of modular, framework-agnostic packages designed to keep your frontend architecture **clean**, **scalable**, and **highly performant** without too much magic! From structural methodologies to advanced state management and partial hydration, each tool is built to solve complex problems without coupling your business logic to a specific UI framework.',
+              'VEAMS is a set of small packages that keep your frontend **clean**, **scalable**, and **fast** without too much magic! They cover structure rules, state management, forms, events, and partial hydration. Each tool solves one problem and does not tie your business logic to a specific UI framework.',
             ],
             id: 'landing',
             intro: '',
@@ -3728,9 +3728,9 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'why',
                 paragraphs: [
-                  'Our methodology defines how projects are structured for modularity, scalability, and maintainability. It spans HTML, CSS, and JavaScript so we can apply the same mental model across the whole frontend stack.',
-                  'This approach is BEM-inspired, but it is not strict BEM. We apply a restricted depth rule to keep class names readable and maintainable.',
-                  'This section focuses on the structure and styling rules. JavaScript binding rules are part of the same methodology but are documented separately.',
+                  'Our methodology defines how projects are structured so they stay modular, scalable, and easy to maintain. It covers HTML, CSS, and JavaScript, so the same mental model works across the whole frontend.',
+                  'The approach is BEM-inspired, but it is not strict BEM. We limit nesting depth to keep class names readable.',
+                  'This section covers the structure and styling rules. JavaScript binding rules belong to the same methodology but are documented separately.',
                 ],
                 title: 'Methodology Overview',
               },
@@ -3794,7 +3794,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'principles',
                 paragraphs: [
-                  'This project uses a BEM-inspired naming approach based on Regions, Components, and Utilities. The goal is clarity and long-term maintainability.',
+                  'The naming is BEM-inspired and based on Regions, Components, and Utilities. The goal is clarity that lasts.',
                 ],
                 title: 'General Principles',
               },
@@ -3808,7 +3808,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'example',
                 paragraphs: [
-                  'This example shows how parents and children are named to maintain a clear hierarchy and ownership.',
+                  'This example shows how parents and children are named so hierarchy and ownership stay clear.',
                 ],
                 title: 'Example snippet',
               },
@@ -3827,14 +3827,14 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'depth',
                 paragraphs: [
-                  'Class names should only be one level deep (only one `__` segment). This ensures better readability and is sufficient to target a parent instrument and its child elements.',
+                  'Class names should only be one level deep (only one `__` segment). That keeps names readable and is enough to target a parent and its children.',
                 ],
                 title: 'One level of depth',
               },
             ],
             eyebrow: 'Getting Started',
             id: 'quick-start',
-            intro: 'The class naming system is designed for clarity and long-term maintainability.',
+            intro: 'The naming system keeps classes clear, even as the project grows.',
             summary: 'Class patterns that stay calm.',
             title: 'Class Naming',
           },
@@ -4031,7 +4031,7 @@ export const docsPackages: DocsPackage[] = [
             ],
             eyebrow: 'Guides',
             id: 'utilities',
-            intro: 'Utilities are great right up until they start impersonating components.',
+            intro: 'Utilities are helpful until they start acting like components.',
             summary: 'Keep the helpers tiny.',
             title: 'Utilities',
           },
@@ -4052,7 +4052,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'variables',
                 paragraphs: [
-                  'We should make it easy for us to distinguish between global and local variables.',
+                  'It should be easy to tell global and local variables apart.',
                 ],
                 title: 'Variables',
               },
@@ -4128,7 +4128,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'combined-example',
                 paragraphs: [
-                  'This kind of slice is where the methodology becomes concrete. A region owns the page band, components own the reusable content pieces, utilities stay small, and modifier or context rules only appear where they actually earn their keep.',
+                  'This slice shows the methodology in practice. A region owns the page band, components own the reusable content pieces, utilities stay small, and modifier or context rules only appear where they are really needed.',
                 ],
                 title: 'See the pieces together',
               },
@@ -4136,7 +4136,7 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Examples',
             id: 'examples',
             intro:
-              'Examples work best when the instruments show up together in one believable page slice.',
+              'Examples work best when the instruments appear together in one realistic page slice.',
             summary: 'See the pieces together.',
             title: 'Examples',
           },
@@ -4148,7 +4148,7 @@ export const docsPackages: DocsPackage[] = [
   },
   {
     accent: 'ember',
-    description: 'Framework-agnostic state handlers with React hooks and explicit lifecycle.',
+    description: 'State handlers for any framework, with React hooks and a clear lifecycle.',
     githubPath: 'packages/status-quo',
     id: 'status-quo',
     npm: '@veams/status-quo',
@@ -4160,14 +4160,14 @@ export const docsPackages: DocsPackage[] = [
             blocks: [
               {
                 bullets: [
-                  'Scale the service and state handler layer without rewriting component wiring.',
-                  'Let state shape and derived logic grow without breeding custom nested hooks in the view.',
-                  'Keep ownership obvious because subscriptions, actions, and teardown do not get trapped inside components.',
+                  'Grow the service and state handler layer without rewriting component wiring.',
+                  'Let state and derived logic grow without adding more and more nested hooks to the view.',
+                  'Keep ownership clear: subscriptions, actions, and cleanup do not get stuck inside components.',
                 ],
                 id: 'why',
                 paragraphs: [
-                  'The split between **service**, **state handler**, and the **component view** is the real payoff. Each layer gets room to grow on its own. Business logic can become richer, state can become more composed, and the component can stay focused on rendering snapshots and triggering actions.',
-                  'That separation keeps React components from turning into ownership puzzles. You do not end up wondering which nested hook owns the subscription, where cleanup should happen, or which component secretly became the home of stateful behavior.',
+                  'The split between **service**, **state handler**, and the **component view** is the main benefit. Each layer can grow on its own. Business logic can get richer, state can get more complex, and the component stays focused on rendering snapshots and calling actions.',
+                  'This split keeps React components simple. You never have to wonder which nested hook owns a subscription, where cleanup happens, or which component quietly became the home of stateful behavior.',
                 ],
                 title: 'Why the split matters',
               },
@@ -4179,7 +4179,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'where-it-fits',
                 paragraphs: [
-                  'Handlers encapsulate state transitions, expose actions, and clean up after themselves. You decide whether each component should have its own instance through a factory or share a singleton, while the UI stays blissfully unaware of the chosen implementation.',
+                  'Handlers own state transitions, expose actions, and clean up after themselves. You decide whether each component gets its own instance through a factory or shares a singleton. The UI does not need to know which one you chose.',
                 ],
                 title: 'Composable handlers with clear ownership',
               },
@@ -4191,7 +4191,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'boundary',
                 paragraphs: [
-                  'Status Quo is opinionated about boundaries. It wants stateful objects to be explicit, portable, and disposable, which is why the handler API is more important than the hook layer around it.',
+                  'Status Quo has a clear opinion on boundaries. Stateful objects should be explicit, portable, and easy to dispose. That is why the handler API matters more than the hook layer around it.',
                 ],
                 title: 'Keep the boundary explicit',
               },
@@ -4236,7 +4236,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'core-flow',
                 paragraphs: [
-                  'Status Quo separates the state model from the UI layer. This separation is achieved through a clear boundary: handlers own transitions and lifecycle, while components subscribe to snapshots and trigger actions.',
+                  'Status Quo separates the state model from the UI layer. The boundary is clear: handlers own transitions and lifecycle, components subscribe to snapshots and call actions.',
                 ],
                 title: 'Core Architecture',
               },
@@ -4248,7 +4248,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'core-contract',
                 paragraphs: [
-                  'The core contract ensures that your application state remains predictable and testable, regardless of its size or complexity.',
+                  'The core contract keeps your application state predictable and testable, no matter how large it grows.',
                 ],
                 title: 'The Core Contract',
               },
@@ -4284,14 +4284,14 @@ export const docsPackages: DocsPackage[] = [
                   },
                 ],
                 bullets: [
-                  'The root package (`@veams/status-quo`) is framework-agnostic and owns the state model.',
+                  'The root package (`@veams/status-quo`) owns the state model and does not need React.',
                   'React bindings live in a separate subpath (`@veams/status-quo/react`).',
-                  'Guides use React examples for readability, but the handler patterns stay the same outside React.',
+                  'The guides use React examples for readability, but the handler patterns work the same outside React.',
                 ],
                 id: 'framework-support',
                 paragraphs: [
-                  'Status Quo is not tied to React. Keep handlers, actions, and lifecycle in the root package, then opt into React only for view-layer wiring when your app uses React.',
-                  'Using React in guides is a documentation choice, not an architectural requirement. The handler boundary and engine choice (observables or signals) remain framework-level decisions, independent from the UI layer.',
+                  'Status Quo is not tied to React. Keep handlers, actions, and lifecycle in the root package. Add React only for the view wiring, and only if your app uses React.',
+                  'The guides use React for readability, not because React is required. The handler boundary and the engine choice (observables or signals) stay independent of the UI layer.',
                 ],
                 title: 'Framework Support',
               },
@@ -4299,7 +4299,7 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Getting Started',
             id: 'framework-support',
             intro:
-              'Use the root package as the framework-agnostic state layer, then add React bindings only where the UI needs them.',
+              'Use the root package as the state layer for any framework, then add React bindings only where the UI needs them.',
             summary: 'Framework-neutral core, optional React layer.',
             title: 'Framework Support',
           },
@@ -4325,7 +4325,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'install',
                 paragraphs: [
-                  'Install the package based on your preferred reactive engine. The native handler is completely zero-dependency, while the observable and signal versions require their respective peer dependencies.',
+                  'Install the package based on your preferred reactive engine. The native handler has no dependencies. The observable and signal versions need their peer packages.',
                 ],
                 title: 'Install the package',
               },
@@ -4405,19 +4405,19 @@ export const docsPackages: DocsPackage[] = [
             blocks: [
               {
                 callout:
-                  'Same hooks. Same snapshots. The real choice is how the handler likes to think.',
+                  'Same hooks. Same snapshots. The only choice is how the handler works inside.',
                 codeExamples: [
                   {
                     code: statusQuoNativeHandlerCompositionExample,
                     description:
-                      'The native engine relies on `bindSubscribable()` to manually derive state. You provide a selector function to map upstream state and a comparison function to prevent redundant updates. This is the zero-dependency default.',
+                      'The native engine uses `bindSubscribable()` to derive state by hand. You pass a selector to map upstream state and a comparison function to skip duplicate updates. This is the zero-dependency default.',
                     label: 'Native (Manual Sync)',
                     language: 'ts',
                   },
                   {
                     code: statusQuoObservableHandlerExample,
                     description:
-                      'The observable engine uses RxJS operators like `pipe()` and `map()` to transform state into a stream. This is ideal when your transitions already feel like a reactive event flow.',
+                      'The observable engine uses RxJS operators like `pipe()` and `map()` to transform state into a stream. Ideal when your transitions already behave like an event stream.',
                     label: 'Observable (Streams)',
                     language: 'ts',
                   },
@@ -4436,7 +4436,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'engine-choice',
                 paragraphs: [
-                  'The engine is a handler decision, not a view decision. The native version is the cleanest starting point because it has no peer-dependency requirements. The observable version excels at complex async coordination through RxJS, while the signal version provides ultra-light reactive derivation via Preact Signals. All three options share the same `bindSubscribable()` contract, ensuring that the surrounding composition and React wiring remain identical regardless of the underlying engine.',
+                  'The engine is a handler decision, not a view decision. The native version is the cleanest start because it needs no peer dependencies. The observable version is strong for complex async work through RxJS. The signal version gives very light reactive derivation via Preact Signals. All three share the same `bindSubscribable()` contract, so the composition and React wiring stay the same.',
                 ],
                 title: 'Pick the engine that matches the state',
               },
@@ -4444,20 +4444,20 @@ export const docsPackages: DocsPackage[] = [
                 featureCards: [
                   {
                     description:
-                      'When your handler needs to coordinate multiple async events, debouncing, or complex time-based transitions, RxJS streams provide the more powerful abstraction.',
+                      'When your handler has to coordinate several async events, debounce input, or manage time-based transitions, RxJS streams are the stronger tool.',
                     title: 'Stream-heavy logic',
                     visual: 'swap-engine',
                   },
                   {
                     description:
-                      'When your state tree has many interdependent derived values, signals allow for automatic tracking and fine-grained updates without manual sync logic.',
+                      'When your state tree has many derived values that depend on each other, signals track them automatically and update only what changed.',
                     title: 'Deeply reactive derivations',
                     visual: 'view-state',
                   },
                 ],
                 id: 'when-to-scale',
                 paragraphs: [
-                  'Native handlers are excellent for most features, as `bindSubscribable()` already allows for manual state derivation and synchronization. You should consider scaling to other engines only when the manual logic becomes repetitive or the state transitions become inherently complex.',
+                  'Native handlers cover most features, because `bindSubscribable()` already handles manual state derivation and syncing. Move to another engine only when the manual logic gets repetitive or the transitions get truly complex.',
                 ],
                 title: 'When to scale',
               },
@@ -4469,7 +4469,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'rule-of-thumb',
                 paragraphs: [
-                  'A simple rule of thumb: let the handler internals do the weird stuff so the component can stay boring. That is the whole point of the abstraction.',
+                  'A simple rule of thumb: let the handler do the complex work so the component can stay simple. That is the whole point.',
                 ],
                 title: 'Rule of thumb',
               },
@@ -4534,7 +4534,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'lifecycle-tradeoffs',
                 paragraphs: [
-                  'The default favors persistence, which fits app-level shared state better. If a singleton should behave more like a mounted resource, opt into teardown with `destroyOnNoConsumers: true`.',
+                  'By default a singleton stays alive, which fits app-level shared state. If it should behave more like a mounted resource, opt into teardown with `destroyOnNoConsumers: true`.',
                 ],
                 title: 'Singleton does not mean forever',
               },
@@ -4586,8 +4586,8 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'provider-scope-tradeoffs',
                 paragraphs: [
-                  'The flow still dies with the local scope; only access is shared.',
-                  'This is often the clean middle ground between a local shortcut and a singleton. You keep ownership local, but you stop threading the handler through props or cramming state reads and actions into the same component just because the instance needs to be shared.',
+                  'The handler still ends with the local scope. Only access is shared.',
+                  'This is the middle ground between a local shortcut and a singleton. Ownership stays local, but you no longer pass the handler through props or force state reads and actions into one component just to share the instance.',
                 ],
                 title: 'Keep ownership local, share access on purpose',
               },
@@ -4691,7 +4691,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'when-to-use-connection-lifecycle',
                 paragraphs: [
-                  'Reach for the connection lifecycle whenever the work observes something outside the handler or schedules future work. If the code would need an unsubscribe, cancel, removeEventListener, or clearTimeout path, it belongs in `onConnect()` and `onDisconnect()` rather than the constructor.',
+                  'Use the connection lifecycle whenever the handler watches something outside itself or schedules future work. If the code would need an unsubscribe, cancel, removeEventListener, or clearTimeout path, it belongs in `onConnect()` and `onDisconnect()`, not in the constructor.',
                 ],
                 title: 'When to use it',
               },
@@ -4754,7 +4754,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'named-binding',
                 paragraphs: [
-                  'Named `bindSubscribable(...)` is the replaceable form. It is useful when a handler selects one upstream resource at a time, such as one active list item, and should treat a new selection as replacement instead of accumulation. The handler can also inspect `this.namedSubscriptions` directly when feature logic needs visibility into the currently active named bindings.',
+                  'Named `bindSubscribable(...)` is the replaceable form. Use it when a handler follows one upstream resource at a time, such as one active list item. A new selection then replaces the old subscription instead of adding another one. The handler can also read `this.namedSubscriptions` when feature logic needs to see the active named bindings.',
                 ],
                 title: 'Named bindings for replaceable sync',
               },
@@ -4776,7 +4776,7 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Guides',
             id: 'bindings',
             intro:
-              'Bindings keep handler-to-handler synchronization inside the state layer, with one path for stable lifetime work and one path for replaceable work.',
+              'Bindings keep handler-to-handler sync inside the state layer: one form for stable work, one for replaceable work.',
             summary: 'Unnamed, named, and destroy-time cleanup.',
             title: 'Bindings',
           },
@@ -4797,7 +4797,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'selector-example',
                 paragraphs: [
-                  'If a component only cares about `user.profile`, subscribe to `user.profile`. Selectors are the clean way to keep the store cohesive without pushing the whole state tree through every consumer.',
+                  'If a component only cares about `user.profile`, subscribe to `user.profile`. Selectors keep the store in one piece without pushing the whole state tree through every consumer.',
                 ],
                 title: 'Subscribe to the slice that matters',
               },
@@ -4835,7 +4835,7 @@ export const docsPackages: DocsPackage[] = [
                 title: 'Apply selector thinking in handler composition',
               },
               {
-                callout: 'Selectors are the main tool for controlling rerender fanout.',
+                callout: 'Selectors are the main tool for limiting rerenders.',
                 bullets: [
                   'Subscribe to full state only when the component really needs all of it.',
                   'Reach for a selector as soon as one branch of state clearly drives the UI.',
@@ -4843,7 +4843,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'selector-guidelines',
                 paragraphs: [
-                  'This is the practical scaling tool in Status Quo. One handler can stay coherent while each consumer asks for only the bit it actually renders.',
+                  'This is the practical scaling tool in Status Quo. One handler stays whole while each consumer only asks for the part it renders.',
                 ],
                 title: 'Keep rerenders boring',
               },
@@ -4859,7 +4859,7 @@ export const docsPackages: DocsPackage[] = [
             blocks: [
               {
                 callout:
-                  'Comparison rules belong in the handler first. Hook-level equality is the last-mile escape hatch.',
+                  'Comparison rules belong in the handler first. Hook-level equality is the final override.',
                 bullets: [
                   'Handler-level distinct comparison decides whether updates should propagate at all.',
                   'Hook-level `isEqual` only decides whether one selected value should rerender one subscriber.',
@@ -4867,7 +4867,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'comparison-layers',
                 paragraphs: [
-                  'Status Quo has two comparison layers on purpose. The handler is the primary definition of state behavior and should own the broad rule for what counts as a meaningful update. Subscription hooks sit later in the pipeline and are best used for UI-specific selection boundaries.',
+                  'Status Quo has two comparison layers on purpose. The handler owns the broad rule for what counts as a real update. Subscription hooks come later in the pipeline and are best for UI-specific selection.',
                 ],
                 title: 'Know the two comparison layers',
               },
@@ -4897,7 +4897,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'comparison-defaults',
                 paragraphs: [
-                  'The defaults are intentionally different because they operate at different layers. Handler distinct comparison is broader and protects the state pipeline itself. Its built-in JSON fallback uses a replacer so `Map` and `Set` values are compared structurally instead of collapsing to empty objects. You can keep that rule global or pin a different comparator to one handler instance through constructor options. Hook equality is narrower and only filters one selected subscription result.',
+                  'The defaults differ because the layers differ. Handler distinct comparison is broader and protects the state pipeline itself. Its JSON fallback uses a replacer, so `Map` and `Set` values compare by content instead of collapsing to empty objects. Keep that rule global, or set a different comparator per handler through constructor options. Hook equality is narrower and only filters one selected subscription result.',
                 ],
                 title: 'Understand the defaults',
               },
@@ -4924,7 +4924,7 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Guides',
             id: 'comparators-and-defaults',
             intro:
-              'Comparator behavior exists at the handler layer and at the subscription layer. Keep the primary rule in the handler, then use hook-level equality only when a component truly needs local render tuning.',
+              'Comparators exist at the handler layer and at the subscription layer. Keep the main rule in the handler. Use hook-level equality only when one component needs local render tuning.',
             summary: 'Handler-first comparison rules, hook-level escape hatches.',
             title: 'Comparators and Defaults',
           },
@@ -5000,7 +5000,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'entry-points',
                 paragraphs: [
-                  'The root package is framework-agnostic and covers handlers, runtime setup, and singleton helpers. `NativeStateHandler`, `makeStateSingleton`, and `setupStatusQuo` are exported from the root. Use `@veams/status-quo/observable` for `ObservableStateHandler` (requires rxjs), `@veams/status-quo/signals` for `SignalStateHandler` (requires @preact/signals-core), `@veams/status-quo/react` for the React integration layer, and `@veams/status-quo/store` for store primitives grouped separately.',
+                  'The root package works without React and covers handlers, runtime setup, and singleton helpers. `NativeStateHandler`, `makeStateSingleton`, and `setupStatusQuo` are exported from the root. Use `@veams/status-quo/observable` for `ObservableStateHandler` (needs rxjs), `@veams/status-quo/signals` for `SignalStateHandler` (needs @preact/signals-core), `@veams/status-quo/react` for the React layer, and `@veams/status-quo/store` for store primitives.',
                 ],
                 title: 'Entry points',
               },
@@ -5213,7 +5213,7 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Guides',
             id: 'api-reference',
             intro:
-              'Start at the root for framework-agnostic pieces, then import the React integration from `@veams/status-quo/react` when you are wiring handlers into React.',
+              'Start at the root for the core pieces, then import from `@veams/status-quo/react` when you wire handlers into React.',
             summary: 'The full surface, minus the noise.',
             title: 'API Reference',
           },
@@ -5369,7 +5369,7 @@ export const docsPackages: DocsPackage[] = [
             blocks: [
               {
                 bullets: [
-                  'Selectors are how you control rerender fanout without fragmenting the handler.',
+                  'Selectors let you limit rerenders without splitting the handler apart.',
                   'Return only the slice the component renders, then add an equality function when the selector creates new objects.',
                   'Compare render counts to see the optimization, not just the API surface.',
                 ],
@@ -5547,7 +5547,7 @@ export const docsPackages: DocsPackage[] = [
                 codeExamples: [
                   {
                     code: statusQuoQueryFrameworkImports,
-                    label: 'Framework-agnostic service layer',
+                    label: 'Framework-neutral service layer',
                     language: 'ts',
                   },
                   {
@@ -6204,7 +6204,7 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   '`useMutationHandle(mutationHandle)` lives in `@veams/status-quo-query/react`.',
                   'It subscribes React directly to one `MutationHandle` and returns the latest `MutationHandleSnapshot`.',
-                  'Use it when a component should reflect mutation state — pending, success, or error — without owning the mutation trigger logic.',
+                  'Use it when a component should show mutation state (pending, success, or error) without owning the mutation trigger logic.',
                   'Call `mutationHandle.mutate(variables)` directly on the handle; the hook only subscribes to state.',
                 ],
                 id: 'use-mutation-handle',
@@ -6509,7 +6509,7 @@ export const docsPackages: DocsPackage[] = [
                 featureCards: ventOverviewCards,
                 id: 'overview-shape',
                 paragraphs: [
-                  'Vent is the smallest coordination layer in the VEAMS ecosystem: publish an event, let interested consumers react, and keep ownership local instead of building another shared mutable state surface.',
+                  'Vent is the smallest coordination layer in the VEAMS ecosystem: publish an event, let interested consumers react, and keep ownership local without creating another shared state store.',
                 ],
                 title: 'Keep event boundaries explicit',
               },
@@ -6532,7 +6532,7 @@ export const docsPackages: DocsPackage[] = [
               'A simple event boundary when a store would be heavier than the problem.',
             ],
             heroParagraphs: [
-              'Vent gives you a focused event bus when one part of the app needs to signal another part without sharing state ownership. It is useful for transient coordination such as notifications, orchestration signals, and integration boundaries where a store would be heavier than the actual problem.',
+              'Vent gives you a focused event bus when one part of the app needs to signal another part without sharing state ownership. It fits short-lived coordination such as notifications, workflow signals, and integration points where a store would be heavier than the problem.',
             ],
             id: 'overview',
             intro:
@@ -6550,9 +6550,9 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'event-model',
                 paragraphs: [
-                  'Vent works best for transient coordination. If the value itself must remain readable and derivable over time, use a state handler. If the important thing is that something happened and multiple listeners may react, an event bus is the simpler fit.',
+                  'Vent works best for short-lived coordination. If a value must stay readable over time, use a state handler. If the important thing is that something happened and several listeners may react, an event bus is the simpler fit.',
                 ],
-                title: 'Choose events for transient coordination',
+                title: 'Choose events for short-lived coordination',
               },
               {
                 bullets: [
@@ -6580,7 +6580,7 @@ export const docsPackages: DocsPackage[] = [
                 codeExamples: [
                   {
                     code: `import createVent from '@veams/vent';`,
-                    label: 'Framework-agnostic root',
+                    label: 'Framework-neutral root',
                     language: 'ts',
                   },
                   {
@@ -6590,7 +6590,7 @@ export const docsPackages: DocsPackage[] = [
                   },
                 ],
                 bullets: [
-                  'The root package is framework-agnostic and owns the bus.',
+                  'The root package owns the bus and does not need React.',
                   'React bindings live under `@veams/vent/react`.',
                 ],
                 id: 'framework-support',
@@ -6734,7 +6734,7 @@ export const docsPackages: DocsPackage[] = [
                 bullets: [
                   '`useVent()` takes no parameters.',
                   'Returns the current `EventHandler` from the nearest `VentProvider`.',
-                  'Throws when used outside provider scope so missing bus ownership fails loudly.',
+                  'Throws when used outside a `VentProvider`, so a missing provider fails fast.',
                 ],
                 id: 'use-vent',
                 paragraphs: [
@@ -7684,7 +7684,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'islands-architecture',
                 paragraphs: [
-                  'Partial Hydration allows you to build high-performance web applications by combining the speed of static HTML with the interactivity of modern UI frameworks. Instead of hydrating the entire page, you only activate specific components based on user interaction or environment triggers.',
+                  'Partial Hydration combines the speed of static HTML with the interactivity of modern UI frameworks. Instead of hydrating the whole page, you only activate specific components based on user interaction or environment triggers.',
                 ],
                 title: 'Islands of Interactivity',
               },
@@ -7697,18 +7697,18 @@ export const docsPackages: DocsPackage[] = [
             ],
             heroImage: islandArchitectureImg,
             heroParagraphs: [
-              'VEAMS Partial Hydration provides the core infrastructure for activating components in a static HTML environment. It enables the Islands Architecture by serializing component props into the DOM during server-rendering and selectively hydrating them on the client. Unlike many modern meta-frameworks, it achieves this purely at runtime, meaning you do not need a custom compiler and are never locked into a specific bundler.',
+              'VEAMS Partial Hydration activates components inside static HTML. It enables the Islands Architecture by writing component props into the DOM during server rendering and hydrating them selectively on the client. It works purely at runtime: no custom compiler, no bundler lock-in.',
             ],
             id: 'overview',
             intro:
-              'Leverage the Islands Architecture to activate interactive UI components exactly when and where they are needed.',
+              'Use the Islands Architecture to activate interactive components exactly when and where they are needed.',
             summary: 'Selective hydration for peak performance.',
             title: 'Overview',
           },
           {
             blocks: [
               {
-                callout: 'The data-internal-ref and data-internal-id attributes are a fallback solution we support to re-connect the data script with the component if the DOM is structurally manipulated before hydration. In standard setups where the script tag stays directly adjacent to the wrapper, these attributes are actually not necessary.',
+                callout: 'The data-internal-ref and data-internal-id attributes are a fallback. They re-connect the data script with the component if the DOM changes before hydration. In standard setups, where the script tag stays right next to the wrapper, they are not needed.',
                 codeExamples: [
                   {
                     code: partialHydrationDomExample,
@@ -7732,7 +7732,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'hydration-principles',
                 paragraphs: [
-                  'By following these principles, you ensure that your application remains fast, accessible, and easy to maintain as it grows in complexity.',
+                  'Follow these principles and your application stays fast, accessible, and easy to maintain as it grows.',
                 ],
                 title: 'Core Principles',
               },
@@ -7760,7 +7760,7 @@ export const docsPackages: DocsPackage[] = [
                   },
                 ],
                 bullets: [
-                  'The root package (`@veams/partial-hydration`) is framework-agnostic and owns the core engine.',
+                  'The root package (`@veams/partial-hydration`) owns the core engine and does not need React.',
                   'React bindings live in a separate subpath (`@veams/partial-hydration/react`).',
                   'The `render` function gives you full control over how any framework is initialized.',
                 ],
@@ -7775,7 +7775,7 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Getting Started',
             id: 'framework-support',
             intro:
-              'Use the framework-agnostic root for the client-side engine, then add React bindings only for SSR component preparation.',
+              'Use the framework-neutral root for the client-side engine, then add React bindings only for SSR component preparation.',
             summary: 'Framework-neutral core, optional React layer.',
             title: 'Framework Support',
           },
@@ -7791,7 +7791,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'install',
                 paragraphs: [
-                  'Install the hydration package. It is framework-agnostic at its core, but provides optional React bindings for easier integration.',
+                  'Install the hydration package. The core works with any framework. Optional React bindings make integration easier.',
                 ],
                 title: 'Install the package',
               },
@@ -7845,7 +7845,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'strategies',
                 paragraphs: [
-                  'Choosing the right hydration strategy is crucial for balancing performance and interactivity. We recommend a "lazy-first" approach: only hydrate components when they are actually needed by the user.',
+                  'The right trigger balances performance and interactivity. We recommend lazy-first: hydrate a component only when the user actually needs it.',
                 ],
                 title: 'Choosing a Trigger',
               },
@@ -7867,7 +7867,7 @@ export const docsPackages: DocsPackage[] = [
                 paragraphs: [
                   'The `createHydration` options map `data-component` values to their activation rules. Each component in the map requires a `render` function, which provides full control over how the framework (like React or Vue) is initialized on the DOM element.',
                   'If you use `withHydration()`, the wrapper `data-component` value is taken from `Component.displayName`, so that `displayName` must stay stable and match the client registration key.',
-                  'For viewport-based hydration, you can provide an optional `config.rootMargin` to trigger activation slightly before the element enters the visible area, ensuring a seamless experience for the user.',
+                  'For viewport-based hydration, an optional `config.rootMargin` triggers activation slightly before the element becomes visible, so the component is ready when the user reaches it.',
                 ],
                 title: 'Trigger Reference & Options',
               },
@@ -7896,7 +7896,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'lazy-loading-guide',
                 paragraphs: [
-                  'To truly benefit from partial hydration, you should lazy load your component code. By passing a dynamic import (e.g., `() => import(...)`) as your Component definition and awaiting it in the `render` function, the browser only downloads the JavaScript when the component is actually activated.',
+                  'To get the full benefit of partial hydration, lazy load your component code. Pass a dynamic import (e.g., `() => import(...)`) as your component definition and await it in the `render` function. The browser then only downloads the JavaScript when the component is actually activated.',
                 ],
                 title: 'Dynamic Imports',
               },
@@ -7952,7 +7952,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'provider-guide',
                 paragraphs: [
-                  'The `HydrationProvider` is a React context provider that supplies metadata to the hydrated component tree. While it is automatically included when using `withHydration`, you can also use it manually if you are building custom hydration wrappers or orchestrating complex isomorphic setups.',
+                  'The `HydrationProvider` is a React context provider that supplies metadata to the hydrated component tree. `withHydration` includes it automatically. Use it manually only when you build custom hydration wrappers or advanced isomorphic setups.',
                 ],
                 title: 'Context Provider',
               },
@@ -7987,7 +7987,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'create-hydration-api',
                 paragraphs: [
-                  'Use `createHydration` to define your client-side activation logic. It is framework-agnostic, meaning you define exactly how each component is rendered in the `render` callback.',
+                  'Use `createHydration` to define your client-side activation logic. It works with any framework: you define exactly how each component renders in the `render` callback.',
                 ],
                 title: 'createHydration',
               },
@@ -8023,7 +8023,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'with-hydration-api',
                 paragraphs: [
-                  'Use `withHydration` during SSR to ensure that the client-side loader has all the data it needs to activate the component without a full page re-render. The client-side `components` key must match the wrapped component `displayName` because that is what ends up in `data-component`.',
+                  'Use `withHydration` during SSR so the client-side loader gets all the data it needs to activate the component. The client-side `components` key must match the wrapped component `displayName`, because that value ends up in `data-component`.',
                 ],
                 title: 'withHydration',
               },
@@ -8043,7 +8043,7 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Guides',
             id: 'api-reference',
             intro:
-              'The package provides a minimal but powerful API for implementing the Islands Architecture in your project.',
+              'A small API that covers the whole Islands Architecture setup.',
             summary: 'Core factory and bindings reference.',
             title: 'API Reference',
           },
@@ -8065,7 +8065,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'complete-setup',
                 paragraphs: [
-                  'This example demonstrates a complete React setup. It mixes non-lazy components for critical UI (like Navigation) with lazy components that only load when they enter the viewport.',
+                  'This example shows a complete React setup. It mixes non-lazy components for critical UI (like navigation) with lazy components that only load when they enter the viewport.',
                 ],
                 title: 'Mix Lazy and Non-Lazy Components',
               },
@@ -8073,7 +8073,7 @@ export const docsPackages: DocsPackage[] = [
             eyebrow: 'Examples',
             id: 'example-complete-setup',
             intro:
-              'See how to orchestrate a full page with both immediate and deferred hydration strategies.',
+              'See how one page combines immediate and deferred hydration.',
             summary: 'Complete setup mixing lazy and non-lazy components.',
             title: 'Complete Setup',
           },
@@ -8085,7 +8085,7 @@ export const docsPackages: DocsPackage[] = [
   },
   {
     accent: 'pink',
-    description: 'A curated collection of high-performance CSS animations for modern web interfaces.',
+    description: 'A curated set of fast CSS animations for modern web interfaces.',
     githubPath: 'packages/css-animations',
     id: 'css-animations',
     npm: '@veams/css-animations',
@@ -8105,7 +8105,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'overview-intro',
                 paragraphs: [
-                  '@veams/css-animations provides a curated set of high-performance CSS animations designed for the VEAMS ecosystem. It is available as SCSS mixins, pre-compiled CSS, and TypeScript constants for type-safe usage.',
+                  '@veams/css-animations is a curated set of fast CSS animations for the VEAMS ecosystem. It ships as SCSS mixins, pre-compiled CSS, and TypeScript constants for type-safe usage.',
                 ],
                 title: 'High-Performance Animations',
               },
@@ -8117,7 +8117,7 @@ export const docsPackages: DocsPackage[] = [
               'Type-safe TypeScript constants for class names.',
             ],
             heroParagraphs: [
-              'VEAMS CSS Animations is more than just a stylesheet. It is a structured library of performance-optimized animations that follow the VEAMS methodology, ensuring smooth transitions and feedback effects with minimal impact on frame rates.',
+              'VEAMS CSS Animations is more than a stylesheet. It is a structured library of fast animations that follow the VEAMS methodology. Transitions and feedback effects stay smooth without hurting frame rates.',
             ],
             id: 'overview',
             intro: 'Curated CSS animations for modern web interfaces.',
@@ -8165,7 +8165,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'scss-usage',
                 paragraphs: [
-                  'For Sass users, the package provides a highly modular set of mixins. You can `@use` the full bundle or just the specific variables and animation modules you need to keep your CSS footprint small.',
+                  'For Sass users, the package provides a modular set of mixins. You can `@use` the full bundle or only the variables and animation modules you need, which keeps your CSS small.',
                   'When using feedback animations, remember to include `@include fb-setup;` on the target element to initialize the required pseudo-element styling.',
                 ],
                 title: 'SCSS Mixins',
@@ -8203,7 +8203,7 @@ export const docsPackages: DocsPackage[] = [
                 ],
                 id: 'ts-usage',
                 paragraphs: [
-                  'To avoid typos and enable IDE autocompletion, the package exports an `ANIMATIONS` constant. This is particularly useful in component-based frameworks where you might want to toggle animation classes dynamically.',
+                  'To avoid typos and get IDE autocompletion, the package exports an `ANIMATIONS` constant. This is especially useful in component frameworks where you toggle animation classes dynamically.',
                 ],
                 title: 'TypeScript Constants',
               },
