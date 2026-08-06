@@ -62,6 +62,56 @@ describe('useQueryHandle', () => {
       root.unmount();
     });
   });
+  it("returns the new handle's snapshot after swapping to a handle that never notifies", async () => {
+    const createResolvedHandle = (name: string): QueryHandle<{ name: string }, Error> => {
+      const snapshot: QueryHandleSnapshot<{ name: string }, Error> = {
+        data: { name },
+        error: null,
+        fetchStatus: 'idle',
+        status: 'success',
+        isError: false,
+        isFetching: false,
+        isPending: false,
+        isSuccess: true,
+      };
+
+      return {
+        getSnapshot: jest.fn(() => snapshot),
+        subscribe: jest.fn(() => jest.fn()),
+        refetch: jest.fn(async () => snapshot),
+        invalidate: jest.fn(async () => undefined),
+        unsafe_getResult: jest.fn(),
+      };
+    };
+
+    const firstHandle = createResolvedHandle('Ada');
+    const secondHandle = createResolvedHandle('Grace');
+
+    const Consumer = ({ handle }: { handle: QueryHandle<{ name: string }, Error> }) => {
+      const snapshot = useQueryHandle(handle);
+
+      return <span>{snapshot.data?.name ?? 'pending'}</span>;
+    };
+
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(<Consumer handle={firstHandle} />);
+    });
+
+    expect(container.textContent).toBe('Ada');
+
+    await act(async () => {
+      root.render(<Consumer handle={secondHandle} />);
+    });
+
+    expect(container.textContent).toBe('Grace');
+    expect(secondHandle.getSnapshot).toHaveBeenCalled();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
   it('cleans up the store subscription on unmount', async () => {
     const snapshot: QueryHandleSnapshot<{ name: string }, Error> = {
       data: { name: 'Ada' },

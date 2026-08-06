@@ -26,6 +26,20 @@ export function useQueryHandle<TData, TError>(
   const snapshotCacheRef = useRef<SnapshotCacheEntry<TData, TError> | null>(null);
   // Cache the server snapshot separately for the useSyncExternalStore SSR fallback.
   const serverSnapshotCacheRef = useRef<QueryHandleSnapshot<TData, TError> | null>(null);
+  // Track the handle instance that produced the current cache contents.
+  const lastHandleRef = useRef(queryHandle);
+
+  // Reset the caches during render when the handle identity changes.
+  if (lastHandleRef.current !== queryHandle) {
+    // Remember the new handle as the owner of upcoming cache entries.
+    lastHandleRef.current = queryHandle;
+    // Bump the version so stale cache entries can never match again.
+    snapshotVersionRef.current += 1;
+    // Drop the cached client snapshot from the previous handle.
+    snapshotCacheRef.current = null;
+    // Drop the cached server snapshot from the previous handle.
+    serverSnapshotCacheRef.current = null;
+  }
 
   // Create the subscribe function expected by useSyncExternalStore.
   const subscribe = useCallback(
