@@ -212,6 +212,30 @@ function RoleField() {
 Available modes are `'change'`, `'blur'`, `'submit'`, and `'inherit'`.
 `'inherit'` means "use the current `FormProvider` defaults".
 
+### Custom Bindings
+
+The library exports `FormValidationConfigContext`, `defaultFormValidationConfig`,
+`resolveValidationBehavior`, and `shouldValidateFieldInteraction` from
+`@veams/form/react` for custom field bindings.
+
+```ts
+import { useContext } from 'react';
+import {
+  FormValidationConfigContext,
+  resolveValidationBehavior,
+  shouldValidateFieldInteraction,
+} from '@veams/form/react';
+
+const config = useContext(FormValidationConfigContext);
+const behavior = resolveValidationBehavior(config, overrides);
+
+function handleBlur() {
+  if (shouldValidateFieldInteraction('blur', touched, behavior)) {
+    validateField();
+  }
+}
+```
+
 ## Uncontrolled Field Principle
 
 Native fields should stay uncontrolled by default in VEAMS Form, while `FormStateHandler` remains the source of truth for values, errors, touched state, and submit state.
