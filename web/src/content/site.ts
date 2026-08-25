@@ -2356,6 +2356,46 @@ function AccountForm() {
   );
 }`;
 
+const formCustomBindingExample = `import { useContext } from 'react';
+import {
+  FormValidationConfigContext,
+  resolveValidationBehavior,
+  shouldValidateFieldInteraction,
+  useFieldMeta,
+  useFormController,
+  type ValidationBehaviorOverrides,
+} from '@veams/form/react';
+
+// A custom binding for a widget that VEAMS Form does not cover.
+function useColorPickerField(name: string, overrides?: ValidationBehaviorOverrides) {
+  const controller = useFormController();
+  const meta = useFieldMeta(name);
+  const config = useContext(FormValidationConfigContext);
+  const behavior = resolveValidationBehavior(config, overrides);
+
+  const onChange = (nextValue: string) => {
+    if (!meta.touched && behavior.validationMode === 'change') {
+      controller.setFieldTouched(name, true);
+    }
+
+    controller.setFieldValue(name, nextValue, {
+      validate: shouldValidateFieldInteraction('change', meta.touched, behavior),
+    });
+  };
+
+  const onBlur = () => {
+    if (!meta.touched) {
+      controller.setFieldTouched(name, true);
+    }
+
+    if (shouldValidateFieldInteraction('blur', meta.touched, behavior)) {
+      controller.validateForm();
+    }
+  };
+
+  return { meta, onBlur, onChange };
+}`;
+
 const formFrameworkCoreImports = `import { FormStateHandler } from '@veams/form';`;
 
 const formFrameworkReactImports = `import {
@@ -3573,10 +3613,18 @@ const formApiImports = `import {
 import {
   Controller,
   FormProvider,
+  FormValidationConfigContext,
+  defaultFormValidationConfig,
+  resolveValidationBehavior,
+  shouldValidateFieldInteraction,
   useFieldMeta,
   useFormController,
   useFormMeta,
   useUncontrolledField,
+  type FormValidationConfig,
+  type ResolvedValidationBehavior,
+  type ValidationBehaviorOverrides,
+  type ValidationMode,
 } from '@veams/form/react';`;
 
 const _cssAnimationsInstall = `npm install @veams/css-animations`;
@@ -7367,6 +7415,28 @@ export const docsPackages: DocsPackage[] = [
                   'Validation timing lives in the React binding layer, not in the core handler API.',
                 ],
                 title: 'Validation Timing',
+              },
+              {
+                codeExamples: [
+                  {
+                    code: formCustomBindingExample,
+                    label: 'Custom field binding',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  '`FormValidationConfigContext` holds the validation timing of the nearest `FormProvider`. Read it with `useContext()`.',
+                  "`defaultFormValidationConfig` is the fallback config outside a provider: `validationMode: 'blur'` and `revalidationMode: 'change'`.",
+                  "`resolveValidationBehavior(config, overrides?)` merges field-level overrides with the form defaults. An `'inherit'` override keeps the form value.",
+                  "`shouldValidateFieldInteraction(interaction, isTouched, behavior)` returns `true` when a `'blur'` or `'change'` interaction must run validation. It reads `validationMode` before the first touch and `revalidationMode` after it.",
+                  '`FormValidationConfig`, `ResolvedValidationBehavior`, and `ValidationBehaviorOverrides` type the config, the merge result, and the field overrides.',
+                ],
+                id: 'custom-bindings-api',
+                paragraphs: [
+                  'A custom binding must follow the same validation timing as the built-in bindings.',
+                  'These exports give your binding the rules that `useUncontrolledField()` and `Controller` use internally.',
+                ],
+                title: 'Custom Bindings',
               },
               {
                 codeExamples: [
