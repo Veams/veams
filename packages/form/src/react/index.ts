@@ -17,3 +17,14 @@ export {
   type UseFieldOptions,
   type ValidationMode,
 } from './react-form.js';
+export {
+  FormValidationConfigContext,
+  defaultFormValidationConfig,
+  type FormValidationConfig,
+} from './context.js';
+export {
+  resolveValidationBehavior,
+  shouldValidateFieldInteraction,
+  type ResolvedValidationBehavior,
+  type ValidationBehaviorOverrides,
+} from './validation-mode.js';
