@@ -3056,6 +3056,51 @@ async function submitSignup() {
   }
 }`;
 
+const formValidatorTouchedFieldsExample = `import { FormStateHandler } from '@veams/form';
+
+type ProfileValues = {
+  contact: {
+    email: string;
+    phone: string;
+  };
+  name: string;
+};
+
+const profileForm = new FormStateHandler<ProfileValues>({
+  initialValues: {
+    contact: {
+      email: '',
+      phone: '',
+    },
+    name: '',
+  },
+  validator: (values) => ({
+    ...(values.name ? {} : { name: 'Name is required' }),
+    ...(values.contact.email ? {} : { 'contact.email': 'Email is required' }),
+    ...(values.contact.phone ? {} : { 'contact.phone': 'Phone is required' }),
+  }),
+});
+
+// The user edits the name and does not reach the contact group.
+profileForm.setFieldTouched('name');
+
+// Only the name error is stored. Both contact errors stay out of the map.
+const areTouchedFieldsValid = profileForm.validateTouchedFields();
+
+// A touched parent path keeps the errors of its children.
+profileForm.setFieldTouched('contact');
+profileForm.validateTouchedFields();
+
+// The submit check still validates every field.
+function handleSubmit() {
+  if (!profileForm.validateForm()) {
+    profileForm.touchAllFields();
+    return;
+  }
+
+  saveProfile(profileForm.getState().values);
+}`;
+
 const formValidatorZodExample = `import { z } from 'zod';
 import { FormStateHandler } from '@veams/form';
 import { toZodValidator } from '@veams/form/validators/zod';
@@ -7237,6 +7282,31 @@ export const docsPackages: DocsPackage[] = [
               {
                 codeExamples: [
                   {
+                    code: formValidatorTouchedFieldsExample,
+                    label: 'Touched-only validation',
+                    language: 'ts',
+                  },
+                ],
+                bullets: [
+                  'Call `validateTouchedFields()` when the form must only show errors for the fields the user already touched.',
+                  'The action runs the same validator as `validateForm()`. It then removes the errors of untouched paths.',
+                  'An error stays when its path is a touched path, a parent of a touched path, or a child of a touched path.',
+                  'Mark one field with `setFieldTouched(name)`. Mark every leaf field with `touchAllFields()`.',
+                  '`isValid` follows the stored error map. After this action it describes the touched fields only.',
+                  'Keep `validateForm()` for the submit check, because it stores the errors of every field.',
+                ],
+                callout:
+                  'The filter applies to one run. `setFieldValue()` and the React blur validation call the full `validateForm()` pipeline, so the next interaction writes the full error map again. A cross-field error on an untouched path also disappears: a "Passwords do not match" error on `passwordConfirm` is dropped while the user touched `password` only.',
+                id: 'validator-touched-fields',
+                paragraphs: [
+                  'A long form should not show an error for a field the user did not reach yet.',
+                  '`validateTouchedFields()` gives you that progressive feedback without a second validator.',
+                ],
+                title: 'Validate only the touched fields',
+              },
+              {
+                codeExamples: [
+                  {
                     code: formValidatorZodExample,
                     label: 'Schema adapter with Zod',
                     language: 'ts',
@@ -7409,6 +7479,7 @@ export const docsPackages: DocsPackage[] = [
                   'React forms validate on first blur by default.',
                   'Touched fields revalidate on change by default so stale errors clear while the user types.',
                   'Use `validationMode` and `revalidationMode` on `FormProvider`, `useUncontrolledField()`, and `Controller` to override that timing.',
+                  'The bindings always call `validateForm()`. Call `validateTouchedFields()` yourself when only the touched fields must hold an error.',
                 ],
                 id: 'validation-timing-api',
                 paragraphs: [
