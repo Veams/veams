@@ -11,6 +11,20 @@ describe('FormStateHandler', () => {
     return errors;
   };
 
+  const multiFieldValidator = (values: { company: string; email: string }) => {
+    const errors: Partial<Record<'company' | 'email', string>> = {};
+
+    if (!values.company) {
+      errors.company = 'Company is required';
+    }
+
+    if (!values.email) {
+      errors.email = 'Email is required';
+    }
+
+    return errors;
+  };
+
   it('should initialize without validation errors', () => {
     const handler = new FormStateHandler({
       initialValues: { email: '' },
@@ -79,6 +93,170 @@ describe('FormStateHandler', () => {
       },
     });
     expect(handler.getState().errors['profile.email']).toBeUndefined();
+  });
+
+  it('should validate touched fields and store touched field errors', () => {
+    const handler = new FormStateHandler({
+      initialValues: { company: '', email: '' },
+      validator: multiFieldValidator,
+    });
+
+    handler.setFieldTouched('email');
+    const isValid = handler.validateTouchedFields();
+
+    expect(isValid).toBe(false);
+    expect(handler.getState().errors).toEqual({
+      email: 'Email is required',
+    });
+    expect(handler.getState().isValid).toBe(false);
+  });
+
+  it('should remove untouched field errors and keep validateForm behavior', () => {
+    const handler = new FormStateHandler({
+      initialValues: { company: '', email: 'hello@veams.org' },
+      validator: multiFieldValidator,
+    });
+
+    handler.setFieldTouched('email');
+    const isTouchedValid = handler.validateTouchedFields();
+
+    expect(isTouchedValid).toBe(true);
+    expect(handler.getState().errors).toEqual({});
+    expect(handler.getState().isValid).toBe(true);
+
+    const isFullyValid = handler.validateForm();
+
+    expect(isFullyValid).toBe(false);
+    expect(handler.getState().errors).toEqual({
+      company: 'Company is required',
+    });
+    expect(handler.getState().isValid).toBe(false);
+  });
+
+  it('should keep parent-path errors for touched child paths', () => {
+    const handler = new FormStateHandler({
+      initialValues: {
+        profile: {
+          email: '',
+        },
+      },
+      validator: () => ({
+        profile: 'Profile is invalid',
+      }),
+    });
+
+    handler.setFieldTouched('profile.email');
+    const isValid = handler.validateTouchedFields();
+
+    expect(isValid).toBe(false);
+    expect(handler.getState().errors).toEqual({
+      profile: 'Profile is invalid',
+    });
+    expect(handler.getState().isValid).toBe(false);
+  });
+
+  it('should keep child-path errors for touched parent paths', () => {
+    const handler = new FormStateHandler({
+      initialValues: {
+        profile: {
+          email: '',
+        },
+      },
+      validator: () => ({
+        'profile.email': 'Email is required',
+      }),
+    });
+
+    handler.setFieldTouched('profile');
+    const isValid = handler.validateTouchedFields();
+
+    expect(isValid).toBe(false);
+    expect(handler.getState().errors).toEqual({
+      'profile.email': 'Email is required',
+    });
+    expect(handler.getState().isValid).toBe(false);
+  });
+
+  it('should clear errors and set valid state when no field is touched', () => {
+    const handler = new FormStateHandler({
+      initialValues: { email: '' },
+      validator,
+    });
+
+    const isValid = handler.validateTouchedFields();
+
+    expect(isValid).toBe(true);
+    expect(handler.getState().errors).toEqual({});
+    expect(handler.getState().isValid).toBe(true);
+  });
+
+  it('should ignore fields whose touched entry is false', () => {
+    const handler = new FormStateHandler({
+      initialValues: { email: '' },
+      validator,
+    });
+
+    handler.setFieldTouched('email', false);
+    const isValid = handler.validateTouchedFields();
+
+    expect(isValid).toBe(true);
+    expect(handler.getState().errors).toEqual({});
+    expect(handler.getState().isValid).toBe(true);
+  });
+
+  it('should validate touched fields without a validator', () => {
+    const handler = new FormStateHandler({
+      initialValues: { email: '' },
+    });
+
+    handler.setFieldTouched('email');
+    const isValid = handler.validateTouchedFields();
+
+    expect(isValid).toBe(true);
+    expect(handler.getState().errors).toEqual({});
+    expect(handler.getState().isValid).toBe(true);
+  });
+
+  it('should keep submitError unchanged when validating touched fields', () => {
+    const handler = new FormStateHandler({
+      initialValues: { email: '' },
+      validator,
+    });
+
+    handler.setSubmitError('Backend unavailable');
+    handler.setFieldTouched('email');
+    const isValid = handler.validateTouchedFields();
+
+    expect(isValid).toBe(false);
+    expect(handler.getState().errors).toEqual({
+      email: 'Email is required',
+    });
+    expect(handler.getState().submitError).toBe('Backend unavailable');
+  });
+
+  it('should restore the full error map on field change after touched validation', () => {
+    const handler = new FormStateHandler({
+      initialValues: { company: '', email: 'hello@veams.org' },
+      validator: multiFieldValidator,
+    });
+
+    handler.setFieldTouched('email');
+    handler.validateTouchedFields();
+    handler.setFieldValue('email', 'next@veams.org');
+
+    expect(handler.getState().errors).toEqual({
+      company: 'Company is required',
+    });
+    expect(handler.getState().isValid).toBe(false);
+  });
+
+  it('should expose validateTouchedFields through getActions', () => {
+    const handler = new FormStateHandler({
+      initialValues: { email: '' },
+      validator,
+    });
+
+    expect(handler.getActions().validateTouchedFields).toBe(handler.validateTouchedFields);
   });
 
   it('should handle manual field errors', () => {

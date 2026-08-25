@@ -155,3 +155,15 @@ export function collectLeafPaths(values: unknown): string[] {
   traverse(values);
   return paths;
 }
+
+/**
+ * Checks whether two dot-paths point to the same field or to fields on one branch.
+ * Returns true for equal paths, and when one path is a parent of the other path.
+ */
+export function isRelatedPath(left: string, right: string): boolean {
+  if (left === right) {
+    return true;
+  }
+
+  return left.startsWith(`${right}.`) || right.startsWith(`${left}.`);
+}

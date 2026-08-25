@@ -236,6 +236,48 @@ function handleBlur() {
 }
 ```
 
+## Touched-Only Validation
+
+Use `validateTouchedFields()` when a form must validate only fields the user has touched. The action runs the configured validator, stores only related errors, and returns `true` when no touched field has an error.
+
+An error stays when its path is:
+
+- a touched path;
+- a parent of a touched path;
+- a child of a touched path.
+
+`isValid` then reflects the stored touched-field error map only. Call `validateForm()` before submit.
+
+The filter applies to one run. `setFieldValue()` and React blur validation call the full `validateForm()` pipeline. The next interaction writes the full error map again. See [Validation Timing](#validation-timing) for React behavior.
+
+A cross-field error on an untouched path is not stored. For example, a validator can return "Passwords do not match" on `passwordConfirm` while the user touched only `password`.
+
+```ts
+type LoginValues = {
+  email: string;
+  password: string;
+};
+
+declare const submitValues: (values: LoginValues) => void;
+declare const validator: (values: LoginValues) => Partial<Record<keyof LoginValues, string>>;
+
+const form = new FormStateHandler({
+  initialValues: { email: '', password: '' },
+  validator,
+});
+
+form.setFieldTouched('email');
+form.validateTouchedFields();
+
+function handleSubmit() {
+  if (!form.validateForm()) {
+    return;
+  }
+
+  submitValues(form.getState().values);
+}
+```
+
 ## Uncontrolled Field Principle
 
 Native fields should stay uncontrolled by default in VEAMS Form, while `FormStateHandler` remains the source of truth for values, errors, touched state, and submit state.
