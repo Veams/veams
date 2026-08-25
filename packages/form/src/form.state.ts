@@ -3,7 +3,7 @@
  */
 import { NativeStateHandler, type DevToolsOptions } from '@veams/status-quo';
 
-import { collectLeafPaths, isDeepEqual, setValueAtPath } from './path-utils.js';
+import { collectLeafPaths, isDeepEqual, isRelatedPath, setValueAtPath } from './path-utils.js';
 
 /**
  * Base type for form values, restricted to object shapes.
@@ -167,6 +167,8 @@ export interface FormActions<T extends FormValues> {
   touchAllFields: () => void;
   // Triggers a full validation of the current form values.
   validateForm: () => boolean;
+  // Validates the current values and keeps only the errors of touched fields.
+  validateTouchedFields: () => boolean;
 }
 
 /**
@@ -232,6 +234,7 @@ export class FormStateHandler<T extends FormValues> extends NativeStateHandler<
       setSubmitting: this.setSubmitting,
       touchAllFields: this.touchAllFields,
       validateForm: this.validateForm,
+      validateTouchedFields: this.validateTouchedFields,
     };
   }
 
@@ -413,6 +416,30 @@ export class FormStateHandler<T extends FormValues> extends NativeStateHandler<
   };
 
   /**
+   * Validates the current values and keeps only the errors of touched fields.
+   * An untouched field never receives an error message from this action.
+   * Returns true when no touched field has an error.
+   */
+  validateTouchedFields = () => {
+    const currentState = this.getState();
+    const nextErrors = filterErrorsByTouched(
+      this.validateValues(currentState.values),
+      currentState.touched
+    );
+    const isValid = this.isEmptyErrors(nextErrors);
+
+    this.setState(
+      {
+        errors: nextErrors,
+        isValid,
+      },
+      'Form :: Validate Touched'
+    );
+
+    return isValid;
+  };
+
+  /**
    * Starts the asynchronous initialization when the first consumer connects.
    */
   protected onConnect(): void {
@@ -528,6 +555,33 @@ function compactErrors<T extends FormValues>(
     }
 
     nextErrors[fieldName] = errorMessage;
+  }
+
+  return nextErrors;
+}
+
+/**
+ * Keeps the errors that belong to a touched field.
+ * An error belongs to a touched field in these cases:
+ * - the error path is a touched path;
+ * - the error path is a parent of a touched path;
+ * - the error path is a child of a touched path.
+ */
+function filterErrorsByTouched<T extends FormValues>(
+  errors: FormErrors<T>,
+  touched: FormTouched<T>
+): FormErrors<T> {
+  const touchedPaths = Object.keys(touched).filter((path) =>
+    Boolean(touched[path as FormFieldName<T>])
+  );
+  const nextErrors: FormErrors<T> = {};
+
+  for (const key in errors) {
+    const fieldName = key as FormFieldName<T>;
+
+    if (touchedPaths.some((touchedPath) => isRelatedPath(touchedPath, key))) {
+      nextErrors[fieldName] = errors[fieldName];
+    }
   }
 
   return nextErrors;

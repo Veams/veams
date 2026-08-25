@@ -7387,6 +7387,7 @@ export const docsPackages: DocsPackage[] = [
                   '`isValid` only looks at the field error map. A `submitError` can exist while `isValid` is still `true`.',
                   '`setFieldValue(name, value, options?)` updates the nested value, optionally reruns the validator, updates `errors`, and clears a stale `submitError`.',
                   '`validateForm()` reruns the validator, stores the resulting field errors, and returns `true` or `false` for submit flow control.',
+                  '`validateTouchedFields()` reruns the validator but keeps only the errors of touched fields. It returns `true` when no touched field has an error. `isValid` then reflects the touched fields only, so use `validateForm()` for the submit check. The filter applies to one run: the next `setFieldValue()` or React blur validation writes the full error map again. A cross-field error on an untouched path is not stored.',
                   '`setFieldError(name, errorMessage?)` is for backend field errors. `setSubmitError(errorMessage?)` is for backend failures that do not belong to one field.',
                   '`setFieldTouched(name, isTouched?)` marks one field. `touchAllFields()` marks every leaf field so all validation messages show at once.',
                   '`resetForm(values?)` goes back to the current baseline, or applies the given values, and clears `errors`, `submitError`, `touched`, and submit state. It never changes the baseline. Use `initialize()` for that.',
